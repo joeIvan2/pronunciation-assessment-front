@@ -153,6 +153,36 @@ export default function PronunciationAssessment() {
     }
   };
 
+  const speakText = () => {
+    if (!referenceText) {
+      alert("請先輸入要發音的文字！");
+      return;
+    }
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
+    // 你可以根據需要設定特定的語音，例如：
+    // speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural"; // 英文女聲
+    // speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoNeural"; // 中文女聲
+    // 更多語音請參考 Azure 文件：https://aka.ms/speech/tts-languages
+
+    const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+
+    synthesizer.speakTextAsync(
+      referenceText,
+      result => {
+        if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
+          console.log("語音合成完成");
+        } else {
+          console.error("語音合成失敗：", result.errorDetails);
+        }
+        synthesizer.close();
+      },
+      error => {
+        console.error("語音合成發生錯誤：", error);
+        synthesizer.close();
+      }
+    );
+  };
+
   // OCR 處理圖片
   const handlePaste = async (event) => {
     const items = event.clipboardData.items;
@@ -237,15 +267,18 @@ export default function PronunciationAssessment() {
         </div>
         
         {!recording && (
-          <button onClick={startAssessment} style={{ padding: "8px 20px", background: "#4cafef", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold" }}>
+          <button onClick={startAssessment} style={{ padding: "8px 20px", background: "#4cafef", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold", marginRight: "8px" }}>
             開始錄音並評分
           </button>
         )}
         {recording && (
-          <button onClick={stopAssessment} style={{ padding: "8px 20px", background: "#e53935", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold" }}>
+          <button onClick={stopAssessment} style={{ padding: "8px 20px", background: "#e53935", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold", marginRight: "8px" }}>
             停止錄音
           </button>
         )}
+        <button onClick={speakText} style={{ padding: "8px 20px", background: "#4caf50", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold" }}>
+          發音
+        </button>
       </div>
       
       {result && (() => {
