@@ -262,8 +262,10 @@ export default function PronunciationAssessment() {
             <h3 style={{ color: "#4cafef" }}>句子分析</h3>
             <WordsDisplay words={nbest.Words} />
             
+            {/*
             <h4 style={{ color: "#aaa", marginTop: 20 }}>原始 JSON</h4>
             <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee" }}>{result.json}</pre>
+            */}
           </div>
         );
       })()}
