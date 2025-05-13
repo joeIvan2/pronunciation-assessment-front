@@ -16,7 +16,6 @@
     "microsoft-cognitiveservices-speech-sdk": "^1.34.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-mic": "^12.4.6",
     "react-scripts": "5.0.1",
     "tesseract.js": "^5.0.4",
     "web-vitals": "^2.1.4"
