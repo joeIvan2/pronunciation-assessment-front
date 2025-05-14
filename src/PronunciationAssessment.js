@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import Tesseract from "tesseract.js";
 
@@ -109,8 +109,15 @@ function WordsDisplay({ words }) {
 export default function PronunciationAssessment() {
   const [result, setResult] = useState(null);
   const [recording, setRecording] = useState(false);
-  const [referenceText, setReferenceText] = useState("Hello, how are you?");
-  const [fontSize, setFontSize] = useState(16);
+
+  // 從 localStorage 讀取初始值，若無則使用預設值
+  const [referenceText, setReferenceText] = useState(
+    localStorage.getItem("referenceText") || "Hello, how are you?"
+  );
+  const [fontSize, setFontSize] = useState(
+    parseInt(localStorage.getItem("fontSize"), 10) || 16
+  );
+
   const recognizerRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -219,6 +226,16 @@ export default function PronunciationAssessment() {
       reader.readAsDataURL(file);
     }
   };
+
+  // 保存 referenceText 到 localStorage
+  useEffect(() => {
+    localStorage.setItem("referenceText", referenceText);
+  }, [referenceText]);
+
+  // 保存 fontSize 到 localStorage
+  useEffect(() => {
+    localStorage.setItem("fontSize", fontSize.toString());
+  }, [fontSize]);
 
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
