@@ -109,6 +109,7 @@ function WordsDisplay({ words }) {
 export default function PronunciationAssessment() {
   const [result, setResult] = useState(null);
   const [recording, setRecording] = useState(false);
+  const [strictMode, setStrictMode] = useState(true); // 預設使用嚴格模式
 
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
@@ -139,6 +140,9 @@ export default function PronunciationAssessment() {
       SpeechSDK.PronunciationAssessmentGranularity.Phoneme,
       true
     );
+    
+    // 啟用嚴格評分模式
+    pronunciationAssessmentConfig.enableStrictAccuracy = strictMode;
 
     const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
     recognizerRef.current = recognizer;
@@ -308,6 +312,37 @@ export default function PronunciationAssessment() {
           >
             +
           </button>
+          
+          <div style={{ marginLeft: 24, display: "flex", alignItems: "center" }}>
+            <label style={{ marginRight: 8, color: "#bbb" }}>嚴格評分: </label>
+            <button 
+              onClick={() => setStrictMode(true)} 
+              style={{ 
+                padding: "4px 8px", 
+                background: strictMode ? "#ff5722" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 4, 
+                marginRight: 4,
+                fontWeight: strictMode ? "bold" : "normal"
+              }}
+            >
+              嚴格
+            </button>
+            <button 
+              onClick={() => setStrictMode(false)}
+              style={{ 
+                padding: "4px 8px", 
+                background: !strictMode ? "#4cafef" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 4,
+                fontWeight: !strictMode ? "bold" : "normal"
+              }}
+            >
+              標準
+            </button>
+          </div>
         </div>
         
         {!recording && (
