@@ -114,12 +114,14 @@ export default function PronunciationAssessment() {
   const [referenceText, setReferenceText] = useState(
     localStorage.getItem("referenceText") || "Hello, how are you?"
   );
-  const [fontSize, setFontSize] = useState(
-    parseInt(localStorage.getItem("fontSize"), 10) || 16
-  );
-  const [favorites, setFavorites] = useState(
-    JSON.parse(localStorage.getItem("favorites")) || []
-  );
+  const [fontSize, setFontSize] = useState(() => {
+    const savedFontSize = localStorage.getItem('fontSize');
+    return savedFontSize !== null ? parseInt(savedFontSize, 10) : 16;
+  });
+  const [favorites, setFavorites] = useState(() => {
+    const savedFavorites = localStorage.getItem('favorites');
+    return savedFavorites !== null ? JSON.parse(savedFavorites) : [];
+  });
 
   const recognizerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -255,11 +257,11 @@ export default function PronunciationAssessment() {
 
   // 保存 fontSize 到 localStorage
   useEffect(() => {
-    localStorage.setItem("fontSize", fontSize.toString());
+    localStorage.setItem('fontSize', fontSize.toString());
   }, [fontSize]);
 
   useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
+    localStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
 
   return (
