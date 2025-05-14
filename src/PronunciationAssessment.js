@@ -117,6 +117,9 @@ export default function PronunciationAssessment() {
   const [fontSize, setFontSize] = useState(
     parseInt(localStorage.getItem("fontSize"), 10) || 16
   );
+  const [favorites, setFavorites] = useState(
+    JSON.parse(localStorage.getItem("favorites")) || []
+  );
 
   const recognizerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -190,6 +193,24 @@ export default function PronunciationAssessment() {
     );
   };
 
+  const addToFavorites = () => {
+    if (referenceText && !favorites.includes(referenceText)) {
+      setFavorites(prevFavorites => [...prevFavorites, referenceText].slice(-10)); // 最多只保留最近10筆
+    } else if (favorites.includes(referenceText)) {
+      alert("此句子已在我的最愛！");
+    } else {
+      alert("請先輸入句子再加入我的最愛！");
+    }
+  };
+
+  const removeFromFavorite = (textToRemove) => {
+    setFavorites(prevFavorites => prevFavorites.filter(fav => fav !== textToRemove));
+  };
+
+  const loadFavorite = (textToLoad) => {
+    setReferenceText(textToLoad);
+  };
+
   // OCR 處理圖片
   const handlePaste = async (event) => {
     const items = event.clipboardData.items;
@@ -236,6 +257,10 @@ export default function PronunciationAssessment() {
   useEffect(() => {
     localStorage.setItem("fontSize", fontSize.toString());
   }, [fontSize]);
+
+  useEffect(() => {
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+  }, [favorites]);
 
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
@@ -296,7 +321,45 @@ export default function PronunciationAssessment() {
         <button onClick={speakText} style={{ padding: "8px 20px", background: "#4caf50", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold" }}>
           發音
         </button>
+        <button onClick={addToFavorites} style={{ padding: "8px 20px", background: "#ff9800", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold", marginLeft: "8px" }}>
+          加入我的最愛
+        </button>
       </div>
+      
+      {favorites.length > 0 && (
+        <div style={{ marginTop: 24, marginBottom: 16 }}>
+          <h3 style={{ color: "#4cafef", marginBottom: 8 }}>我的最愛</h3>
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {favorites.map((fav, index) => (
+              <li 
+                key={index} 
+                style={{
+                  background: "#23272f", 
+                  padding: "8px 12px", 
+                  borderRadius: 4, 
+                  marginBottom: 8, 
+                  display: "flex", 
+                  justifyContent: "space-between", 
+                  alignItems: "center"
+                }}
+              >
+                <span 
+                  onClick={() => loadFavorite(fav)} 
+                  style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee" }}
+                >
+                  {fav}
+                </span>
+                <button 
+                  onClick={() => removeFromFavorite(fav)} 
+                  style={{ background: "#e53935", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize: 14, padding:0 }}
+                >
+                  X
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       
       {result && (() => {
         const json = JSON.parse(result.json);
