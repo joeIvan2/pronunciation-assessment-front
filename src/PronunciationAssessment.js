@@ -1,3 +1,4 @@
+// Azure Speech SDK 发音评分应用 - 带有根据分数变色功能
 import React, { useState, useRef, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import Tesseract from "tesseract.js";
@@ -44,6 +45,21 @@ function ErrorTypeTag({ type }) {
 }
 
 function Word({ word, onClick, isSelected }) {
+  // 计算分数颜色，100分为绿色(#4caf50)，0分为红色(#e53935)，中间根据分数线性插值
+  const getScoreColor = (score) => {
+    if (score === undefined || score === null) return "#bbb";
+    // 将分数限制在0-100之间
+    const normalizedScore = Math.max(0, Math.min(100, score));
+    // 计算红绿色值
+    const red = Math.round(229 - (normalizedScore / 100) * (229 - 76));
+    const green = Math.round(57 + (normalizedScore / 100) * (175 - 57));
+    const blue = Math.round(53 + (normalizedScore / 100) * (80 - 53));
+    return `rgb(${red}, ${green}, ${blue})`;
+  };
+
+  const accuracyScore = word.PronunciationAssessment?.AccuracyScore;
+  const scoreColor = getScoreColor(accuracyScore);
+
   return (
     <div
       onClick={onClick}
@@ -57,8 +73,8 @@ function Word({ word, onClick, isSelected }) {
       }}
     >
       <div style={{ fontSize: "1.2em", marginBottom: "4px" }}>{word.Word}</div>
-      <div style={{ fontSize: "0.9em", color: "#bbb" }}>
-        {word.PronunciationAssessment?.AccuracyScore ?? "-"}
+      <div style={{ fontSize: "0.9em", color: scoreColor, fontWeight: "bold" }}>
+        {accuracyScore ?? "-"}
       </div>
       {isSelected && word.Phonemes && (
         <div style={{ 
@@ -70,11 +86,15 @@ function Word({ word, onClick, isSelected }) {
           zIndex: 10,
           boxShadow: "0 4px 8px rgba(0,0,0,0.3)"
         }}>
-          {word.Phonemes.map((p, i) => (
-            <div key={i} style={{ margin: "4px 0", color: "#ddd" }}>
-              {p.Phoneme}: {p.PronunciationAssessment?.AccuracyScore ?? "-"}
-            </div>
-          ))}
+          {word.Phonemes.map((p, i) => {
+            const phonemeScore = p.PronunciationAssessment?.AccuracyScore;
+            const phonemeColor = getScoreColor(phonemeScore);
+            return (
+              <div key={i} style={{ margin: "4px 0", color: "#ddd" }}>
+                {p.Phoneme}: <span style={{ color: phonemeColor, fontWeight: "bold" }}>{phonemeScore ?? "-"}</span>
+              </div>
+            );
+          })}
         </div>
       )}
       <ErrorTypeTag type={word.PronunciationAssessment?.ErrorType} />
