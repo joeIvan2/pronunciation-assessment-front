@@ -178,77 +178,124 @@ export default function PronunciationAssessment() {
       setResult(null);
       setRecording(true);
       
-      // 开始录音
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // 开始录音，使用更高的采样率和比特率
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 44100
+        } 
+      });
+      
+      // 使用更高质量的录音配置
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: 128000
+      });
+      
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       
       mediaRecorder.ondataavailable = (e) => {
-        audioChunksRef.current.push(e.data);
+        if (e.data.size > 0) {
+          console.log(`收到音频数据块: ${e.data.size} 字节`);
+          audioChunksRef.current.push(e.data);
+        }
       };
       
       mediaRecorder.onstop = async () => {
         try {
           setIsLoading(true);
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          console.log(`录音完成，总大小: ${audioBlob.size} 字节`);
+          
+          if (audioBlob.size === 0) {
+            throw new Error('录音数据为空，请检查麦克风权限和设置');
+          }
           
           // 将Blob转换为base64
           const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = async () => {
-            // 获取base64数据（去掉data:audio/wav;base64,前缀）
-            const base64data = reader.result.split(',')[1];
-            
-            // 尝试所有可能的API路径
-            let success = false;
-            let lastError = null;
-            
-            for (const path of API_PATHS.ASSESSMENT) {
+          
+          // 使用Promise包装FileReader
+          const base64Data = await new Promise((resolve, reject) => {
+            reader.onloadend = () => {
               try {
-                console.log(`尝试连接API: ${BACKEND_URL}${path}`);
-                
-                // 发送到后端 - 使用JSON格式而非FormData
-                const response = await fetch(`${BACKEND_URL}${path}`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    referenceText: referenceText,
-                    audioBuffer: base64data,
-                    strictMode: strictMode
-                  }),
-                });
-                
-                if (response.ok) {
-                  const data = await response.json();
-                  setResult({
-                    accuracy: data.accuracyScore,
-                    fluency: data.fluencyScore,
-                    completeness: data.completenessScore,
-                    pronScore: data.pronunciationScore,
-                    json: JSON.stringify(data)
-                  });
-                  success = true;
-                  console.log(`成功连接到API: ${BACKEND_URL}${path}`);
-                  break;
-                } else {
-                  console.warn(`API路径失败 ${path}: ${response.status} ${response.statusText}`);
-                  const text = await response.text();
-                  console.warn(`返回内容: ${text}`);
-                  lastError = new Error(`后端请求失败: ${response.status} - ${text}`);
-                }
+                // 获取base64数据（去掉data:audio/webm;base64,前缀）
+                const base64Result = reader.result.split(',')[1];
+                console.log(`音频转换为base64完成，数据长度: ${base64Result.length}`);
+                resolve(base64Result);
               } catch (err) {
-                console.warn(`API路径尝试失败 ${path}: ${err.message}`);
-                lastError = err;
+                reject(new Error(`音频数据处理失败: ${err.message}`));
               }
-            }
-            
-            if (!success) {
-              throw lastError || new Error('所有API路径尝试均失败');
-            }
+            };
+            reader.onerror = () => reject(new Error('读取音频文件失败'));
+            reader.readAsDataURL(audioBlob);
+          });
+          
+          // 尝试所有可能的API路径
+          let success = false;
+          let lastError = null;
+          
+          // 精简请求数据，避免发送过大的JSON
+          const requestData = {
+            referenceText: referenceText,
+            audioBuffer: base64Data,
+            strictMode: strictMode
           };
+          
+          console.log(`准备发送数据，参考文本长度: ${referenceText.length}, 音频数据长度: ${base64Data.length}`);
+          
+          for (const path of API_PATHS.ASSESSMENT) {
+            try {
+              console.log(`尝试连接API: ${BACKEND_URL}${path}`);
+              
+              // 发送到后端 - 使用JSON格式
+              const response = await fetch(`${BACKEND_URL}${path}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData),
+              });
+              
+              // 记录HTTP状态和响应头信息
+              console.log(`API响应状态: ${response.status} ${response.statusText}`);
+              console.log(`响应类型: ${response.headers.get('content-type')}`);
+              
+              if (response.ok) {
+                const data = await response.json();
+                console.log(`收到评分数据:`, data);
+                
+                if (data.accuracyScore === 0 && data.fluencyScore === 0 && data.completenessScore === 0 && data.pronunciationScore === 0) {
+                  console.warn('警告: 所有分数都是0，可能音频处理有问题');
+                }
+                
+                setResult({
+                  accuracy: data.accuracyScore,
+                  fluency: data.fluencyScore,
+                  completeness: data.completenessScore,
+                  pronScore: data.pronunciationScore,
+                  json: JSON.stringify(data)
+                });
+                success = true;
+                console.log(`成功连接到API: ${BACKEND_URL}${path}`);
+                break;
+              } else {
+                console.warn(`API路径失败 ${path}: ${response.status} ${response.statusText}`);
+                const text = await response.text();
+                console.warn(`返回内容: ${text}`);
+                lastError = new Error(`后端请求失败: ${response.status} - ${text}`);
+              }
+            } catch (err) {
+              console.warn(`API路径尝试失败 ${path}: ${err.message}`);
+              lastError = err;
+            }
+          }
+          
+          if (!success) {
+            throw lastError || new Error('所有API路径尝试均失败');
+          }
         } catch (err) {
           console.error('处理录音失败:', err);
           setError(`后端API连接失败: ${err.message}。请检查后端服务是否正常运行，或尝试使用直连Azure模式。`);
@@ -266,10 +313,9 @@ export default function PronunciationAssessment() {
         }
       };
       
-      // 开始录制，不设置自动停止
-      mediaRecorder.start(1000); // 每1秒保存一次数据块
-      
-      // 移除自动停止录音功能，由用户手动控制
+      // 开始录制，每500毫秒保存一次数据块，提高数据收集频率
+      mediaRecorder.start(500);
+      console.log('开始录音...');
       
     } catch (err) {
       console.error('启动录音失败:', err);
