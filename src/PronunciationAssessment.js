@@ -799,12 +799,12 @@ export default function PronunciationAssessment() {
       {result && (() => {
         try {
           // 添加调试日志
-          console.log("开始解析结果:", result);
+          console.log("开始解析结果，原始result对象:", JSON.parse(JSON.stringify(result)));
           
           // 确保json属性是字符串
           if (typeof result.json !== 'string') {
-            console.error("结果中json属性不是字符串:", result.json);
-            throw new Error("结果数据格式错误");
+            console.error("结果中json属性不是字符串，实际类型:", typeof result.json, result.json);
+            throw new Error("结果数据格式错误: result.json 不是字符串");
           }
           
           const jsonStr = result.json;
@@ -814,19 +814,20 @@ export default function PronunciationAssessment() {
           let jsonData;
           try {
             jsonData = JSON.parse(jsonStr);
-            console.log("成功解析JSON数据:", jsonData);
+            console.log("成功解析JSON数据:", JSON.parse(JSON.stringify(jsonData))); // 打印深拷贝以避免循环引用问题
           } catch (parseError) {
             console.error("JSON解析错误:", parseError);
+            console.error("问题JSON字符串片段:", jsonStr.substring(0, 500));
             throw parseError;
           }
           
           // 检查NBest属性是否存在，修复大小写问题
           const nbest = jsonData.NBest?.[0] || jsonData.nBest?.[0] || jsonData.nbest?.[0];
-          console.log("检测到NBest:", nbest);
+          console.log("检测到NBest:", nbest ? JSON.parse(JSON.stringify(nbest)) : undefined);
           
           // 如果没有找到NBest，使用直接返回的评分数据
           if (!nbest) {
-            console.warn('API返回数据中缺少NBest结构，使用直接返回的评分数据');
+            console.warn('API返回数据中缺少NBest结构或NBest为空，使用直接返回的评分数据');
             return (
               <div>
                 <h3 style={{ color: "#4cafef" }}>評分結果</h3>
@@ -849,7 +850,7 @@ export default function PronunciationAssessment() {
           
           // 检查PronunciationAssessment，修复大小写问题
           const pa = nbest.PronunciationAssessment || nbest.pronunciationAssessment;
-          console.log("检测到PronunciationAssessment:", pa);
+          console.log("检测到PronunciationAssessment:", pa ? JSON.parse(JSON.stringify(pa)) : undefined);
           
           // 检查Words属性
           const words = nbest.Words || nbest.words || [];
