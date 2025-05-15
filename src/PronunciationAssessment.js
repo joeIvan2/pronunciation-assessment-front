@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import Tesseract from "tesseract.js";
+import nlp from 'compromise'; // 导入compromise库用于英文分词
 
 // 后端API地址
 const BACKEND_URL = "https://pronunciation-assessment-app-1.onrender.com";
@@ -21,6 +22,50 @@ const API_PATHS = {
     "/tts"
   ]
 };
+
+// 处理无空格英文文本的函数
+function processEnglishText(text) {
+  // 检查文本是否英文且缺少空格
+  const hasEnoughSpaces = (text.match(/ /g) || []).length > text.length / 15;
+  const isProbablyEnglish = /^[a-zA-Z0-9.,!?;:'"-]*$/.test(text);
+  
+  if (isProbablyEnglish && !hasEnoughSpaces && text.length > 10) {
+    // 保留文本中的标点符号
+    const punctuation = text.match(/[.,!?;:'"()-]/g) || [];
+    const punctPositions = [];
+    
+    for (let i = 0; i < text.length; i++) {
+      if (/[.,!?;:'"()-]/.test(text[i])) {
+        punctPositions.push({ pos: i, char: text[i] });
+      }
+    }
+    
+    // 去除标点进行分词
+    const cleanText = text.replace(/[.,!?;:'"()-]/g, '');
+    const doc = nlp(cleanText);
+    let processed = doc.terms().out('array').join(' ');
+    
+    // 重新插入标点
+    punctPositions.forEach(p => {
+      // 计算新位置（考虑空格增加）
+      const wordCount = p.pos - (p.pos > 0 ? 
+        text.substring(0, p.pos).replace(/[a-zA-Z0-9]/g, '').length : 0);
+      
+      const spacesBeforePos = wordCount;
+      const newPos = p.pos + spacesBeforePos;
+      
+      if (newPos < processed.length) {
+        processed = processed.substring(0, newPos) + p.char + processed.substring(newPos);
+      } else {
+        processed += p.char;
+      }
+    });
+    
+    return processed;
+  }
+  
+  return text; // 无需处理的情况直接返回原文本
+}
 
 function ScoreBar({ label, value, max = 100 }) {
   return (
@@ -571,12 +616,17 @@ export default function PronunciationAssessment() {
   const handlePaste = async (event) => {
     const items = event.clipboardData.items;
     let imageItem = null;
+    let textItem = null;
+    
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1) {
         imageItem = items[i];
         break;
+      } else if (items[i].type.indexOf('text') !== -1) {
+        textItem = items[i];
       }
     }
+    
     if (imageItem) {
       event.preventDefault();
       const file = imageItem.getAsFile();
@@ -593,14 +643,40 @@ export default function PronunciationAssessment() {
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const value = textarea.value;
-        const newValue = value.substring(0, start) + text + value.substring(end);
+        
+        // 处理识别出的文本
+        const processedText = processEnglishText(text);
+        
+        const newValue = value.substring(0, start) + processedText + value.substring(end);
         setReferenceText(newValue);
         // 等待 setState 完成後設置光標
         setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + text.length;
+          textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
         }, 0);
       };
       reader.readAsDataURL(file);
+    } else if (textItem) {
+      textItem.getAsString(text => {
+        // 如果是纯文本粘贴，对文本进行处理
+        const processedText = processEnglishText(text);
+        
+        // 如果处理后的文本与原文本不同，阻止默认粘贴并使用处理后的文本
+        if (processedText !== text) {
+          event.preventDefault();
+          const textarea = textareaRef.current;
+          if (!textarea) return;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const value = textarea.value;
+          const newValue = value.substring(0, start) + processedText + value.substring(end);
+          setReferenceText(newValue);
+          
+          // 等待 setState 完成後設置光標
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
+          }, 0);
+        }
+      });
     }
   };
 
