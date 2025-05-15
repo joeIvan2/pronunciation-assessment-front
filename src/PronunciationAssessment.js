@@ -542,12 +542,18 @@ export default function PronunciationAssessment() {
 
   // 切换API模式
   const toggleApiMode = () => {
+    // 如果当前是后端模式，将要切换到直连Azure模式
+    if (useBackend) {
+      // 检查是否已设置Azure Key和Region
+      if (!azureKey || !azureRegion) {
+        // 没有设置，显示设置面板
+        setShowAzureSettings(true);
+      }
+    }
+    
+    // 切换模式
     setUseBackend(!useBackend);
     localStorage.setItem('useBackend', (!useBackend).toString());
-    // 如果切换到直连Azure模式且没有设置API key，显示设置面板
-    if (useBackend && (!azureKey || !azureRegion)) {
-      setShowAzureSettings(true);
-    }
   };
 
   // 初始化时从localStorage读取API模式设置
@@ -555,6 +561,9 @@ export default function PronunciationAssessment() {
     const savedUseBackend = localStorage.getItem('useBackend');
     if (savedUseBackend !== null) {
       setUseBackend(savedUseBackend === 'true');
+    } else {
+      // 如果没有保存的设置，默认使用后端API模式
+      setUseBackend(true);
     }
   }, []);
 
@@ -638,8 +647,8 @@ export default function PronunciationAssessment() {
         </div>
       )}
       
-      {/* Azure设置面板 */}
-      {!useBackend && (
+      {/* Azure设置面板 - 只在非后端模式且showAzureSettings为true时显示 */}
+      {!useBackend && showAzureSettings && (
         <div style={{ 
           marginBottom: 16, 
           padding: 16, 
