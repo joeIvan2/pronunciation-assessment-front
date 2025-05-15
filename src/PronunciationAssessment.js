@@ -799,6 +799,31 @@ export default function PronunciationAssessment() {
       {result && (() => {
         const json = JSON.parse(result.json);
         const nbest = json.NBest?.[0];
+        
+        // 检查nbest和PronunciationAssessment是否存在
+        if (!nbest || !nbest.PronunciationAssessment) {
+          return (
+            <div>
+              <h3 style={{ color: "#e53935" }}>評分數據無效</h3>
+              <p style={{ color: "#fff" }}>未能獲取完整的評分結果，請重試或檢查音頻質量。</p>
+              
+              {/* 直接使用result中的分数，这些分数由后端直接返回 */}
+              {result.accuracyScore !== undefined && (
+                <div>
+                  <h3 style={{ color: "#4cafef" }}>總分</h3>
+                  <ScoreBar label="Accuracy" value={result.accuracyScore} />
+                  <ScoreBar label="Fluency" value={result.fluencyScore} />
+                  <ScoreBar label="Completeness" value={result.completenessScore} />
+                  <ScoreBar label="Pronunciation" value={result.pronunciationScore} />
+                </div>
+              )}
+              
+              <h4 style={{ color: "#aaa", marginTop: 20 }}>調試信息</h4>
+              <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>{result.json}</pre>
+            </div>
+          );
+        }
+        
         return (
           <div>
             <h3 style={{ color: "#4cafef" }}>總分</h3>
@@ -808,7 +833,7 @@ export default function PronunciationAssessment() {
             <ScoreBar label="Pronunciation" value={nbest.PronunciationAssessment.PronScore} />
             
             <h3 style={{ color: "#4cafef" }}>句子分析</h3>
-            <WordsDisplay words={nbest.Words} />
+            {nbest.Words && <WordsDisplay words={nbest.Words} />}
             
             {/*
             <h4 style={{ color: "#aaa", marginTop: 20 }}>原始 JSON</h4>
