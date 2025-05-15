@@ -21,9 +21,6 @@ const API_PATHS = {
     "/tts"
   ]
 };
-// 不再使用硬编码的API KEY
-// const AZURE_KEY = "6De1xcmCRcloGS9zt9dRsW6l31tzdsX2nYznw99BppG8OKDqrSIEJQQJ99BEACxCCsyXJ3w3AAAYACOGgvSV";
-// const AZURE_REGION = "japanwest"; // 例如 southeastasia
 
 function ScoreBar({ label, value, max = 100 }) {
   return (
