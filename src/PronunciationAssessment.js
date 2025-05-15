@@ -193,52 +193,62 @@ export default function PronunciationAssessment() {
           setIsLoading(true);
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
           
-          // 尝试所有可能的API路径
-          let success = false;
-          let lastError = null;
-          
-          for (const path of API_PATHS.ASSESSMENT) {
-            try {
-              const formData = new FormData();
-              formData.append('audio', audioBlob);
-              formData.append('referenceText', referenceText);
-              formData.append('strictMode', strictMode);
-              
-              console.log(`尝试连接API: ${BACKEND_URL}${path}`);
-              
-              // 发送到后端
-              const response = await fetch(`${BACKEND_URL}${path}`, {
-                method: 'POST',
-                body: formData,
-              });
-              
-              if (response.ok) {
-                const data = await response.json();
-                setResult({
-                  accuracy: data.accuracyScore,
-                  fluency: data.fluencyScore,
-                  completeness: data.completenessScore,
-                  pronScore: data.pronunciationScore,
-                  json: JSON.stringify(data)
+          // 将Blob转换为base64
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            // 获取base64数据（去掉data:audio/wav;base64,前缀）
+            const base64data = reader.result.split(',')[1];
+            
+            // 尝试所有可能的API路径
+            let success = false;
+            let lastError = null;
+            
+            for (const path of API_PATHS.ASSESSMENT) {
+              try {
+                console.log(`尝试连接API: ${BACKEND_URL}${path}`);
+                
+                // 发送到后端 - 使用JSON格式而非FormData
+                const response = await fetch(`${BACKEND_URL}${path}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    referenceText: referenceText,
+                    audioBuffer: base64data,
+                    strictMode: strictMode
+                  }),
                 });
-                success = true;
-                console.log(`成功连接到API: ${BACKEND_URL}${path}`);
-                break;
-              } else {
-                console.warn(`API路径失败 ${path}: ${response.status} ${response.statusText}`);
-                const text = await response.text();
-                console.warn(`返回内容: ${text}`);
-                lastError = new Error(`后端请求失败: ${response.status} - ${text}`);
+                
+                if (response.ok) {
+                  const data = await response.json();
+                  setResult({
+                    accuracy: data.accuracyScore,
+                    fluency: data.fluencyScore,
+                    completeness: data.completenessScore,
+                    pronScore: data.pronunciationScore,
+                    json: JSON.stringify(data)
+                  });
+                  success = true;
+                  console.log(`成功连接到API: ${BACKEND_URL}${path}`);
+                  break;
+                } else {
+                  console.warn(`API路径失败 ${path}: ${response.status} ${response.statusText}`);
+                  const text = await response.text();
+                  console.warn(`返回内容: ${text}`);
+                  lastError = new Error(`后端请求失败: ${response.status} - ${text}`);
+                }
+              } catch (err) {
+                console.warn(`API路径尝试失败 ${path}: ${err.message}`);
+                lastError = err;
               }
-            } catch (err) {
-              console.warn(`API路径尝试失败 ${path}: ${err.message}`);
-              lastError = err;
             }
-          }
-          
-          if (!success) {
-            throw lastError || new Error('所有API路径尝试均失败');
-          }
+            
+            if (!success) {
+              throw lastError || new Error('所有API路径尝试均失败');
+            }
+          };
         } catch (err) {
           console.error('处理录音失败:', err);
           setError(`后端API连接失败: ${err.message}。请检查后端服务是否正常运行，或尝试使用直连Azure模式。`);
@@ -256,18 +266,10 @@ export default function PronunciationAssessment() {
         }
       };
       
-      // 开始录制5秒后自动停止
-      mediaRecorder.start();
+      // 开始录制，不设置自动停止
+      mediaRecorder.start(1000); // 每1秒保存一次数据块
       
-      // 显示录音时间
-      let recordingTime = 0;
-      const recordingInterval = setInterval(() => {
-        recordingTime += 1;
-        if (recordingTime >= 5 && mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          clearInterval(recordingInterval);
-          stopAssessment();
-        }
-      }, 1000);
+      // 移除自动停止录音功能，由用户手动控制
       
     } catch (err) {
       console.error('启动录音失败:', err);
