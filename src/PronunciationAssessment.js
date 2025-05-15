@@ -21,9 +21,9 @@ const API_PATHS = {
     "/tts"
   ]
 };
-// Azure配置（备用，将优先使用后端API）
-const AZURE_KEY = "6De1xcmCRcloGS9zt9dRsW6l31tzdsX2nYznw99BppG8OKDqrSIEJQQJ99BEACxCCsyXJ3w3AAAYACOGgvSV";
-const AZURE_REGION = "japanwest"; // 例如 southeastasia
+// 不再使用硬编码的API KEY
+// const AZURE_KEY = "6De1xcmCRcloGS9zt9dRsW6l31tzdsX2nYznw99BppG8OKDqrSIEJQQJ99BEACxCCsyXJ3w3AAAYACOGgvSV";
+// const AZURE_REGION = "japanwest"; // 例如 southeastasia
 
 function ScoreBar({ label, value, max = 100 }) {
   return (
@@ -151,6 +151,9 @@ export default function PronunciationAssessment() {
   const [isLoading, setIsLoading] = useState(false); // 新增加载状态
   const [useBackend, setUseBackend] = useState(true); // 是否使用后端API
   const [error, setError] = useState(null); // 错误信息
+  const [azureKey, setAzureKey] = useState(() => localStorage.getItem('azureKey') || ''); // Azure API key
+  const [azureRegion, setAzureRegion] = useState(() => localStorage.getItem('azureRegion') || 'japanwest'); // Azure 区域
+  const [showAzureSettings, setShowAzureSettings] = useState(false); // 控制Azure设置的显示
 
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
@@ -327,12 +330,21 @@ export default function PronunciationAssessment() {
 
   // 原始的Azure直接调用方法（保留作为备用）
   const startAssessmentWithAzure = () => {
+    // 检查API key和region是否已设置
+    if (!azureKey || !azureRegion) {
+      setError('请先设置Azure API key和区域');
+      setShowAzureSettings(true);
+      setRecording(false);
+      setIsLoading(false);
+      return;
+    }
+
     setResult(null);
     setRecording(true);
     setIsLoading(true);
     setError(null);
     
-    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(azureKey, azureRegion);
     speechConfig.speechRecognitionLanguage = "en-US";
     const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
 
@@ -465,8 +477,16 @@ export default function PronunciationAssessment() {
       return;
     }
     
+    // 检查API key和region是否已设置
+    if (!azureKey || !azureRegion) {
+      setError('请先设置Azure API key和区域');
+      setShowAzureSettings(true);
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
-    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(azureKey, azureRegion);
     // 你可以根據需要設定特定的語音，例如：
     // speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural"; // 英文女聲
     // speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoNeural"; // 中文女聲
@@ -527,6 +547,10 @@ export default function PronunciationAssessment() {
   const toggleApiMode = () => {
     setUseBackend(!useBackend);
     localStorage.setItem('useBackend', (!useBackend).toString());
+    // 如果切换到直连Azure模式且没有设置API key，显示设置面板
+    if (useBackend && (!azureKey || !azureRegion)) {
+      setShowAzureSettings(true);
+    }
   };
 
   // 初始化时从localStorage读取API模式设置
@@ -588,6 +612,14 @@ export default function PronunciationAssessment() {
     localStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
 
+  // 保存Azure设置
+  const saveAzureSettings = () => {
+    localStorage.setItem('azureKey', azureKey);
+    localStorage.setItem('azureRegion', azureRegion);
+    setShowAzureSettings(false);
+    alert('Azure设置已保存！');
+  };
+
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
       <h2 style={{ color: "#4cafef" }}>發音評分（React + Azure）</h2>
@@ -606,6 +638,70 @@ export default function PronunciationAssessment() {
             嘗試的評分API路徑: {API_PATHS.ASSESSMENT.join(", ")}<br/>
             嘗試的TTS API路徑: {API_PATHS.TTS.join(", ")}
           </p>
+        </div>
+      )}
+      
+      {/* Azure设置面板 */}
+      {!useBackend && (
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          background: "#2a2e39", 
+          borderRadius: 8,
+          border: "1px solid #3f51b5"
+        }}>
+          <h3 style={{ color: "#3f51b5", marginTop: 0 }}>Azure配置</h3>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, color: "#bbb" }}>
+              API Key:
+            </label>
+            <input 
+              type="text" 
+              value={azureKey} 
+              onChange={(e) => setAzureKey(e.target.value)}
+              style={{ 
+                width: "100%", 
+                padding: 8, 
+                background: "#23272f", 
+                border: "1px solid #444",
+                borderRadius: 4,
+                color: "#fff"
+              }}
+              placeholder="输入您的Azure Speech API Key"
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "block", marginBottom: 4, color: "#bbb" }}>
+              区域:
+            </label>
+            <input 
+              type="text" 
+              value={azureRegion} 
+              onChange={(e) => setAzureRegion(e.target.value)}
+              style={{ 
+                width: "100%", 
+                padding: 8, 
+                background: "#23272f", 
+                border: "1px solid #444",
+                borderRadius: 4,
+                color: "#fff"
+              }}
+              placeholder="输入Azure区域，例如eastasia、japanwest等"
+            />
+          </div>
+          <button 
+            onClick={saveAzureSettings}
+            style={{ 
+              padding: "8px 16px", 
+              background: "#3f51b5", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: 4, 
+              cursor: "pointer" 
+            }}
+          >
+            保存设置
+          </button>
         </div>
       )}
       
@@ -696,6 +792,22 @@ export default function PronunciationAssessment() {
             >
               {useBackend ? "後端API" : "直連Azure"}
             </button>
+            {!useBackend && (
+              <button 
+                onClick={() => setShowAzureSettings(!showAzureSettings)} 
+                style={{ 
+                  padding: "4px 8px", 
+                  background: "#3f51b5", 
+                  color: "#fff", 
+                  border: "none", 
+                  borderRadius: 4, 
+                  fontWeight: "bold",
+                  marginLeft: "8px"
+                }}
+              >
+                {showAzureSettings ? "隐藏设置" : "Azure设置"}
+              </button>
+            )}
           </div>
         </div>
         
