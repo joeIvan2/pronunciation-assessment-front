@@ -807,17 +807,26 @@ export default function PronunciationAssessment() {
             throw new Error("结果数据格式错误");
           }
           
-          const json = JSON.parse(result.json);
-          console.log("解析后的JSON:", json);
+          const jsonStr = result.json;
+          console.log("JSON字符串长度:", jsonStr.length);
+          
+          // 解析JSON字符串
+          let jsonData;
+          try {
+            jsonData = JSON.parse(jsonStr);
+            console.log("成功解析JSON数据:", jsonData);
+          } catch (parseError) {
+            console.error("JSON解析错误:", parseError);
+            throw parseError;
+          }
           
           // 检查NBest属性是否存在，修复大小写问题
-          const nbest = json.NBest?.[0] || json.nBest?.[0] || json.nbest?.[0];
+          const nbest = jsonData.NBest?.[0] || jsonData.nBest?.[0] || jsonData.nbest?.[0];
           console.log("检测到NBest:", nbest);
           
-          // 先检查是否有NBest数据
+          // 如果没有找到NBest，使用直接返回的评分数据
           if (!nbest) {
             console.warn('API返回数据中缺少NBest结构，使用直接返回的评分数据');
-            // 使用后端直接返回的数据显示结果
             return (
               <div>
                 <h3 style={{ color: "#4cafef" }}>評分結果</h3>
@@ -828,6 +837,12 @@ export default function PronunciationAssessment() {
                 
                 <h4 style={{ color: "#aaa", marginTop: 20 }}>識別文本</h4>
                 <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>{result.text || "無文本"}</p>
+                
+                <h4 style={{ color: "#aaa", marginTop: 20 }}>調試信息</h4>
+                <details>
+                  <summary style={{ color: "#bbb", cursor: "pointer", marginBottom: "10px" }}>點擊查看原始JSON</summary>
+                  <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>{jsonStr.substring(0, 500)}...</pre>
+                </details>
               </div>
             );
           }
@@ -896,7 +911,7 @@ export default function PronunciationAssessment() {
               <h4 style={{ color: "#aaa", marginTop: 20 }}>調試信息</h4>
               <details>
                 <summary style={{ color: "#bbb", cursor: "pointer", marginBottom: "10px" }}>點擊查看原始數據</summary>
-                <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>{typeof result.json === 'string' ? result.json : JSON.stringify(result, null, 2)}</pre>
+                <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>{typeof result.json === 'string' ? result.json.substring(0, 500) + '...' : JSON.stringify(result, null, 2)}</pre>
               </details>
               <p style={{ color: "#bbb", fontSize: "0.9em" }}>錯誤信息: {error.message}</p>
             </div>
