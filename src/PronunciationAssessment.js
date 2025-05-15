@@ -801,6 +801,38 @@ export default function PronunciationAssessment() {
           // 添加调试日志
           console.log("开始解析结果，原始result对象:", JSON.parse(JSON.stringify(result)));
           
+          // 首先检查是否为Azure直连模式返回的数据
+          if (result.NBest) {
+            console.log("检测到直连Azure模式数据");
+            // 直接使用Azure返回的结构化数据
+            const nbest = result.NBest[0];
+            const pa = nbest.PronunciationAssessment;
+            const words = nbest.Words || [];
+            
+            return (
+              <div>
+                <h3 style={{ color: "#4cafef" }}>總分</h3>
+                <ScoreBar label="Accuracy" value={pa.AccuracyScore} />
+                <ScoreBar label="Fluency" value={pa.FluencyScore} />
+                <ScoreBar label="Completeness" value={pa.CompletenessScore} />
+                <ScoreBar label="Pronunciation" value={pa.PronScore} />
+                
+                <h3 style={{ color: "#4cafef" }}>句子分析</h3>
+                {words && words.length > 0 ? (
+                  <WordsDisplay words={words} />
+                ) : (
+                  <p style={{ color: "#fff" }}>無法獲取詳細單詞評分數據</p>
+                )}
+                
+                <h4 style={{ color: "#4cafef", marginTop: "20px" }}>識別文本</h4>
+                <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>{result.DisplayText || "無文本"}</p>
+              </div>
+            );
+          }
+          
+          // 后端API模式 - 处理嵌套JSON结构
+          console.log("检测到后端API模式数据");
+          
           // 确保json属性是字符串
           if (typeof result.json !== 'string') {
             console.error("结果中json属性不是字符串，实际类型:", typeof result.json, result.json);
@@ -808,84 +840,127 @@ export default function PronunciationAssessment() {
           }
           
           const jsonStr = result.json;
-          console.log("JSON字符串长度:", jsonStr.length);
+          console.log("后端返回的JSON字符串长度:", jsonStr.length);
           
-          // 解析JSON字符串
+          // 解析后端返回的第一层JSON
           let jsonData;
           try {
             jsonData = JSON.parse(jsonStr);
-            console.log("成功解析JSON数据:", JSON.parse(JSON.stringify(jsonData))); // 打印深拷贝以避免循环引用问题
+            console.log("解析后的第一层JSON:", jsonData);
           } catch (parseError) {
-            console.error("JSON解析错误:", parseError);
-            console.error("问题JSON字符串片段:", jsonStr.substring(0, 500));
+            console.error("第一层JSON解析错误:", parseError);
             throw parseError;
           }
           
-          // 检查NBest属性是否存在，修复大小写问题
-          const nbest = jsonData.NBest?.[0] || jsonData.nBest?.[0] || jsonData.nbest?.[0];
-          console.log("检测到NBest:", nbest ? JSON.parse(JSON.stringify(nbest)) : undefined);
+          // 检查是否是嵌套的JSON结构
+          if (jsonData && typeof jsonData.json === 'string') {
+            console.log("检测到嵌套JSON结构");
+            
+            // 解析内层JSON字符串
+            try {
+              const innerJsonData = JSON.parse(jsonData.json);
+              console.log("解析内层JSON成功:", innerJsonData);
+              
+              // 内层JSON中查找NBest数据
+              const nbest = innerJsonData.NBest?.[0];
+              if (nbest) {
+                console.log("在内层JSON中找到NBest:", nbest);
+                const pa = nbest.PronunciationAssessment;
+                const words = nbest.Words || [];
+                
+                return (
+                  <div>
+                    <h3 style={{ color: "#4cafef" }}>總分</h3>
+                    <ScoreBar label="Accuracy" value={pa.AccuracyScore} />
+                    <ScoreBar label="Fluency" value={pa.FluencyScore} />
+                    <ScoreBar label="Completeness" value={pa.CompletenessScore} />
+                    <ScoreBar label="Pronunciation" value={pa.PronScore} />
+                    
+                    <h3 style={{ color: "#4cafef" }}>句子分析</h3>
+                    {words && words.length > 0 ? (
+                      <WordsDisplay words={words} />
+                    ) : (
+                      <p style={{ color: "#fff" }}>無法獲取詳細單詞評分數據</p>
+                    )}
+                    
+                    <h4 style={{ color: "#4cafef", marginTop: "20px" }}>識別文本</h4>
+                    <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>{innerJsonData.DisplayText || jsonData.text || "無文本"}</p>
+                  </div>
+                );
+              }
+            } catch (innerParseError) {
+              console.error("内层JSON解析错误:", innerParseError);
+              // 内层解析失败，继续使用外层数据
+            }
+          }
           
-          // 如果没有找到NBest，使用直接返回的评分数据
-          if (!nbest) {
-            console.warn('API返回数据中缺少NBest结构或NBest为空，使用直接返回的评分数据');
+          // 在外层JSON中尝试查找NBest
+          const nbest = jsonData.NBest?.[0] || jsonData.nBest?.[0] || jsonData.nbest?.[0];
+          console.log("在外层JSON中查找NBest:", nbest);
+          
+          if (nbest) {
+            // 找到了NBest数据
+            const pa = nbest.PronunciationAssessment || nbest.pronunciationAssessment;
+            const words = nbest.Words || nbest.words || [];
+            
             return (
               <div>
-                <h3 style={{ color: "#4cafef" }}>評分結果</h3>
-                <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
-                <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
-                <ScoreBar label="Completeness" value={result.completenessScore || 0} />
-                <ScoreBar label="Pronunciation" value={result.pronunciationScore || 0} />
+                <h3 style={{ color: "#4cafef" }}>總分</h3>
+                {pa ? (
+                  <>
+                    <ScoreBar label="Accuracy" value={pa.AccuracyScore || pa.accuracyScore || result.accuracyScore || 0} />
+                    <ScoreBar label="Fluency" value={pa.FluencyScore || pa.fluencyScore || result.fluencyScore || 0} />
+                    <ScoreBar label="Completeness" value={pa.CompletenessScore || pa.completenessScore || result.completenessScore || 0} />
+                    <ScoreBar label="Pronunciation" value={pa.PronScore || pa.pronScore || result.pronunciationScore || 0} />
+                  </>
+                ) : (
+                  <>
+                    <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
+                    <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
+                    <ScoreBar label="Completeness" value={result.completenessScore || 0} />
+                    <ScoreBar label="Pronunciation" value={result.pronunciationScore || 0} />
+                  </>
+                )}
                 
-                <h4 style={{ color: "#aaa", marginTop: 20 }}>識別文本</h4>
-                <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>{result.text || "無文本"}</p>
+                <h3 style={{ color: "#4cafef" }}>句子分析</h3>
+                {words && words.length > 0 ? (
+                  <WordsDisplay words={words} />
+                ) : (
+                  <p style={{ color: "#fff" }}>無法獲取詳細單詞評分數據</p>
+                )}
                 
-                <h4 style={{ color: "#aaa", marginTop: 20 }}>調試信息</h4>
-                <details>
-                  <summary style={{ color: "#bbb", cursor: "pointer", marginBottom: "10px" }}>點擊查看原始JSON</summary>
-                  <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>{jsonStr.substring(0, 500)}...</pre>
-                </details>
+                <h4 style={{ color: "#4cafef", marginTop: "20px" }}>識別文本</h4>
+                <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>
+                  {jsonData.DisplayText || nbest.Display || nbest.display || result.text || "無文本"}
+                </p>
               </div>
             );
           }
           
-          // 检查PronunciationAssessment，修复大小写问题
-          const pa = nbest.PronunciationAssessment || nbest.pronunciationAssessment;
-          console.log("检测到PronunciationAssessment:", pa ? JSON.parse(JSON.stringify(pa)) : undefined);
-          
-          // 检查Words属性
-          const words = nbest.Words || nbest.words || [];
-          console.log("检测到Words数量:", words.length);
-          
-          // 正常显示包含详细评分的结果
+          // 使用后端直接返回的评分数据
+          console.log("没有找到NBest结构，使用后端直接返回的评分数据");
           return (
             <div>
-              <h3 style={{ color: "#4cafef" }}>總分</h3>
-              {pa ? (
-                <>
-                  <ScoreBar label="Accuracy" value={pa.AccuracyScore || pa.accuracyScore || result.accuracyScore || 0} />
-                  <ScoreBar label="Fluency" value={pa.FluencyScore || pa.fluencyScore || result.fluencyScore || 0} />
-                  <ScoreBar label="Completeness" value={pa.CompletenessScore || pa.completenessScore || result.completenessScore || 0} />
-                  <ScoreBar label="Pronunciation" value={pa.PronScore || pa.pronScore || result.pronunciationScore || 0} />
-                </>
-              ) : (
-                // 使用后端直接返回的分数作为备用
-                <>
-                  <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
-                  <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
-                  <ScoreBar label="Completeness" value={result.completenessScore || 0} />
-                  <ScoreBar label="Pronunciation" value={result.pronunciationScore || 0} />
-                </>
-              )}
-              
-              <h3 style={{ color: "#4cafef" }}>句子分析</h3>
-              {words && words.length > 0 ? (
-                <WordsDisplay words={words} />
-              ) : (
-                <p style={{ color: "#fff" }}>無法獲取詳細單詞評分數據</p>
-              )}
+              <h3 style={{ color: "#4cafef" }}>評分結果</h3>
+              <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
+              <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
+              <ScoreBar label="Completeness" value={result.completenessScore || 0} />
+              <ScoreBar label="Pronunciation" value={result.pronunciationScore || 0} />
               
               <h4 style={{ color: "#4cafef", marginTop: "20px" }}>識別文本</h4>
-              <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>{result.text || nbest.Display || nbest.display || "無文本"}</p>
+              <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>
+                {jsonData.DisplayText || jsonData.text || result.text || "無文本"}
+              </p>
+              
+              <h4 style={{ color: "#aaa", marginTop: 20 }}>調試信息</h4>
+              <details>
+                <summary style={{ color: "#bbb", cursor: "pointer", marginBottom: "10px" }}>點擊查看原始數據</summary>
+                <div style={{ overflowX: "auto" }}>
+                  <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>
+                    {JSON.stringify(result, null, 2)}
+                  </pre>
+                </div>
+              </details>
             </div>
           );
         } catch (error) {
@@ -911,10 +986,15 @@ export default function PronunciationAssessment() {
               
               <h4 style={{ color: "#aaa", marginTop: 20 }}>調試信息</h4>
               <details>
-                <summary style={{ color: "#bbb", cursor: "pointer", marginBottom: "10px" }}>點擊查看原始數據</summary>
-                <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>{typeof result.json === 'string' ? result.json.substring(0, 500) + '...' : JSON.stringify(result, null, 2)}</pre>
+                <summary style={{ color: "#bbb", cursor: "pointer", marginBottom: "10px" }}>點擊查看錯誤詳情</summary>
+                <p style={{ color: "#bbb", fontSize: "0.9em", marginBottom: "10px" }}>錯誤信息: {error.message}</p>
+                <p style={{ color: "#bbb", fontSize: "0.9em", marginBottom: "10px" }}>錯誤堆栈: {error.stack}</p>
+                <div style={{ overflowX: "auto" }}>
+                  <pre style={{ background: "#23272f", padding: 8, borderRadius: 4, fontSize: 12, color: "#eee", maxHeight: "200px", overflow: "auto" }}>
+                    原始数据: {JSON.stringify(result, null, 2)}
+                  </pre>
+                </div>
               </details>
-              <p style={{ color: "#bbb", fontSize: "0.9em" }}>錯誤信息: {error.message}</p>
             </div>
           );
         }
