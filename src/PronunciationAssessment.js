@@ -5,6 +5,22 @@ import Tesseract from "tesseract.js";
 
 // 后端API地址
 const BACKEND_URL = "https://pronunciation-assessment-app-1.onrender.com";
+// 尝试不同的API路径
+const API_PATHS = {
+  ASSESSMENT: [
+    "/api/pronunciation-assessment", 
+    "/pronunciation-assessment",
+    "/api/assess",
+    "/assess",
+    "/api/v1/pronunciation-assessment"
+  ],
+  TTS: [
+    "/api/text-to-speech",
+    "/text-to-speech",
+    "/api/tts",
+    "/tts"
+  ]
+};
 // Azure配置（备用，将优先使用后端API）
 const AZURE_KEY = "6De1xcmCRcloGS9zt9dRsW6l31tzdsX2nYznw99BppG8OKDqrSIEJQQJ99BEACxCCsyXJ3w3AAAYACOGgvSV";
 const AZURE_REGION = "japanwest"; // 例如 southeastasia
@@ -174,33 +190,58 @@ export default function PronunciationAssessment() {
       
       mediaRecorder.onstop = async () => {
         try {
+          setIsLoading(true);
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-          const formData = new FormData();
-          formData.append('audio', audioBlob);
-          formData.append('referenceText', referenceText);
-          formData.append('strictMode', strictMode);
           
-          // 发送到后端
-          const response = await fetch(`${BACKEND_URL}/api/pronunciation-assessment`, {
-            method: 'POST',
-            body: formData,
-          });
+          // 尝试所有可能的API路径
+          let success = false;
+          let lastError = null;
           
-          if (!response.ok) {
-            throw new Error(`后端请求失败: ${response.status}`);
+          for (const path of API_PATHS.ASSESSMENT) {
+            try {
+              const formData = new FormData();
+              formData.append('audio', audioBlob);
+              formData.append('referenceText', referenceText);
+              formData.append('strictMode', strictMode);
+              
+              console.log(`尝试连接API: ${BACKEND_URL}${path}`);
+              
+              // 发送到后端
+              const response = await fetch(`${BACKEND_URL}${path}`, {
+                method: 'POST',
+                body: formData,
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                setResult({
+                  accuracy: data.accuracyScore,
+                  fluency: data.fluencyScore,
+                  completeness: data.completenessScore,
+                  pronScore: data.pronunciationScore,
+                  json: JSON.stringify(data)
+                });
+                success = true;
+                console.log(`成功连接到API: ${BACKEND_URL}${path}`);
+                break;
+              } else {
+                console.warn(`API路径失败 ${path}: ${response.status} ${response.statusText}`);
+                const text = await response.text();
+                console.warn(`返回内容: ${text}`);
+                lastError = new Error(`后端请求失败: ${response.status} - ${text}`);
+              }
+            } catch (err) {
+              console.warn(`API路径尝试失败 ${path}: ${err.message}`);
+              lastError = err;
+            }
           }
           
-          const data = await response.json();
-          setResult({
-            accuracy: data.accuracyScore,
-            fluency: data.fluencyScore,
-            completeness: data.completenessScore,
-            pronScore: data.pronunciationScore,
-            json: JSON.stringify(data)
-          });
+          if (!success) {
+            throw lastError || new Error('所有API路径尝试均失败');
+          }
         } catch (err) {
           console.error('处理录音失败:', err);
-          setError(`处理录音失败: ${err.message}`);
+          setError(`后端API连接失败: ${err.message}。请检查后端服务是否正常运行，或尝试使用直连Azure模式。`);
           // 如果后端失败，回退到直接使用Azure
           if (useBackend) {
             setUseBackend(false);
@@ -215,7 +256,19 @@ export default function PronunciationAssessment() {
         }
       };
       
+      // 开始录制5秒后自动停止
       mediaRecorder.start();
+      
+      // 显示录音时间
+      let recordingTime = 0;
+      const recordingInterval = setInterval(() => {
+        recordingTime += 1;
+        if (recordingTime >= 5 && mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          clearInterval(recordingInterval);
+          stopAssessment();
+        }
+      }, 1000);
+      
     } catch (err) {
       console.error('启动录音失败:', err);
       setError(`启动录音失败: ${err.message}`);
@@ -302,24 +355,47 @@ export default function PronunciationAssessment() {
       
       setIsLoading(true);
       
-      // 发送请求到后端
-      const response = await fetch(`${BACKEND_URL}/api/text-to-speech`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: referenceText }),
-      });
+      // 尝试所有可能的API路径
+      let success = false;
+      let lastError = null;
       
-      if (!response.ok) {
-        throw new Error(`后端请求失败: ${response.status}`);
+      for (const path of API_PATHS.TTS) {
+        try {
+          console.log(`尝试连接TTS API: ${BACKEND_URL}${path}`);
+          
+          // 发送请求到后端
+          const response = await fetch(`${BACKEND_URL}${path}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: referenceText }),
+          });
+          
+          if (response.ok) {
+            // 获取音频数据并播放
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+            success = true;
+            console.log(`成功连接到TTS API: ${BACKEND_URL}${path}`);
+            break;
+          } else {
+            console.warn(`TTS API路径失败 ${path}: ${response.status} ${response.statusText}`);
+            const text = await response.text();
+            console.warn(`返回内容: ${text}`);
+            lastError = new Error(`后端请求失败: ${response.status} - ${text}`);
+          }
+        } catch (err) {
+          console.warn(`TTS API路径尝试失败 ${path}: ${err.message}`);
+          lastError = err;
+        }
       }
       
-      // 获取音频数据并播放
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      audio.play();
+      if (!success) {
+        throw lastError || new Error('所有TTS API路径尝试均失败');
+      }
     } catch (err) {
       console.error('文本转语音失败:', err);
       setError(`文本转语音失败: ${err.message}`);
@@ -476,7 +552,12 @@ export default function PronunciationAssessment() {
           borderRadius: "4px", 
           marginBottom: "16px" 
         }}>
-          {error}
+          <p>{error}</p>
+          <p style={{ fontSize: "0.9em", marginTop: "10px" }}>
+            後端API URL: {BACKEND_URL}<br/>
+            嘗試的評分API路徑: {API_PATHS.ASSESSMENT.join(", ")}<br/>
+            嘗試的TTS API路徑: {API_PATHS.TTS.join(", ")}
+          </p>
         </div>
       )}
       
