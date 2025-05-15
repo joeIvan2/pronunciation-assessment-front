@@ -798,12 +798,25 @@ export default function PronunciationAssessment() {
       
       {result && (() => {
         try {
+          // 添加调试日志
+          console.log("开始解析结果:", result);
+          
+          // 确保json属性是字符串
+          if (typeof result.json !== 'string') {
+            console.error("结果中json属性不是字符串:", result.json);
+            throw new Error("结果数据格式错误");
+          }
+          
           const json = JSON.parse(result.json);
-          const nbest = json.NBest?.[0];
+          console.log("解析后的JSON:", json);
+          
+          // 检查NBest属性是否存在，修复大小写问题
+          const nbest = json.NBest?.[0] || json.nBest?.[0] || json.nbest?.[0];
+          console.log("检测到NBest:", nbest);
           
           // 先检查是否有NBest数据
           if (!nbest) {
-            console.warn('API返回数据中缺少NBest结构');
+            console.warn('API返回数据中缺少NBest结构，使用直接返回的评分数据');
             // 使用后端直接返回的数据显示结果
             return (
               <div>
@@ -819,16 +832,24 @@ export default function PronunciationAssessment() {
             );
           }
           
+          // 检查PronunciationAssessment，修复大小写问题
+          const pa = nbest.PronunciationAssessment || nbest.pronunciationAssessment;
+          console.log("检测到PronunciationAssessment:", pa);
+          
+          // 检查Words属性
+          const words = nbest.Words || nbest.words || [];
+          console.log("检测到Words数量:", words.length);
+          
           // 正常显示包含详细评分的结果
           return (
             <div>
               <h3 style={{ color: "#4cafef" }}>總分</h3>
-              {nbest.PronunciationAssessment ? (
+              {pa ? (
                 <>
-                  <ScoreBar label="Accuracy" value={nbest.PronunciationAssessment.AccuracyScore} />
-                  <ScoreBar label="Fluency" value={nbest.PronunciationAssessment.FluencyScore} />
-                  <ScoreBar label="Completeness" value={nbest.PronunciationAssessment.CompletenessScore} />
-                  <ScoreBar label="Pronunciation" value={nbest.PronunciationAssessment.PronScore} />
+                  <ScoreBar label="Accuracy" value={pa.AccuracyScore || pa.accuracyScore || result.accuracyScore || 0} />
+                  <ScoreBar label="Fluency" value={pa.FluencyScore || pa.fluencyScore || result.fluencyScore || 0} />
+                  <ScoreBar label="Completeness" value={pa.CompletenessScore || pa.completenessScore || result.completenessScore || 0} />
+                  <ScoreBar label="Pronunciation" value={pa.PronScore || pa.pronScore || result.pronunciationScore || 0} />
                 </>
               ) : (
                 // 使用后端直接返回的分数作为备用
@@ -841,14 +862,14 @@ export default function PronunciationAssessment() {
               )}
               
               <h3 style={{ color: "#4cafef" }}>句子分析</h3>
-              {nbest.Words && nbest.Words.length > 0 ? (
-                <WordsDisplay words={nbest.Words} />
+              {words && words.length > 0 ? (
+                <WordsDisplay words={words} />
               ) : (
                 <p style={{ color: "#fff" }}>無法獲取詳細單詞評分數據</p>
               )}
               
               <h4 style={{ color: "#4cafef", marginTop: "20px" }}>識別文本</h4>
-              <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>{result.text || nbest.Display || "無文本"}</p>
+              <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>{result.text || nbest.Display || nbest.display || "無文本"}</p>
             </div>
           );
         } catch (error) {
