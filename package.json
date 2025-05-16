@@ -27,7 +27,7 @@
     "web-vitals": "^2.1.4"
   },
   "optionalDependencies": {
-    "@echogarden/icu-segmentation-wasm": "0.1.2"
+    "@echogarden/icu-segmentation-wasm": "^0.2.1"
   },
   "scripts": {
     "start": "react-scripts start",
