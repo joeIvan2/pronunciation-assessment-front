@@ -26,9 +26,6 @@
     "tesseract.js": "^5.0.4",
     "web-vitals": "^2.1.4"
   },
-  "optionalDependencies": {
-    "@echogarden/icu-segmentation-wasm": "^0.2.1"
-  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
