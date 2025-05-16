@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import Tesseract from "tesseract.js";
-import nlp from 'compromise'; // 导入compromise库用于英文分词
+import wordsNinja from 'wordsninja'; // 导入wordsninja库用于英文分词
 
 // 后端API地址
 const BACKEND_URL = "https://pronunciation-assessment-app-1.onrender.com";
@@ -26,79 +26,50 @@ const API_PATHS = {
 // 处理无空格英文文本的函数
 function processEnglishText(text) {
   // 检查文本是否英文且缺少空格
-  const hasEnoughSpaces = (text.match(/ /g) || []).length > text.length / 15;
+  const hasSpaces = text.includes(' ');
   const isProbablyEnglish = /^[a-zA-Z0-9.,!?;:'"-]*$/.test(text);
   
-  if (isProbablyEnglish && !hasEnoughSpaces && text.length > 10) {
-    console.log("Processing English text:", text);
-    
+  // 只处理可能是英文且没有空格的文本
+  if (isProbablyEnglish && !hasSpaces && text.length > 3) {
     try {
-      // 把文本分割成单词和标点的数组
-      // 使用正则表达式匹配单词和标点，保持它们的顺序
-      const tokens = [];
-      const regex = /([a-zA-Z0-9]+)|([.,!?;:'"()-])/g;
-      let match;
+      // 使用wordsninja分词
+      const tokens = wordsNinja.splitSentence(text);
       
-      while ((match = regex.exec(text)) !== null) {
-        if (match[1]) { // 单词
-          tokens.push({ type: 'word', value: match[1] });
-        } else if (match[2]) { // 标点
-          tokens.push({ type: 'punct', value: match[2] });
-        }
-      }
-      
-      // 对单词进行分词
-      const wordTokens = tokens.filter(t => t.type === 'word');
-      if (wordTokens.length > 0) {
-        const wordsOnly = wordTokens.map(t => t.value).join('');
-        console.log("Words only:", wordsOnly);
-        
-        // 使用compromise进行分词
-        const doc = nlp(wordsOnly);
-        const processedWords = doc.terms().out('array');
-        console.log("Processed words:", processedWords);
-        
-        // 将分词结果放回原位置
-        let wordIndex = 0;
-        const result = [];
-        
-        for (const token of tokens) {
-          if (token.type === 'word') {
-            if (wordIndex < processedWords.length) {
-              result.push(processedWords[wordIndex]);
-              wordIndex++;
-            } else {
-              result.push(token.value);
-            }
-          } else {
-            // 对标点处理：如果是.,!?;:这样的标点，前面的词后面不加空格
-            const shouldAddSpace = !['.', ',', '!', '?', ';', ':'].includes(token.value);
-            
-            // 如果结果不为空且最后一个字符不是空格，且需要空格，则添加空格
-            if (result.length > 0 && result[result.length - 1] !== ' ' && shouldAddSpace) {
-              result.push(' ');
-            }
-            
-            result.push(token.value);
-            
-            // 在句末标点(.!?)后添加空格
-            if (['.', '!', '?'].includes(token.value)) {
-              result.push(' ');
-            }
-          }
-        }
-        
-        const processed = result.join('').trim();
-        console.log("Final processed text:", processed);
-        return processed;
-      }
+      // 调整符号位置 (例如: "hello , how are you ?" => "hello, how are you?")
+      return tokens.join(' ')
+        .replace(/ ,/g, ',')
+        .replace(/ \./g, '.')
+        .replace(/ \?/g, '?')
+        .replace(/ !/g, '!')
+        .replace(/ ;/g, ';')
+        .replace(/ :/g, ':')
+        .replace(/ "/g, '"')
+        .replace(/" /g, '"')
+        .replace(/ '/g, "'")
+        .replace(/' /g, "'");
     } catch (error) {
-      console.error("Error processing English text:", error);
+      console.error('分词处理失败:', error);
+      return text; // 错误时返回原文本
     }
   }
   
-  return text; // 无需处理的情况直接返回原文本
+  return text; // 不符合条件时返回原文本
 }
+
+// 在应用启动时预加载wordsninja字典
+useEffect(() => {
+  async function loadWordsDictionary() {
+    try {
+      console.log('正在加载wordsninja字典...');
+      await wordsNinja.loadDictionary();
+      console.log('wordsninja字典加载成功');
+    } catch (error) {
+      console.error('wordsninja字典加载失败:', error);
+    }
+  }
+  
+  loadWordsDictionary();
+}, []);
 
 function ScoreBar({ label, value, max = 100 }) {
   return (
@@ -229,9 +200,6 @@ export default function PronunciationAssessment() {
   const [azureKey, setAzureKey] = useState(() => localStorage.getItem('azureKey') || ''); // Azure API key
   const [azureRegion, setAzureRegion] = useState(() => localStorage.getItem('azureRegion') || 'japanwest'); // Azure 区域
   const [showAzureSettings, setShowAzureSettings] = useState(false); // 控制Azure设置的显示
-  // 修改语音合成偏好为速度偏好
-  const [speechRate, setSpeechRate] = useState(() => 
-    localStorage.getItem('speechRate') || 'normal'); // 'slow', 'normal', 'fast'
 
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
@@ -600,7 +568,7 @@ export default function PronunciationAssessment() {
     } else if (azureKey && azureRegion) {
       speakTextWithAzure();
     } else {
-      // 使用浏览器内置的Web Speech API，根据速度偏好设置语速
+      // 如果没有Azure Key或后端不可用，使用浏览器内置的Web Speech API
       speakTextWithBrowserAPI();
     }
   };
@@ -633,18 +601,8 @@ export default function PronunciationAssessment() {
       // 设置语言
       utterance.lang = isChinese ? 'zh-CN' : 'en-US';
       
-      // 根据速度偏好设置语速
-      switch (speechRate) {
-        case 'slow':
-          utterance.rate = 0.7; // 慢速
-          break;
-        case 'fast':
-          utterance.rate = 1.3; // 快速
-          break;
-        default:
-          utterance.rate = 1.0; // 正常语速
-      }
-      
+      // 可选: 调整语速和音量
+      utterance.rate = 1.0; // 正常语速
       utterance.pitch = 1.0; // 正常音调
       utterance.volume = 1.0; // 最大音量
       
@@ -718,7 +676,7 @@ export default function PronunciationAssessment() {
       // 播放语音
       window.speechSynthesis.speak(utterance);
       
-      console.log(`使用浏览器内置API播放语音: "${referenceText}", 语速: ${speechRate}`);
+      console.log(`使用浏览器内置API播放语音: "${referenceText}"`);
     } catch (err) {
       console.error('浏览器语音合成失败:', err);
       setError(`浏览器语音合成失败: ${err.message}`);
@@ -812,21 +770,18 @@ export default function PronunciationAssessment() {
           e.target.result,
           'chi_sim+eng',
         );
-        
-        // 处理识别出的文本
-        const processedText = processEnglishText(text);
-        console.log("OCR text:", text);
-        console.log("Processed OCR text:", processedText);
-        
         // 插入到光標處
         const textarea = textareaRef.current;
         if (!textarea) return;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const value = textarea.value;
+        
+        // 处理识别出的文本
+        const processedText = processEnglishText(text);
+        
         const newValue = value.substring(0, start) + processedText + value.substring(end);
         setReferenceText(newValue);
-        
         // 等待 setState 完成後設置光標
         setTimeout(() => {
           textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
@@ -834,29 +789,26 @@ export default function PronunciationAssessment() {
       };
       reader.readAsDataURL(file);
     } else if (textItem) {
-      // 阻止默认粘贴行为
-      event.preventDefault();
-      
       textItem.getAsString(text => {
-        console.log("Pasted text:", text);
-        
-        // 处理文本
+        // 如果是纯文本粘贴，对文本进行处理
         const processedText = processEnglishText(text);
-        console.log("Processed pasted text:", processedText);
         
-        // 插入到光标处
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const value = textarea.value;
-        const newValue = value.substring(0, start) + processedText + value.substring(end);
-        setReferenceText(newValue);
-        
-        // 等待 setState 完成后设置光标
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
-        }, 0);
+        // 如果处理后的文本与原文本不同，阻止默认粘贴并使用处理后的文本
+        if (processedText !== text) {
+          event.preventDefault();
+          const textarea = textareaRef.current;
+          if (!textarea) return;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const value = textarea.value;
+          const newValue = value.substring(0, start) + processedText + value.substring(end);
+          setReferenceText(newValue);
+          
+          // 等待 setState 完成後設置光標
+          setTimeout(() => {
+            textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
+          }, 0);
+        }
       });
     }
   };
@@ -882,38 +834,6 @@ export default function PronunciationAssessment() {
     setShowAzureSettings(false);
     alert('Azure设置已保存！');
   };
-
-  // 保存语音速度偏好设置
-  const saveSpeechRate = (rate) => {
-    setSpeechRate(rate);
-    localStorage.setItem('speechRate', rate);
-  };
-
-  // 键盘快捷键处理函数
-  const handleKeyPress = (event) => {
-    // 当焦点在输入框时不触发快捷键
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-      return;
-    }
-    
-    // ENTER键控制开始/停止录音
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      if (recording) {
-        stopAssessment();
-      } else {
-        startAssessment();
-      }
-    }
-  };
-
-  // 添加键盘事件监听器
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyPress);
-    return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [recording]); // 依赖于recording状态
 
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
@@ -1104,52 +1024,6 @@ export default function PronunciationAssessment() {
               </button>
             )}
           </div>
-          
-          {/* 修改为本地端发音速度选择 */}
-          <div style={{ marginLeft: 24, display: "flex", alignItems: "center" }}>
-            <label style={{ marginRight: 8, color: "#bbb" }}>發音速度: </label>
-            <button 
-              onClick={() => saveSpeechRate('slow')} 
-              style={{ 
-                padding: "4px 8px", 
-                background: speechRate === 'slow' ? "#00897b" : "#333", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4, 
-                marginRight: 4,
-                fontWeight: speechRate === 'slow' ? "bold" : "normal"
-              }}
-            >
-              慢速
-            </button>
-            <button 
-              onClick={() => saveSpeechRate('normal')}
-              style={{ 
-                padding: "4px 8px", 
-                background: speechRate === 'normal' ? "#43a047" : "#333", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4,
-                marginRight: 4,
-                fontWeight: speechRate === 'normal' ? "bold" : "normal"
-              }}
-            >
-              正常
-            </button>
-            <button 
-              onClick={() => saveSpeechRate('fast')}
-              style={{ 
-                padding: "4px 8px", 
-                background: speechRate === 'fast' ? "#0288d1" : "#333", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4,
-                fontWeight: speechRate === 'fast' ? "bold" : "normal"
-              }}
-            >
-              快速
-            </button>
-          </div>
         </div>
         
         {isLoading && (
@@ -1158,73 +1032,60 @@ export default function PronunciationAssessment() {
           </div>
         )}
         
-        <div style={{ display: "flex", alignItems: "center" }}>
-          {!recording && (
-            <button 
-              onClick={startAssessment} 
-              disabled={isLoading}
-              style={{ 
-                padding: "8px 20px", 
-                background: isLoading ? "#666" : "#4cafef", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4, 
-                fontWeight: "bold", 
-                marginRight: "8px",
-                cursor: isLoading ? "not-allowed" : "pointer"
-              }}
-            >
-              開始錄音並評分 <span style={{ opacity: 0.7, fontSize: "0.8em" }}>(Enter)</span>
-            </button>
-          )}
-          {recording && (
-            <button 
-              onClick={stopAssessment} 
-              style={{ 
-                padding: "8px 20px", 
-                background: "#e53935", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4, 
-                fontWeight: "bold", 
-                marginRight: "8px" 
-              }}
-            >
-              停止錄音 <span style={{ opacity: 0.7, fontSize: "0.8em" }}>(Enter)</span>
-            </button>
-          )}
+        {!recording && (
           <button 
-            onClick={speakText} 
+            onClick={startAssessment} 
             disabled={isLoading}
             style={{ 
               padding: "8px 20px", 
-              background: isLoading ? "#666" : "#4caf50", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4, 
-              fontWeight: "bold",
-              cursor: isLoading ? "not-allowed" : "pointer"
-            }}
-          >
-            發音
-          </button>
-          <button 
-            onClick={addToFavorites} 
-            disabled={isLoading}
-            style={{ 
-              padding: "8px 20px", 
-              background: isLoading ? "#666" : "#ff9800", 
+              background: isLoading ? "#666" : "#4cafef", 
               color: "#fff", 
               border: "none", 
               borderRadius: 4, 
               fontWeight: "bold", 
-              marginLeft: "8px",
+              marginRight: "8px",
               cursor: isLoading ? "not-allowed" : "pointer"
             }}
           >
-            加入我的最愛
+            開始錄音並評分
           </button>
-        </div>
+        )}
+        {recording && (
+          <button onClick={stopAssessment} style={{ padding: "8px 20px", background: "#e53935", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold", marginRight: "8px" }}>
+            停止錄音
+          </button>
+        )}
+        <button 
+          onClick={speakText} 
+          disabled={isLoading}
+          style={{ 
+            padding: "8px 20px", 
+            background: isLoading ? "#666" : "#4caf50", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 4, 
+            fontWeight: "bold",
+            cursor: isLoading ? "not-allowed" : "pointer"
+          }}
+        >
+          發音
+        </button>
+        <button 
+          onClick={addToFavorites} 
+          disabled={isLoading}
+          style={{ 
+            padding: "8px 20px", 
+            background: isLoading ? "#666" : "#ff9800", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 4, 
+            fontWeight: "bold", 
+            marginLeft: "8px",
+            cursor: isLoading ? "not-allowed" : "pointer"
+          }}
+        >
+          加入我的最愛
+        </button>
       </div>
       
       {favorites.length > 0 && (
