@@ -156,6 +156,10 @@ export default function PronunciationAssessment() {
   const [selectedVoice, setSelectedVoice] = useState(null); // 当前选中的语音
   const [showVoiceOptions, setShowVoiceOptions] = useState(false); // 控制语音选项的显示
   const [voiceSearchTerm, setVoiceSearchTerm] = useState(''); // 语音搜索关键词
+  const [speechRate, setSpeechRate] = useState(() => {
+    const savedRate = localStorage.getItem('speechRate');
+    return savedRate !== null ? parseFloat(savedRate) : 1.0; // 默认1.0正常语速
+  }); // 语音速度
 
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
@@ -556,7 +560,7 @@ export default function PronunciationAssessment() {
       utterance.lang = isChinese ? 'zh-CN' : 'en-US';
       
       // 可选: 调整语速和音量
-      utterance.rate = 1.0; // 正常语速
+      utterance.rate = speechRate;
       utterance.pitch = 1.0; // 正常音调
       utterance.volume = 1.0; // 最大音量
       
@@ -773,6 +777,11 @@ export default function PronunciationAssessment() {
     alert('Azure设置已保存！');
   };
 
+  // 保存 speechRate 到 localStorage
+  useEffect(() => {
+    localStorage.setItem('speechRate', speechRate.toString());
+  }, [speechRate]);
+
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
       <h2 style={{ color: "#4cafef" }}>發音評分（瀏覽器內建語音版）</h2>
@@ -965,6 +974,91 @@ export default function PronunciationAssessment() {
           </div>
         </div>
         
+        {/* 添加语音控制 */}
+        <div style={{ display: "flex", alignItems: "center", marginTop: "12px", marginBottom: "12px" }}>
+          <label style={{ marginRight: "8px", color: "#bbb" }}>语音速度: </label>
+          <div style={{ display: "flex", alignItems: "center", width: "300px" }}>
+            <span style={{ color: "#bbb", marginRight: "8px", fontSize: "12px" }}>慢</span>
+            <input 
+              type="range" 
+              min="0.1" 
+              max="3.0" 
+              step="0.1" 
+              value={speechRate}
+              onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+              style={{ 
+                flex: 1, 
+                background: "#444", 
+                height: "8px", 
+                borderRadius: "4px", 
+                WebkitAppearance: "none", 
+                appearance: "none",
+                outline: "none"
+              }}
+            />
+            <span style={{ color: "#bbb", marginLeft: "8px", fontSize: "12px" }}>快</span>
+          </div>
+          <span style={{ marginLeft: "8px", color: "#4caf50", fontWeight: "bold" }}>{speechRate.toFixed(1)}x</span>
+          
+          <div style={{ display: "flex", marginLeft: "16px" }}>
+            <button 
+              onClick={() => setSpeechRate(0.7)}
+              style={{ 
+                padding: "2px 8px", 
+                background: speechRate === 0.7 ? "#ff9800" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "4px", 
+                fontSize: "12px",
+                marginRight: "4px"
+              }}
+            >
+              0.7x
+            </button>
+            <button 
+              onClick={() => setSpeechRate(1.0)}
+              style={{ 
+                padding: "2px 8px", 
+                background: speechRate === 1.0 ? "#4caf50" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "4px", 
+                fontSize: "12px",
+                marginRight: "4px"
+              }}
+            >
+              1.0x
+            </button>
+            <button 
+              onClick={() => setSpeechRate(1.5)}
+              style={{ 
+                padding: "2px 8px", 
+                background: speechRate === 1.5 ? "#2196f3" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "4px", 
+                fontSize: "12px",
+                marginRight: "4px"
+              }}
+            >
+              1.5x
+            </button>
+            <button 
+              onClick={() => setSpeechRate(2.0)}
+              style={{ 
+                padding: "2px 8px", 
+                background: speechRate === 2.0 ? "#f44336" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: "4px", 
+                fontSize: "12px"
+              }}
+            >
+              2.0x
+            </button>
+          </div>
+        </div>
+        
         {isLoading && (
           <div style={{ marginBottom: 12, color: "#ff9800" }}>
             處理中...請稍候...
@@ -1127,6 +1221,86 @@ export default function PronunciationAssessment() {
               <div style={{ marginTop: "16px", padding: "10px", background: "#23272f", borderRadius: "4px" }}>
                 <div style={{ fontWeight: "bold", color: "#4cafef", marginBottom: "4px" }}>當前選擇的語音:</div>
                 <div style={{ color: "#fff" }}>{selectedVoice.name} ({selectedVoice.lang})</div>
+                
+                {/* 添加语音控制 */}
+                <div style={{ marginTop: "12px" }}>
+                  <div style={{ fontWeight: "bold", color: "#4cafef", marginBottom: "4px" }}>語音速度: {speechRate.toFixed(1)}</div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ color: "#bbb", marginRight: "8px" }}>慢</span>
+                    <input 
+                      type="range" 
+                      min="0.1" 
+                      max="3.0" 
+                      step="0.1" 
+                      value={speechRate}
+                      onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                      style={{ 
+                        flex: 1, 
+                        background: "#444", 
+                        height: "8px", 
+                        borderRadius: "4px", 
+                        WebkitAppearance: "none", 
+                        appearance: "none",
+                        outline: "none"
+                      }}
+                    />
+                    <span style={{ color: "#bbb", marginLeft: "8px" }}>快</span>
+                  </div>
+                  <div style={{ display: "flex", marginTop: "8px", justifyContent: "space-between" }}>
+                    <button 
+                      onClick={() => setSpeechRate(0.7)}
+                      style={{ 
+                        padding: "4px 8px", 
+                        background: speechRate === 0.7 ? "#ff9800" : "#333", 
+                        color: "#fff", 
+                        border: "none", 
+                        borderRadius: "4px", 
+                        fontSize: "12px"
+                      }}
+                    >
+                      慢速 (0.7)
+                    </button>
+                    <button 
+                      onClick={() => setSpeechRate(1.0)}
+                      style={{ 
+                        padding: "4px 8px", 
+                        background: speechRate === 1.0 ? "#4caf50" : "#333", 
+                        color: "#fff", 
+                        border: "none", 
+                        borderRadius: "4px", 
+                        fontSize: "12px"
+                      }}
+                    >
+                      正常 (1.0)
+                    </button>
+                    <button 
+                      onClick={() => setSpeechRate(1.5)}
+                      style={{ 
+                        padding: "4px 8px", 
+                        background: speechRate === 1.5 ? "#2196f3" : "#333", 
+                        color: "#fff", 
+                        border: "none", 
+                        borderRadius: "4px", 
+                        fontSize: "12px"
+                      }}
+                    >
+                      快速 (1.5)
+                    </button>
+                    <button 
+                      onClick={() => setSpeechRate(2.0)}
+                      style={{ 
+                        padding: "4px 8px", 
+                        background: speechRate === 2.0 ? "#f44336" : "#333", 
+                        color: "#fff", 
+                        border: "none", 
+                        borderRadius: "4px", 
+                        fontSize: "12px"
+                      }}
+                    >
+                      極速 (2.0)
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
