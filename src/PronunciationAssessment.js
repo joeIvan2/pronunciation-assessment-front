@@ -155,7 +155,7 @@ export default function PronunciationAssessment() {
   const [availableVoices, setAvailableVoices] = useState([]); // 所有可用的语音
   const [selectedVoice, setSelectedVoice] = useState(null); // 当前选中的语音
   const [showVoiceOptions, setShowVoiceOptions] = useState(false); // 控制语音选项的显示
-  const [voiceSearchTerm, setVoiceSearchTerm] = useState(''); // 语音搜索关键词
+  const [voiceSearchTerm, setVoiceSearchTerm] = useState('english'); // 语音搜索关键词
   const [speechRate, setSpeechRate] = useState(() => {
     const savedRate = localStorage.getItem('speechRate');
     return savedRate !== null ? parseFloat(savedRate) : 1.0; // 默认1.0正常语速
@@ -1159,7 +1159,7 @@ export default function PronunciationAssessment() {
               </button>
             </div>
             
-            <div style={{ display: "flex", marginBottom: "12px" }}>
+            <div style={{ display: "flex", marginBottom: "12px", gap: "8px" }}>
               <input 
                 type="text" 
                 placeholder="搜索語音..." 
@@ -1169,12 +1169,57 @@ export default function PronunciationAssessment() {
                   border: "1px solid #444", 
                   background: "#23272f", 
                   color: "#fff", 
-                  width: "100%" 
+                  flexGrow: 1
                 }} 
                 id="voice-search"
                 value={voiceSearchTerm}
                 onChange={(e) => setVoiceSearchTerm(e.target.value)}
               />
+              
+              <button 
+                onClick={() => setVoiceSearchTerm('')}
+                style={{ 
+                  padding: "4px 12px", 
+                  background: voiceSearchTerm === '' ? "#4caf50" : "#333", 
+                  color: "#fff", 
+                  border: "none", 
+                  borderRadius: "4px", 
+                  fontWeight: "bold",
+                  fontSize: "12px"
+                }}
+              >
+                全部
+              </button>
+              
+              <button 
+                onClick={() => setVoiceSearchTerm('english')}
+                style={{ 
+                  padding: "4px 12px", 
+                  background: voiceSearchTerm === 'english' ? "#2196f3" : "#333", 
+                  color: "#fff", 
+                  border: "none", 
+                  borderRadius: "4px", 
+                  fontWeight: "bold",
+                  fontSize: "12px"
+                }}
+              >
+                英文
+              </button>
+              
+              <button 
+                onClick={() => setVoiceSearchTerm('chinese')}
+                style={{ 
+                  padding: "4px 12px", 
+                  background: voiceSearchTerm === 'chinese' ? "#ff9800" : "#333", 
+                  color: "#fff", 
+                  border: "none", 
+                  borderRadius: "4px", 
+                  fontWeight: "bold",
+                  fontSize: "12px"
+                }}
+              >
+                中文
+              </button>
             </div>
             
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "12px" }}>
