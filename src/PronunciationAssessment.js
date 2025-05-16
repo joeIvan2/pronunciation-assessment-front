@@ -35,8 +35,20 @@ async function processEnglishText(text) {
       // 使用text-segmentation分词
       const result = await splitToWords(text);
       
+      // 确保result不为null或undefined
+      if (!result) {
+        console.error("分词结果为空");
+        return text;
+      }
+      
+      // 根据文档，splitToWords返回的是包含words属性的对象
+      // 检查result是否有words属性，如果没有则直接使用result
+      const words = Array.isArray(result.words) ? result.words : 
+                    Array.isArray(result) ? result : 
+                    [text]; // 兜底方案
+      
       // 返回空格分隔的文本
-      return result.words.filter(word => !word.match(/^\s+$/)).join(' ')
+      return words.filter(word => word && !word.match(/^\s+$/)).join(' ')
         .replace(/ ,/g, ',')
         .replace(/ \./g, '.')
         .replace(/ \?/g, '?')
