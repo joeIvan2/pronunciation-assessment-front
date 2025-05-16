@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import Tesseract from "tesseract.js";
-import wordsNinja from 'wordsninja'; // 导入wordsninja库用于英文分词
+import { splitToWords } from '@echogarden/text-segmentation'; // 导入text-segmentation包用于英文分词
 
 // 后端API地址
 const BACKEND_URL = "https://pronunciation-assessment-app-1.onrender.com";
@@ -24,19 +24,19 @@ const API_PATHS = {
 };
 
 // 处理无空格英文文本的函数
-function processEnglishText(text) {
+async function processEnglishText(text) {
   // 检查文本是否英文且缺少空格
   const hasSpaces = text.includes(' ');
-  const isProbablyEnglish = /^[a-zA-Z0-9.,!?;:'"-]*$/.test(text);
+  const isProbablyEnglish = /^[a-zA-Z0-9.,!?;:'\"-]*$/.test(text);
   
   // 只处理可能是英文且没有空格的文本
   if (isProbablyEnglish && !hasSpaces && text.length > 3) {
     try {
-      // 使用wordsninja分词
-      const tokens = wordsNinja.splitSentence(text);
+      // 使用text-segmentation分词
+      const result = await splitToWords(text);
       
-      // 调整符号位置 (例如: "hello , how are you ?" => "hello, how are you?")
-      return tokens.join(' ')
+      // 返回空格分隔的文本
+      return result.words.filter(word => !word.match(/^\s+$/)).join(' ')
         .replace(/ ,/g, ',')
         .replace(/ \./g, '.')
         .replace(/ \?/g, '?')
@@ -44,16 +44,14 @@ function processEnglishText(text) {
         .replace(/ ;/g, ';')
         .replace(/ :/g, ':')
         .replace(/ "/g, '"')
-        .replace(/" /g, '"')
-        .replace(/ '/g, "'")
-        .replace(/' /g, "'");
+        .replace(/" /g, '"');
     } catch (error) {
-      console.error('分词处理失败:', error);
-      return text; // 错误时返回原文本
+      console.error("分词处理出错:", error);
+      return text;
     }
   }
   
-  return text; // 不符合条件时返回原文本
+  return text;
 }
 
 // 在应用启动时预加载wordsninja字典
@@ -745,71 +743,39 @@ export default function PronunciationAssessment() {
     }
   }, []);
 
-  // OCR 處理圖片
-  const handlePaste = async (event) => {
-    const items = event.clipboardData.items;
-    let imageItem = null;
-    let textItem = null;
+  // 处理粘贴事件，支持文本和图片
+  const handlePaste = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
     
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        imageItem = items[i];
-        break;
-      } else if (items[i].type.indexOf('text') !== -1) {
-        textItem = items[i];
-      }
-    }
-    
-    if (imageItem) {
-      event.preventDefault();
-      const file = imageItem.getAsFile();
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        // 可選：顯示 loading 狀態
-        const { data: { text } } = await Tesseract.recognize(
-          e.target.result,
-          'chi_sim+eng',
-        );
-        // 插入到光標處
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const value = textarea.value;
+    try {
+      // 检查是否有图片
+      if (e.clipboardData.files.length > 0) {
+        const file = e.clipboardData.files[0];
         
-        // 处理识别出的文本
-        const processedText = processEnglishText(text);
-        
-        const newValue = value.substring(0, start) + processedText + value.substring(end);
-        setReferenceText(newValue);
-        // 等待 setState 完成後設置光標
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
-        }, 0);
-      };
-      reader.readAsDataURL(file);
-    } else if (textItem) {
-      textItem.getAsString(text => {
-        // 如果是纯文本粘贴，对文本进行处理
-        const processedText = processEnglishText(text);
-        
-        // 如果处理后的文本与原文本不同，阻止默认粘贴并使用处理后的文本
-        if (processedText !== text) {
-          event.preventDefault();
-          const textarea = textareaRef.current;
-          if (!textarea) return;
-          const start = textarea.selectionStart;
-          const end = textarea.selectionEnd;
-          const value = textarea.value;
-          const newValue = value.substring(0, start) + processedText + value.substring(end);
-          setReferenceText(newValue);
-          
-          // 等待 setState 完成後設置光標
-          setTimeout(() => {
-            textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
-          }, 0);
+        if (file.type.startsWith('image/')) {
+          // 处理图片OCR
+          const result = await Tesseract.recognize(file, 'eng+chi_sim');
+          const text = result.data.text.trim();
+          setReferenceText(text);
+          setIsLoading(false);
+          return;
         }
-      });
+      }
+      
+      // 处理纯文本
+      let text = e.clipboardData.getData('text').trim();
+      
+      // 检测是否需要分词处理
+      text = await processEnglishText(text);
+      
+      setReferenceText(text);
+    } catch (error) {
+      console.error("粘贴处理出错:", error);
+      setError("粘贴内容处理失败: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
