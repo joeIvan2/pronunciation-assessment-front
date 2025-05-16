@@ -54,21 +54,6 @@ async function processEnglishText(text) {
   return text;
 }
 
-// 在应用启动时预加载wordsninja字典
-useEffect(() => {
-  async function loadWordsDictionary() {
-    try {
-      console.log('正在加载wordsninja字典...');
-      await wordsNinja.loadDictionary();
-      console.log('wordsninja字典加载成功');
-    } catch (error) {
-      console.error('wordsninja字典加载失败:', error);
-    }
-  }
-  
-  loadWordsDictionary();
-}, []);
-
 function ScoreBar({ label, value, max = 100 }) {
   return (
     <div style={{ margin: "8px 0" }}>
