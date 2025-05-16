@@ -147,7 +147,7 @@ export default function PronunciationAssessment() {
   const [strictMode, setStrictMode] = useState(true); // 預設使用嚴格模式
   const [isLoading, setIsLoading] = useState(false); // 新增加载状态
   const [useBackend, setUseBackend] = useState(true); // 是否使用后端API
-  const [useBrowserSpeech, setUseBrowserSpeech] = useState(() => localStorage.getItem('useBrowserSpeech') === 'true'); // 是否使用浏览器内置语音
+  const [useBrowserSpeech, setUseBrowserSpeech] = useState(true); // 始终使用浏览器内置语音
   const [error, setError] = useState(null); // 错误信息
   const [azureKey, setAzureKey] = useState(() => localStorage.getItem('azureKey') || ''); // Azure API key
   const [azureRegion, setAzureRegion] = useState(() => localStorage.getItem('azureRegion') || 'japanwest'); // Azure 区域
@@ -515,20 +515,11 @@ export default function PronunciationAssessment() {
 
   // 统一的文本转语音入口
   const speakText = () => {
-    // 检查浏览器是否支持Web Speech API并且启用了浏览器语音选项
-    if ('speechSynthesis' in window && useBrowserSpeech) {
+    // 始终使用浏览器内置的Web Speech API
+    if ('speechSynthesis' in window) {
       speakTextWithBrowserAPI();
-    } else if (useBackend) {
-      speakTextWithBackend();
-    } else if (azureKey && azureRegion) {
-      speakTextWithAzure();
     } else {
-      // 如果后端或Azure都不可用，尝试使用浏览器内置语音
-      if ('speechSynthesis' in window) {
-        speakTextWithBrowserAPI();
-      } else {
-        setError('您的浏览器不支持语音合成API，请设置Azure凭证或使用后端API');
-      }
+      setError('您的浏览器不支持语音合成API，请尝试使用Chrome或Edge浏览器');
     }
   };
 
@@ -760,7 +751,8 @@ export default function PronunciationAssessment() {
 
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
-      <h2 style={{ color: "#4cafef" }}>發音評分（React + Azure）</h2>
+      <h2 style={{ color: "#4cafef" }}>發音評分（瀏覽器內建語音版）</h2>
+      <p style={{ color: "#aaa", marginBottom: "16px" }}>此版本始終使用瀏覽器內建Web Speech API進行語音合成，無需連接雲端服務</p>
       
       {error && (
         <div style={{ 
@@ -947,27 +939,6 @@ export default function PronunciationAssessment() {
               </button>
             )}
           </div>
-          
-          {/* 添加浏览器语音API选项 */}
-          <div style={{ marginLeft: 24, display: "flex", alignItems: "center" }}>
-            <label style={{ marginRight: 8, color: "#bbb" }}>语音模式: </label>
-            <button 
-              onClick={() => {
-                setUseBrowserSpeech(!useBrowserSpeech);
-                localStorage.setItem('useBrowserSpeech', (!useBrowserSpeech).toString());
-              }} 
-              style={{ 
-                padding: "4px 8px", 
-                background: useBrowserSpeech ? "#4caf50" : "#666", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4, 
-                fontWeight: "bold"
-              }}
-            >
-              {useBrowserSpeech ? "浏览器语音" : "云端语音"}
-            </button>
-          </div>
         </div>
         
         {isLoading && (
@@ -1012,7 +983,7 @@ export default function PronunciationAssessment() {
             cursor: isLoading ? "not-allowed" : "pointer"
           }}
         >
-          發音
+          瀏覽器語音播放
         </button>
         <button 
           onClick={addToFavorites} 
