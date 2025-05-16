@@ -553,13 +553,10 @@ export default function PronunciationAssessment() {
       // 创建语音合成请求
       const utterance = new SpeechSynthesisUtterance(referenceText);
       
-      // 检测语言（简单检测，主要区分中英文）
-      const isChinese = /[\u4e00-\u9fa5]/.test(referenceText);
+      // 设置语言为英文
+      utterance.lang = 'en-US';
       
-      // 设置语言
-      utterance.lang = isChinese ? 'zh-CN' : 'en-US';
-      
-      // 可选: 调整语速和音量
+      // 调整语速和音量
       utterance.rate = speechRate;
       utterance.pitch = 1.0; // 正常音调
       utterance.volume = 1.0; // 最大音量
@@ -581,61 +578,21 @@ export default function PronunciationAssessment() {
         utterance.voice = selectedVoice;
         console.log(`使用用户选择的语音: ${selectedVoice.name}`);
       } 
-      // 否则尝试自动选择合适的语音
+      // 否则尝试自动选择合适的英文语音
       else {
         // 获取可用的语音选项
         const voices = window.speechSynthesis.getVoices();
         
-        // 尝试找到更自然的语音
-        if (voices && voices.length > 0) {
-          // 优先使用自然音质更好的语音
-          let autoSelectedVoice = null;
-          
-          // 尝试查找特定语音
-          if (isChinese) {
-            // 中文优先查找顺序
-            const preferredVoices = [
-              'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)',
-              'Microsoft Yunxi Online (Natural) - Chinese (Mainland)',
-              'Google 普通话（中国大陆）',
-              'Tingting'
-            ];
-            
-            for (const name of preferredVoices) {
-              const voice = voices.find(v => v.name.includes(name));
-              if (voice) {
-                autoSelectedVoice = voice;
-                break;
-              }
-            }
-            
-            // 如果没找到优选语音，查找任何中文语音
-            if (!autoSelectedVoice) {
-              autoSelectedVoice = voices.find(v => v.lang.startsWith('zh'));
-            }
-          } else {
-            // 英文优先查找顺序
-            const preferredVoices = [
-              'Microsoft Guy Online (Natural) - English',
-              'Microsoft Jenny Online (Natural) - English',
-              'Google US English',
-              'Alex'
-            ];
-            
-            for (const name of preferredVoices) {
-              const voice = voices.find(v => v.name.includes(name));
-              if (voice) {
-                autoSelectedVoice = voice;
-                break;
-              }
-            }
-          }
-          
-          // 设置选中的语音
-          if (autoSelectedVoice) {
-            utterance.voice = autoSelectedVoice;
-            console.log(`自动选择语音: ${autoSelectedVoice.name}`);
-          }
+        // 只选择英文语音
+        const englishVoices = voices.filter(voice => 
+          voice.name.toLowerCase().includes('english') || 
+          voice.lang.toLowerCase().includes('en')
+        );
+        
+        if (englishVoices.length > 0) {
+          // 选择英文语音中的第一个
+          utterance.voice = englishVoices[0];
+          console.log(`使用默认英文语音: ${englishVoices[0].name}`);
         }
       }
       
@@ -663,9 +620,15 @@ export default function PronunciationAssessment() {
         // 如果没有选择过语音，默认选择一个合适的
         if (!selectedVoice && voices.length > 0) {
           // 尝试找到一个合适的默认语音
-          const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
-          const englishVoice = voices.find(v => v.lang.startsWith('en'));
-          setSelectedVoice(chineseVoice || englishVoice || voices[0]);
+          const englishVoices = voices.filter(voice => 
+            voice.name.toLowerCase().includes('english') || 
+            voice.lang.toLowerCase().includes('en')
+          );
+          
+          // 优先使用英文语音
+          const preferredVoice = englishVoices.length > 0 ? englishVoices[0] : voices[0];
+          setSelectedVoice(preferredVoice);
+          console.log(`自动选择语音: ${preferredVoice.name}`);
         }
       };
       
@@ -1238,7 +1201,7 @@ export default function PronunciationAssessment() {
                   onClick={() => {
                     setSelectedVoice(voice);
                     // 可选：自动播放一小段示例
-                    const utterance = new SpeechSynthesisUtterance("語音示例");
+                    const utterance = new SpeechSynthesisUtterance("This is a sample voice");
                     utterance.voice = voice;
                     speechSynthesis.speak(utterance);
                   }}
