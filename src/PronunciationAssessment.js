@@ -516,10 +516,139 @@ export default function PronunciationAssessment() {
   const speakText = () => {
     if (useBackend) {
       speakTextWithBackend();
-    } else {
+    } else if (azureKey && azureRegion) {
       speakTextWithAzure();
+    } else {
+      // 如果没有Azure Key或后端不可用，使用浏览器内置的Web Speech API
+      speakTextWithBrowserAPI();
     }
   };
+
+  // 使用浏览器内置的Web Speech API进行本地文本转语音
+  const speakTextWithBrowserAPI = () => {
+    if (!referenceText) {
+      alert("請先輸入要發音的文字！");
+      return;
+    }
+    
+    // 检查浏览器是否支持Web Speech API
+    if (!('speechSynthesis' in window)) {
+      setError('您的浏览器不支持语音合成API，请尝试使用Chrome或Edge浏览器');
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // 停止之前可能正在播放的语音
+      window.speechSynthesis.cancel();
+      
+      // 创建语音合成请求
+      const utterance = new SpeechSynthesisUtterance(referenceText);
+      
+      // 检测语言（简单检测，主要区分中英文）
+      const isChinese = /[\u4e00-\u9fa5]/.test(referenceText);
+      
+      // 设置语言
+      utterance.lang = isChinese ? 'zh-CN' : 'en-US';
+      
+      // 可选: 调整语速和音量
+      utterance.rate = 1.0; // 正常语速
+      utterance.pitch = 1.0; // 正常音调
+      utterance.volume = 1.0; // 最大音量
+      
+      // 语音结束事件
+      utterance.onend = () => {
+        setIsLoading(false);
+      };
+      
+      // 错误处理
+      utterance.onerror = (err) => {
+        console.error('语音合成错误:', err);
+        setError(`浏览器语音合成出错: ${err.message || '未知错误'}`);
+        setIsLoading(false);
+      };
+      
+      // 获取可用的语音选项
+      const voices = window.speechSynthesis.getVoices();
+      
+      // 尝试找到更自然的语音
+      if (voices && voices.length > 0) {
+        // 优先使用自然音质更好的语音
+        let selectedVoice = null;
+        
+        // 尝试查找特定语音
+        if (isChinese) {
+          // 中文优先查找顺序
+          const preferredVoices = [
+            'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)',
+            'Microsoft Yunxi Online (Natural) - Chinese (Mainland)',
+            'Google 普通话（中国大陆）',
+            'Tingting'
+          ];
+          
+          for (const name of preferredVoices) {
+            const voice = voices.find(v => v.name.includes(name));
+            if (voice) {
+              selectedVoice = voice;
+              break;
+            }
+          }
+          
+          // 如果没找到优选语音，查找任何中文语音
+          if (!selectedVoice) {
+            selectedVoice = voices.find(v => v.lang.startsWith('zh'));
+          }
+        } else {
+          // 英文优先查找顺序
+          const preferredVoices = [
+            'Microsoft Guy Online (Natural) - English',
+            'Microsoft Jenny Online (Natural) - English',
+            'Google US English',
+            'Alex'
+          ];
+          
+          for (const name of preferredVoices) {
+            const voice = voices.find(v => v.name.includes(name));
+            if (voice) {
+              selectedVoice = voice;
+              break;
+            }
+          }
+        }
+        
+        // 设置选中的语音
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+          console.log(`使用语音: ${selectedVoice.name}`);
+        }
+      }
+      
+      // 播放语音
+      window.speechSynthesis.speak(utterance);
+      
+      console.log(`使用浏览器内置API播放语音: "${referenceText}"`);
+    } catch (err) {
+      console.error('浏览器语音合成失败:', err);
+      setError(`浏览器语音合成失败: ${err.message}`);
+      setIsLoading(false);
+    }
+  };
+
+  // 确保在组件加载时预加载语音
+  useEffect(() => {
+    // 在某些浏览器中，voices列表可能需要时间加载
+    if ('speechSynthesis' in window) {
+      // 触发voices加载
+      speechSynthesis.getVoices();
+      
+      // 监听voices加载完成事件
+      speechSynthesis.onvoiceschanged = () => {
+        const availableVoices = speechSynthesis.getVoices();
+        console.log(`加载了${availableVoices.length}个语音选项`);
+      };
+    }
+  }, []);
 
   // 收藏夹相关函数
   const addToFavorites = () => {
