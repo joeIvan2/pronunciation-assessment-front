@@ -24,7 +24,7 @@
     "temp": "^0.9.4",
     "tesseract.js": "^5.0.4",
     "web-vitals": "^2.1.4",
-    "wordsninja": "^1.0.2"
+    "wordsninja": "1.0.0"
   },
   "scripts": {
     "start": "node server.js",
