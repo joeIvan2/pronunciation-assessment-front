@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@echogarden/text-segmentation": "^0.3.1",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^5.17.0",

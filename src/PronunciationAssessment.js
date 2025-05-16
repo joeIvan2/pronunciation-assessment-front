@@ -2,11 +2,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
 import Tesseract from "tesseract.js";
-import { splitToWords } from '@echogarden/text-segmentation'; // 导入text-segmentation包用于英文分词
-
-// 忽略WebPack警告，因为@echogarden/icu-segmentation-wasm是可选依赖
-// eslint-disable-next-line import/no-webpack-loader-syntax
-// eslint-disable-next-line import/no-unresolved
 
 // 后端API地址
 const BACKEND_URL = "https://pronunciation-assessment-app-1.onrender.com";
@@ -26,64 +21,6 @@ const API_PATHS = {
     "/tts"
   ]
 };
-
-// 处理无空格英文文本的函数
-async function processEnglishText(text) {
-  // 检查文本是否英文且缺少空格
-  const hasSpaces = text.includes(' ');
-  // 使用更宽松的英文判断，支持更多字符，但需要至少包含一些英文字母
-  const containsEnglishLetters = /[a-zA-Z]/.test(text);
-  const mostlyEnglishChars = /^[a-zA-Z0-9.,!?;:'"()\-_]*$/.test(text);
-  const isProbablyEnglish = containsEnglishLetters && mostlyEnglishChars;
-  
-  console.log("文本分词分析:", { text, hasSpaces, isProbablyEnglish, textLength: text.length });
-  
-  // 只处理可能是英文且没有空格的文本
-  if (isProbablyEnglish && !hasSpaces && text.length > 3) {
-    try {
-      console.log("尝试对无空格英文进行分词:", text);
-      // 使用text-segmentation分词
-      const result = await splitToWords(text);
-      
-      // 确保result不为null或undefined
-      if (!result) {
-        console.error("分词结果为空");
-        return text;
-      }
-      
-      // 根据文档，splitToWords返回的是包含words属性的对象
-      // 检查result是否有words属性，如果没有则直接使用result
-      const words = Array.isArray(result.words) ? result.words : 
-                    Array.isArray(result) ? result : 
-                    [text]; // 兜底方案
-      
-      console.log("分词结果:", words);
-      
-      // 返回空格分隔的文本
-      const processedText = words.filter(word => word && !word.match(/^\s+$/)).join(' ')
-        .replace(/ ,/g, ',')
-        .replace(/ \./g, '.')
-        .replace(/ \?/g, '?')
-        .replace(/ !/g, '!')
-        .replace(/ ;/g, ';')
-        .replace(/ :/g, ':')
-        .replace(/ "/g, '"')
-        .replace(/" /g, '"')
-        .replace(/ \(/g, '(')
-        .replace(/\) /g, ')')
-        .replace(/ -/g, '-')
-        .replace(/- /g, '-');
-      
-      console.log("处理后的文本:", processedText);
-      return processedText;
-    } catch (error) {
-      console.error("分词处理出错:", error);
-      return text;
-    }
-  }
-  
-  return text;
-}
 
 function ScoreBar({ label, value, max = 100 }) {
   return (
@@ -782,57 +719,10 @@ export default function PronunciationAssessment() {
       
       // 处理纯文本
       let text = e.clipboardData.getData('text').trim();
-      console.log("接收到粘贴文本:", text);
-      
-      // 检测是否需要分词处理
-      text = await processEnglishText(text);
-      
       setReferenceText(text);
     } catch (error) {
       console.error("粘贴处理出错:", error);
       setError("粘贴内容处理失败: " + error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 添加手动触发分词的功能
-  const handleProcessText = async () => {
-    if (!referenceText) return;
-    
-    setIsLoading(true);
-    try {
-      const processed = await processEnglishText(referenceText);
-      if (processed !== referenceText) {
-        setReferenceText(processed);
-      } else {
-        // 如果文本没变化，尝试强制分词
-        const words = referenceText.split(/([.,!?;:'"()\-_])/g)
-          .filter(part => part.trim() !== '');
-        
-        // 只有当分割后有意义时才应用
-        if (words.length > 1) {
-          const forcedText = words.join(' ')
-            .replace(/ ,/g, ',')
-            .replace(/ \./g, '.')
-            .replace(/ \?/g, '?')
-            .replace(/ !/g, '!')
-            .replace(/ ;/g, ';')
-            .replace(/ :/g, ':')
-            .replace(/ "/g, '"')
-            .replace(/" /g, '"')
-            .replace(/ \(/g, '(')
-            .replace(/\) /g, ')')
-            .replace(/ -/g, '-')
-            .replace(/- /g, '-')
-            .replace(/\s+/g, ' ');
-          
-          setReferenceText(forcedText);
-        }
-      }
-    } catch (error) {
-      console.error("处理文本出错:", error);
-      setError("文本处理失败: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -984,22 +874,6 @@ export default function PronunciationAssessment() {
             style={{ padding: "4px 8px", background: "#333", color: "#fff", border: "none", borderRadius: 4 }}
           >
             +
-          </button>
-          
-          {/* 添加手动触发分词处理的按钮 */}
-          <button 
-            onClick={handleProcessText}
-            style={{ 
-              padding: "4px 12px", 
-              background: "#ff9800", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4, 
-              marginLeft: 24,
-              cursor: "pointer"
-            }}
-          >
-            處理英文分詞
           </button>
           
           <div style={{ marginLeft: 24, display: "flex", alignItems: "center" }}>
