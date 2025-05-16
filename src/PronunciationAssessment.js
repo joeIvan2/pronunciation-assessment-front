@@ -30,38 +30,71 @@ function processEnglishText(text) {
   const isProbablyEnglish = /^[a-zA-Z0-9.,!?;:'"-]*$/.test(text);
   
   if (isProbablyEnglish && !hasEnoughSpaces && text.length > 10) {
-    // 保留文本中的标点符号
-    const punctuation = text.match(/[.,!?;:'"()-]/g) || [];
-    const punctPositions = [];
+    console.log("Processing English text:", text);
     
-    for (let i = 0; i < text.length; i++) {
-      if (/[.,!?;:'"()-]/.test(text[i])) {
-        punctPositions.push({ pos: i, char: text[i] });
+    try {
+      // 把文本分割成单词和标点的数组
+      // 使用正则表达式匹配单词和标点，保持它们的顺序
+      const tokens = [];
+      const regex = /([a-zA-Z0-9]+)|([.,!?;:'"()-])/g;
+      let match;
+      
+      while ((match = regex.exec(text)) !== null) {
+        if (match[1]) { // 单词
+          tokens.push({ type: 'word', value: match[1] });
+        } else if (match[2]) { // 标点
+          tokens.push({ type: 'punct', value: match[2] });
+        }
       }
+      
+      // 对单词进行分词
+      const wordTokens = tokens.filter(t => t.type === 'word');
+      if (wordTokens.length > 0) {
+        const wordsOnly = wordTokens.map(t => t.value).join('');
+        console.log("Words only:", wordsOnly);
+        
+        // 使用compromise进行分词
+        const doc = nlp(wordsOnly);
+        const processedWords = doc.terms().out('array');
+        console.log("Processed words:", processedWords);
+        
+        // 将分词结果放回原位置
+        let wordIndex = 0;
+        const result = [];
+        
+        for (const token of tokens) {
+          if (token.type === 'word') {
+            if (wordIndex < processedWords.length) {
+              result.push(processedWords[wordIndex]);
+              wordIndex++;
+            } else {
+              result.push(token.value);
+            }
+          } else {
+            // 对标点处理：如果是.,!?;:这样的标点，前面的词后面不加空格
+            const shouldAddSpace = !['.', ',', '!', '?', ';', ':'].includes(token.value);
+            
+            // 如果结果不为空且最后一个字符不是空格，且需要空格，则添加空格
+            if (result.length > 0 && result[result.length - 1] !== ' ' && shouldAddSpace) {
+              result.push(' ');
+            }
+            
+            result.push(token.value);
+            
+            // 在句末标点(.!?)后添加空格
+            if (['.', '!', '?'].includes(token.value)) {
+              result.push(' ');
+            }
+          }
+        }
+        
+        const processed = result.join('').trim();
+        console.log("Final processed text:", processed);
+        return processed;
+      }
+    } catch (error) {
+      console.error("Error processing English text:", error);
     }
-    
-    // 去除标点进行分词
-    const cleanText = text.replace(/[.,!?;:'"()-]/g, '');
-    const doc = nlp(cleanText);
-    let processed = doc.terms().out('array').join(' ');
-    
-    // 重新插入标点
-    punctPositions.forEach(p => {
-      // 计算新位置（考虑空格增加）
-      const wordCount = p.pos - (p.pos > 0 ? 
-        text.substring(0, p.pos).replace(/[a-zA-Z0-9]/g, '').length : 0);
-      
-      const spacesBeforePos = wordCount;
-      const newPos = p.pos + spacesBeforePos;
-      
-      if (newPos < processed.length) {
-        processed = processed.substring(0, newPos) + p.char + processed.substring(newPos);
-      } else {
-        processed += p.char;
-      }
-    });
-    
-    return processed;
   }
   
   return text; // 无需处理的情况直接返回原文本
@@ -766,18 +799,21 @@ export default function PronunciationAssessment() {
           e.target.result,
           'chi_sim+eng',
         );
+        
+        // 处理识别出的文本
+        const processedText = processEnglishText(text);
+        console.log("OCR text:", text);
+        console.log("Processed OCR text:", processedText);
+        
         // 插入到光標處
         const textarea = textareaRef.current;
         if (!textarea) return;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const value = textarea.value;
-        
-        // 处理识别出的文本
-        const processedText = processEnglishText(text);
-        
         const newValue = value.substring(0, start) + processedText + value.substring(end);
         setReferenceText(newValue);
+        
         // 等待 setState 完成後設置光標
         setTimeout(() => {
           textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
@@ -785,26 +821,29 @@ export default function PronunciationAssessment() {
       };
       reader.readAsDataURL(file);
     } else if (textItem) {
+      // 阻止默认粘贴行为
+      event.preventDefault();
+      
       textItem.getAsString(text => {
-        // 如果是纯文本粘贴，对文本进行处理
-        const processedText = processEnglishText(text);
+        console.log("Pasted text:", text);
         
-        // 如果处理后的文本与原文本不同，阻止默认粘贴并使用处理后的文本
-        if (processedText !== text) {
-          event.preventDefault();
-          const textarea = textareaRef.current;
-          if (!textarea) return;
-          const start = textarea.selectionStart;
-          const end = textarea.selectionEnd;
-          const value = textarea.value;
-          const newValue = value.substring(0, start) + processedText + value.substring(end);
-          setReferenceText(newValue);
-          
-          // 等待 setState 完成後設置光標
-          setTimeout(() => {
-            textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
-          }, 0);
-        }
+        // 处理文本
+        const processedText = processEnglishText(text);
+        console.log("Processed pasted text:", processedText);
+        
+        // 插入到光标处
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        const newValue = value.substring(0, start) + processedText + value.substring(end);
+        setReferenceText(newValue);
+        
+        // 等待 setState 完成后设置光标
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + processedText.length;
+        }, 0);
       });
     }
   };
