@@ -229,9 +229,9 @@ export default function PronunciationAssessment() {
   const [azureKey, setAzureKey] = useState(() => localStorage.getItem('azureKey') || ''); // Azure API key
   const [azureRegion, setAzureRegion] = useState(() => localStorage.getItem('azureRegion') || 'japanwest'); // Azure 区域
   const [showAzureSettings, setShowAzureSettings] = useState(false); // 控制Azure设置的显示
-  // 添加语音合成偏好设置
-  const [ttsPreference, setTtsPreference] = useState(() => 
-    localStorage.getItem('ttsPreference') || 'local'); // 'local' 或 'azure'
+  // 修改语音合成偏好为速度偏好
+  const [speechRate, setSpeechRate] = useState(() => 
+    localStorage.getItem('speechRate') || 'normal'); // 'slow', 'normal', 'fast'
 
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
@@ -597,10 +597,10 @@ export default function PronunciationAssessment() {
   const speakText = () => {
     if (useBackend) {
       speakTextWithBackend();
-    } else if (ttsPreference === 'azure' && azureKey && azureRegion) {
+    } else if (azureKey && azureRegion) {
       speakTextWithAzure();
     } else {
-      // 如果选择本地SDK或Azure配置不可用，使用浏览器内置的Web Speech API
+      // 使用浏览器内置的Web Speech API，根据速度偏好设置语速
       speakTextWithBrowserAPI();
     }
   };
@@ -633,8 +633,18 @@ export default function PronunciationAssessment() {
       // 设置语言
       utterance.lang = isChinese ? 'zh-CN' : 'en-US';
       
-      // 可选: 调整语速和音量
-      utterance.rate = 1.0; // 正常语速
+      // 根据速度偏好设置语速
+      switch (speechRate) {
+        case 'slow':
+          utterance.rate = 0.7; // 慢速
+          break;
+        case 'fast':
+          utterance.rate = 1.3; // 快速
+          break;
+        default:
+          utterance.rate = 1.0; // 正常语速
+      }
+      
       utterance.pitch = 1.0; // 正常音调
       utterance.volume = 1.0; // 最大音量
       
@@ -708,7 +718,7 @@ export default function PronunciationAssessment() {
       // 播放语音
       window.speechSynthesis.speak(utterance);
       
-      console.log(`使用浏览器内置API播放语音: "${referenceText}"`);
+      console.log(`使用浏览器内置API播放语音: "${referenceText}", 语速: ${speechRate}`);
     } catch (err) {
       console.error('浏览器语音合成失败:', err);
       setError(`浏览器语音合成失败: ${err.message}`);
@@ -873,11 +883,37 @@ export default function PronunciationAssessment() {
     alert('Azure设置已保存！');
   };
 
-  // 保存TTS偏好设置
-  const saveTtsPreference = (preference) => {
-    setTtsPreference(preference);
-    localStorage.setItem('ttsPreference', preference);
+  // 保存语音速度偏好设置
+  const saveSpeechRate = (rate) => {
+    setSpeechRate(rate);
+    localStorage.setItem('speechRate', rate);
   };
+
+  // 键盘快捷键处理函数
+  const handleKeyPress = (event) => {
+    // 当焦点在输入框时不触发快捷键
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return;
+    }
+    
+    // ENTER键控制开始/停止录音
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (recording) {
+        stopAssessment();
+      } else {
+        startAssessment();
+      }
+    }
+  };
+
+  // 添加键盘事件监听器
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [recording]); // 依赖于recording状态
 
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
@@ -1069,35 +1105,49 @@ export default function PronunciationAssessment() {
             )}
           </div>
           
-          {/* 添加语音合成偏好设置 */}
+          {/* 修改为本地端发音速度选择 */}
           <div style={{ marginLeft: 24, display: "flex", alignItems: "center" }}>
-            <label style={{ marginRight: 8, color: "#bbb" }}>語音合成: </label>
+            <label style={{ marginRight: 8, color: "#bbb" }}>發音速度: </label>
             <button 
-              onClick={() => saveTtsPreference('local')} 
+              onClick={() => saveSpeechRate('slow')} 
               style={{ 
                 padding: "4px 8px", 
-                background: ttsPreference === 'local' ? "#00897b" : "#333", 
+                background: speechRate === 'slow' ? "#00897b" : "#333", 
                 color: "#fff", 
                 border: "none", 
                 borderRadius: 4, 
                 marginRight: 4,
-                fontWeight: ttsPreference === 'local' ? "bold" : "normal"
+                fontWeight: speechRate === 'slow' ? "bold" : "normal"
               }}
             >
-              本地SDK
+              慢速
             </button>
             <button 
-              onClick={() => saveTtsPreference('azure')}
+              onClick={() => saveSpeechRate('normal')}
               style={{ 
                 padding: "4px 8px", 
-                background: ttsPreference === 'azure' ? "#0288d1" : "#333", 
+                background: speechRate === 'normal' ? "#43a047" : "#333", 
                 color: "#fff", 
                 border: "none", 
                 borderRadius: 4,
-                fontWeight: ttsPreference === 'azure' ? "bold" : "normal"
+                marginRight: 4,
+                fontWeight: speechRate === 'normal' ? "bold" : "normal"
               }}
             >
-              Azure雲端
+              正常
+            </button>
+            <button 
+              onClick={() => saveSpeechRate('fast')}
+              style={{ 
+                padding: "4px 8px", 
+                background: speechRate === 'fast' ? "#0288d1" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 4,
+                fontWeight: speechRate === 'fast' ? "bold" : "normal"
+              }}
+            >
+              快速
             </button>
           </div>
         </div>
@@ -1108,60 +1158,73 @@ export default function PronunciationAssessment() {
           </div>
         )}
         
-        {!recording && (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {!recording && (
+            <button 
+              onClick={startAssessment} 
+              disabled={isLoading}
+              style={{ 
+                padding: "8px 20px", 
+                background: isLoading ? "#666" : "#4cafef", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 4, 
+                fontWeight: "bold", 
+                marginRight: "8px",
+                cursor: isLoading ? "not-allowed" : "pointer"
+              }}
+            >
+              開始錄音並評分 <span style={{ opacity: 0.7, fontSize: "0.8em" }}>(Enter)</span>
+            </button>
+          )}
+          {recording && (
+            <button 
+              onClick={stopAssessment} 
+              style={{ 
+                padding: "8px 20px", 
+                background: "#e53935", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 4, 
+                fontWeight: "bold", 
+                marginRight: "8px" 
+              }}
+            >
+              停止錄音 <span style={{ opacity: 0.7, fontSize: "0.8em" }}>(Enter)</span>
+            </button>
+          )}
           <button 
-            onClick={startAssessment} 
+            onClick={speakText} 
             disabled={isLoading}
             style={{ 
               padding: "8px 20px", 
-              background: isLoading ? "#666" : "#4cafef", 
+              background: isLoading ? "#666" : "#4caf50", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: 4, 
+              fontWeight: "bold",
+              cursor: isLoading ? "not-allowed" : "pointer"
+            }}
+          >
+            發音
+          </button>
+          <button 
+            onClick={addToFavorites} 
+            disabled={isLoading}
+            style={{ 
+              padding: "8px 20px", 
+              background: isLoading ? "#666" : "#ff9800", 
               color: "#fff", 
               border: "none", 
               borderRadius: 4, 
               fontWeight: "bold", 
-              marginRight: "8px",
+              marginLeft: "8px",
               cursor: isLoading ? "not-allowed" : "pointer"
             }}
           >
-            開始錄音並評分
+            加入我的最愛
           </button>
-        )}
-        {recording && (
-          <button onClick={stopAssessment} style={{ padding: "8px 20px", background: "#e53935", color: "#fff", border: "none", borderRadius: 4, fontWeight: "bold", marginRight: "8px" }}>
-            停止錄音
-          </button>
-        )}
-        <button 
-          onClick={speakText} 
-          disabled={isLoading}
-          style={{ 
-            padding: "8px 20px", 
-            background: isLoading ? "#666" : "#4caf50", 
-            color: "#fff", 
-            border: "none", 
-            borderRadius: 4, 
-            fontWeight: "bold",
-            cursor: isLoading ? "not-allowed" : "pointer"
-          }}
-        >
-          發音
-        </button>
-        <button 
-          onClick={addToFavorites} 
-          disabled={isLoading}
-          style={{ 
-            padding: "8px 20px", 
-            background: isLoading ? "#666" : "#ff9800", 
-            color: "#fff", 
-            border: "none", 
-            borderRadius: 4, 
-            fontWeight: "bold", 
-            marginLeft: "8px",
-            cursor: isLoading ? "not-allowed" : "pointer"
-          }}
-        >
-          加入我的最愛
-        </button>
+        </div>
       </div>
       
       {favorites.length > 0 && (
