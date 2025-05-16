@@ -144,7 +144,10 @@ function WordsDisplay({ words }) {
 export default function PronunciationAssessment() {
   const [result, setResult] = useState(null);
   const [recording, setRecording] = useState(false);
-  const [strictMode, setStrictMode] = useState(true); // 預設使用嚴格模式
+  const [strictMode, setStrictMode] = useState(() => {
+    const savedStrictMode = localStorage.getItem('strictMode');
+    return savedStrictMode !== null ? savedStrictMode === 'true' : true; // 默认使用严格模式
+  }); // 预設使用嚴格模式
   const [isLoading, setIsLoading] = useState(false); // 新增加载状态
   const [useBackend, setUseBackend] = useState(true); // 是否使用后端API
   const [useBrowserSpeech, setUseBrowserSpeech] = useState(true); // 始终使用浏览器内置语音
@@ -155,7 +158,10 @@ export default function PronunciationAssessment() {
   const [availableVoices, setAvailableVoices] = useState([]); // 所有可用的语音
   const [selectedVoice, setSelectedVoice] = useState(null); // 当前选中的语音
   const [showVoiceOptions, setShowVoiceOptions] = useState(false); // 控制语音选项的显示
-  const [voiceSearchTerm, setVoiceSearchTerm] = useState('english'); // 语音搜索关键词
+  const [voiceSearchTerm, setVoiceSearchTerm] = useState(() => {
+    const savedSearchTerm = localStorage.getItem('voiceSearchTerm');
+    return savedSearchTerm || 'english'; // 默认搜索英文语音
+  }); // 语音搜索关键词
   const [speechRate, setSpeechRate] = useState(() => {
     const savedRate = localStorage.getItem('speechRate');
     return savedRate !== null ? parseFloat(savedRate) : 1.0; // 默认1.0正常语速
@@ -620,13 +626,28 @@ export default function PronunciationAssessment() {
         // 如果没有选择过语音，默认选择一个合适的
         if (!selectedVoice && voices.length > 0) {
           // 尝试找到一个合适的默认语音
-          const englishVoices = voices.filter(voice => 
-            voice.name.toLowerCase().includes('english') || 
-            voice.lang.toLowerCase().includes('en')
-          );
+          const savedVoiceName = localStorage.getItem('selectedVoiceName');
+          const savedVoiceLang = localStorage.getItem('selectedVoiceLang');
           
-          // 优先使用英文语音
-          const preferredVoice = englishVoices.length > 0 ? englishVoices[0] : voices[0];
+          let preferredVoice = null;
+          
+          // 如果之前有选择过语音，尝试找到相同的语音
+          if (savedVoiceName) {
+            preferredVoice = voices.find(voice => voice.name === savedVoiceName && voice.lang === savedVoiceLang);
+          }
+          
+          // 如果没有找到相同的语音，则尝试找到一个合适的英文语音
+          if (!preferredVoice) {
+            // 在所有语音中选择一个英文语音
+            const englishVoices = voices.filter(voice => 
+              voice.name.toLowerCase().includes('english') || 
+              voice.lang.toLowerCase().includes('en')
+            );
+            
+            // 如果没有找到英文语音，则选择第一个语音
+            preferredVoice = englishVoices.length > 0 ? englishVoices[0] : voices[0];
+          }
+          
           setSelectedVoice(preferredVoice);
           console.log(`自动选择语音: ${preferredVoice.name}`);
         }
@@ -744,6 +765,24 @@ export default function PronunciationAssessment() {
   useEffect(() => {
     localStorage.setItem('speechRate', speechRate.toString());
   }, [speechRate]);
+
+  // 保存所选语音到 localStorage
+  useEffect(() => {
+    if (selectedVoice) {
+      localStorage.setItem('selectedVoiceName', selectedVoice.name);
+      localStorage.setItem('selectedVoiceLang', selectedVoice.lang);
+    }
+  }, [selectedVoice]);
+  
+  // 保存语音搜索关键词到 localStorage
+  useEffect(() => {
+    localStorage.setItem('voiceSearchTerm', voiceSearchTerm);
+  }, [voiceSearchTerm]);
+
+  // 保存 strictMode 到 localStorage
+  useEffect(() => {
+    localStorage.setItem('strictMode', strictMode.toString());
+  }, [strictMode]);
 
   return (
     <div style={{ background: "#181c23", minHeight: "100vh", color: "#fff", padding: 24 }}>
