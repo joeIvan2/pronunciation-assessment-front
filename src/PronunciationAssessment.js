@@ -152,6 +152,10 @@ export default function PronunciationAssessment() {
   const [azureKey, setAzureKey] = useState(() => localStorage.getItem('azureKey') || ''); // Azure API key
   const [azureRegion, setAzureRegion] = useState(() => localStorage.getItem('azureRegion') || 'japanwest'); // Azure 区域
   const [showAzureSettings, setShowAzureSettings] = useState(false); // 控制Azure设置的显示
+  const [availableVoices, setAvailableVoices] = useState([]); // 所有可用的语音
+  const [selectedVoice, setSelectedVoice] = useState(null); // 当前选中的语音
+  const [showVoiceOptions, setShowVoiceOptions] = useState(false); // 控制语音选项的显示
+  const [voiceSearchTerm, setVoiceSearchTerm] = useState(''); // 语音搜索关键词
 
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
@@ -568,58 +572,66 @@ export default function PronunciationAssessment() {
         setIsLoading(false);
       };
       
-      // 获取可用的语音选项
-      const voices = window.speechSynthesis.getVoices();
-      
-      // 尝试找到更自然的语音
-      if (voices && voices.length > 0) {
-        // 优先使用自然音质更好的语音
-        let selectedVoice = null;
+      // 如果用户选择了特定的语音，则使用该语音
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(`使用用户选择的语音: ${selectedVoice.name}`);
+      } 
+      // 否则尝试自动选择合适的语音
+      else {
+        // 获取可用的语音选项
+        const voices = window.speechSynthesis.getVoices();
         
-        // 尝试查找特定语音
-        if (isChinese) {
-          // 中文优先查找顺序
-          const preferredVoices = [
-            'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)',
-            'Microsoft Yunxi Online (Natural) - Chinese (Mainland)',
-            'Google 普通话（中国大陆）',
-            'Tingting'
-          ];
+        // 尝试找到更自然的语音
+        if (voices && voices.length > 0) {
+          // 优先使用自然音质更好的语音
+          let autoSelectedVoice = null;
           
-          for (const name of preferredVoices) {
-            const voice = voices.find(v => v.name.includes(name));
-            if (voice) {
-              selectedVoice = voice;
-              break;
+          // 尝试查找特定语音
+          if (isChinese) {
+            // 中文优先查找顺序
+            const preferredVoices = [
+              'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)',
+              'Microsoft Yunxi Online (Natural) - Chinese (Mainland)',
+              'Google 普通话（中国大陆）',
+              'Tingting'
+            ];
+            
+            for (const name of preferredVoices) {
+              const voice = voices.find(v => v.name.includes(name));
+              if (voice) {
+                autoSelectedVoice = voice;
+                break;
+              }
+            }
+            
+            // 如果没找到优选语音，查找任何中文语音
+            if (!autoSelectedVoice) {
+              autoSelectedVoice = voices.find(v => v.lang.startsWith('zh'));
+            }
+          } else {
+            // 英文优先查找顺序
+            const preferredVoices = [
+              'Microsoft Guy Online (Natural) - English',
+              'Microsoft Jenny Online (Natural) - English',
+              'Google US English',
+              'Alex'
+            ];
+            
+            for (const name of preferredVoices) {
+              const voice = voices.find(v => v.name.includes(name));
+              if (voice) {
+                autoSelectedVoice = voice;
+                break;
+              }
             }
           }
           
-          // 如果没找到优选语音，查找任何中文语音
-          if (!selectedVoice) {
-            selectedVoice = voices.find(v => v.lang.startsWith('zh'));
+          // 设置选中的语音
+          if (autoSelectedVoice) {
+            utterance.voice = autoSelectedVoice;
+            console.log(`自动选择语音: ${autoSelectedVoice.name}`);
           }
-        } else {
-          // 英文优先查找顺序
-          const preferredVoices = [
-            'Microsoft Guy Online (Natural) - English',
-            'Microsoft Jenny Online (Natural) - English',
-            'Google US English',
-            'Alex'
-          ];
-          
-          for (const name of preferredVoices) {
-            const voice = voices.find(v => v.name.includes(name));
-            if (voice) {
-              selectedVoice = voice;
-              break;
-            }
-          }
-        }
-        
-        // 设置选中的语音
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-          console.log(`使用语音: ${selectedVoice.name}`);
         }
       }
       
@@ -638,16 +650,28 @@ export default function PronunciationAssessment() {
   useEffect(() => {
     // 在某些浏览器中，voices列表可能需要时间加载
     if ('speechSynthesis' in window) {
-      // 触发voices加载
-      speechSynthesis.getVoices();
+      // 获取当前可用的语音
+      const loadVoices = () => {
+        const voices = speechSynthesis.getVoices();
+        console.log(`加载了${voices.length}个语音选项`);
+        setAvailableVoices(voices);
+        
+        // 如果没有选择过语音，默认选择一个合适的
+        if (!selectedVoice && voices.length > 0) {
+          // 尝试找到一个合适的默认语音
+          const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
+          const englishVoice = voices.find(v => v.lang.startsWith('en'));
+          setSelectedVoice(chineseVoice || englishVoice || voices[0]);
+        }
+      };
+      
+      // 首次加载尝试
+      loadVoices();
       
       // 监听voices加载完成事件
-      speechSynthesis.onvoiceschanged = () => {
-        const availableVoices = speechSynthesis.getVoices();
-        console.log(`加载了${availableVoices.length}个语音选项`);
-      };
+      speechSynthesis.onvoiceschanged = loadVoices;
     }
-  }, []);
+  }, [selectedVoice]);
 
   // 收藏夹相关函数
   const addToFavorites = () => {
@@ -980,11 +1004,29 @@ export default function PronunciationAssessment() {
             border: "none", 
             borderRadius: 4, 
             fontWeight: "bold",
-            cursor: isLoading ? "not-allowed" : "pointer"
+            cursor: isLoading ? "not-allowed" : "pointer",
+            marginRight: "8px"
           }}
         >
           瀏覽器語音播放
         </button>
+        
+        <button 
+          onClick={() => setShowVoiceOptions(!showVoiceOptions)} 
+          style={{ 
+            padding: "8px 20px", 
+            background: "#2196f3", 
+            color: "#fff", 
+            border: "none", 
+            borderRadius: 4, 
+            fontWeight: "bold",
+            cursor: "pointer",
+            marginRight: "8px"
+          }}
+        >
+          選擇語音 ({availableVoices.length})
+        </button>
+
         <button 
           onClick={addToFavorites} 
           disabled={isLoading}
@@ -995,12 +1037,100 @@ export default function PronunciationAssessment() {
             border: "none", 
             borderRadius: 4, 
             fontWeight: "bold", 
-            marginLeft: "8px",
+            marginLeft: "0",
             cursor: isLoading ? "not-allowed" : "pointer"
           }}
         >
           加入我的最愛
         </button>
+        
+        {/* 语音选择面板 */}
+        {showVoiceOptions && (
+          <div style={{ 
+            marginTop: "16px", 
+            background: "#2a2e39", 
+            padding: "16px", 
+            borderRadius: "8px", 
+            maxHeight: "400px", 
+            overflowY: "auto",
+            border: "1px solid #444"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+              <h3 style={{ color: "#4cafef", margin: 0 }}>可用語音選項 ({availableVoices.length})</h3>
+              <button 
+                onClick={() => setShowVoiceOptions(false)}
+                style={{ background: "transparent", border: "none", color: "#999", cursor: "pointer", fontSize: "16px" }}
+              >
+                X
+              </button>
+            </div>
+            
+            <div style={{ display: "flex", marginBottom: "12px" }}>
+              <input 
+                type="text" 
+                placeholder="搜索語音..." 
+                style={{ 
+                  padding: "8px", 
+                  borderRadius: "4px", 
+                  border: "1px solid #444", 
+                  background: "#23272f", 
+                  color: "#fff", 
+                  width: "100%" 
+                }} 
+                id="voice-search"
+                value={voiceSearchTerm}
+                onChange={(e) => setVoiceSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "12px" }}>
+              {availableVoices
+                .filter(voice => {
+                  if (!voiceSearchTerm) return true;
+                  const searchTermLower = voiceSearchTerm.toLowerCase();
+                  return (
+                    voice.name.toLowerCase().includes(searchTermLower) ||
+                    voice.lang.toLowerCase().includes(searchTermLower)
+                  );
+                })
+                .map((voice, index) => (
+                <div 
+                  key={index} 
+                  onClick={() => {
+                    setSelectedVoice(voice);
+                    // 可选：自动播放一小段示例
+                    const utterance = new SpeechSynthesisUtterance("語音示例");
+                    utterance.voice = voice;
+                    speechSynthesis.speak(utterance);
+                  }}
+                  style={{ 
+                    padding: "10px", 
+                    borderRadius: "4px", 
+                    background: selectedVoice?.name === voice.name ? "#3f51b5" : "#23272f",
+                    cursor: "pointer",
+                    border: selectedVoice?.name === voice.name ? "1px solid #7986cb" : "1px solid #444"
+                  }}
+                >
+                  <div style={{ fontWeight: "bold", color: "#fff", marginBottom: "4px" }}>{voice.name}</div>
+                  <div style={{ fontSize: "0.9em", color: "#bbb" }}>
+                    {voice.lang} {voice.default ? "- 默認" : ""}
+                    {voice.localService ? " - 本地" : " - 在線"}
+                  </div>
+                  {selectedVoice?.name === voice.name && (
+                    <div style={{ marginTop: "4px", color: "#4caf50", fontSize: "0.9em" }}>✓ 已選擇</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            {selectedVoice && (
+              <div style={{ marginTop: "16px", padding: "10px", background: "#23272f", borderRadius: "4px" }}>
+                <div style={{ fontWeight: "bold", color: "#4cafef", marginBottom: "4px" }}>當前選擇的語音:</div>
+                <div style={{ color: "#fff" }}>{selectedVoice.name} ({selectedVoice.lang})</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       
       {favorites.length > 0 && (
