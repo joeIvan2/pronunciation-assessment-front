@@ -27,7 +27,7 @@ const API_PATHS = {
 async function processEnglishText(text) {
   // 检查文本是否英文且缺少空格
   const hasSpaces = text.includes(' ');
-  const isProbablyEnglish = /^[a-zA-Z0-9.,!?;:'\"-]*$/.test(text);
+  const isProbablyEnglish = /^[a-zA-Z0-9.,!?;:'"-]*$/.test(text);
   
   // 只处理可能是英文且没有空格的文本
   if (isProbablyEnglish && !hasSpaces && text.length > 3) {
