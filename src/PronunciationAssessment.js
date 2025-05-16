@@ -229,6 +229,10 @@ export default function PronunciationAssessment() {
   const [azureKey, setAzureKey] = useState(() => localStorage.getItem('azureKey') || ''); // Azure API key
   const [azureRegion, setAzureRegion] = useState(() => localStorage.getItem('azureRegion') || 'japanwest'); // Azure 区域
   const [showAzureSettings, setShowAzureSettings] = useState(false); // 控制Azure设置的显示
+  // 添加浏览器语音偏好设置
+  const [browserVoicePreference, setBrowserVoicePreference] = useState(() => 
+    localStorage.getItem('browserVoicePreference') || 'standard'); // 'standard' 或 'premium'
+  const [showBrowserVoiceSettings, setShowBrowserVoiceSettings] = useState(false); // 控制浏览器语音设置显示
 
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
@@ -597,13 +601,13 @@ export default function PronunciationAssessment() {
     } else if (azureKey && azureRegion) {
       speakTextWithAzure();
     } else {
-      // 如果没有Azure Key或后端不可用，使用浏览器内置的Web Speech API
-      speakTextWithBrowserAPI();
+      // 使用浏览器内置的Web Speech API
+      speakTextWithBrowserAPI(browserVoicePreference);
     }
   };
 
   // 使用浏览器内置的Web Speech API进行本地文本转语音
-  const speakTextWithBrowserAPI = () => {
+  const speakTextWithBrowserAPI = (preference = browserVoicePreference) => {
     if (!referenceText) {
       alert("請先輸入要發音的文字！");
       return;
@@ -630,9 +634,15 @@ export default function PronunciationAssessment() {
       // 设置语言
       utterance.lang = isChinese ? 'zh-CN' : 'en-US';
       
-      // 可选: 调整语速和音量
-      utterance.rate = 1.0; // 正常语速
-      utterance.pitch = 1.0; // 正常音调
+      // 根据偏好设置语速和音调
+      if (preference === 'standard') {
+        utterance.rate = 1.0; // 正常语速
+        utterance.pitch = 1.0; // 正常音调
+      } else if (preference === 'slow') {
+        utterance.rate = 0.8; // 较慢语速
+        utterance.pitch = 1.0; // 正常音调
+      }
+      
       utterance.volume = 1.0; // 最大音量
       
       // 语音结束事件
@@ -655,21 +665,38 @@ export default function PronunciationAssessment() {
         // 优先使用自然音质更好的语音
         let selectedVoice = null;
         
-        // 尝试查找特定语音
+        // 根据偏好选择不同的语音
         if (isChinese) {
-          // 中文优先查找顺序
-          const preferredVoices = [
-            'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)',
-            'Microsoft Yunxi Online (Natural) - Chinese (Mainland)',
-            'Google 普通话（中国大陆）',
-            'Tingting'
-          ];
-          
-          for (const name of preferredVoices) {
-            const voice = voices.find(v => v.name.includes(name));
-            if (voice) {
-              selectedVoice = voice;
-              break;
+          // 中文语音选择
+          if (preference === 'standard') {
+            // 标准中文语音偏好
+            const preferredVoices = [
+              'Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)',
+              'Google 普通话（中国大陆）',
+              'Tingting'
+            ];
+            
+            for (const name of preferredVoices) {
+              const voice = voices.find(v => v.name.includes(name));
+              if (voice) {
+                selectedVoice = voice;
+                break;
+              }
+            }
+          } else if (preference === 'slow') {
+            // 较慢、更清晰的中文语音偏好
+            const preferredVoices = [
+              'Microsoft Yunxi Online (Natural) - Chinese (Mainland)',
+              'Microsoft Yunyang Online (Natural) - Chinese (Mainland)',
+              'Google 普通话（中国大陆）'
+            ];
+            
+            for (const name of preferredVoices) {
+              const voice = voices.find(v => v.name.includes(name));
+              if (voice) {
+                selectedVoice = voice;
+                break;
+              }
             }
           }
           
@@ -678,19 +705,36 @@ export default function PronunciationAssessment() {
             selectedVoice = voices.find(v => v.lang.startsWith('zh'));
           }
         } else {
-          // 英文优先查找顺序
-          const preferredVoices = [
-            'Microsoft Guy Online (Natural) - English',
-            'Microsoft Jenny Online (Natural) - English',
-            'Google US English',
-            'Alex'
-          ];
-          
-          for (const name of preferredVoices) {
-            const voice = voices.find(v => v.name.includes(name));
-            if (voice) {
-              selectedVoice = voice;
-              break;
+          // 英文语音选择
+          if (preference === 'standard') {
+            // 标准英文语音偏好
+            const preferredVoices = [
+              'Microsoft Guy Online (Natural) - English',
+              'Google US English',
+              'Alex'
+            ];
+            
+            for (const name of preferredVoices) {
+              const voice = voices.find(v => v.name.includes(name));
+              if (voice) {
+                selectedVoice = voice;
+                break;
+              }
+            }
+          } else if (preference === 'slow') {
+            // 较慢、更清晰的英文语音偏好
+            const preferredVoices = [
+              'Microsoft Jenny Online (Natural) - English',
+              'Microsoft Clara Online (Natural) - English',
+              'Google US English Female'
+            ];
+            
+            for (const name of preferredVoices) {
+              const voice = voices.find(v => v.name.includes(name));
+              if (voice) {
+                selectedVoice = voice;
+                break;
+              }
             }
           }
         }
@@ -698,19 +742,25 @@ export default function PronunciationAssessment() {
         // 设置选中的语音
         if (selectedVoice) {
           utterance.voice = selectedVoice;
-          console.log(`使用语音: ${selectedVoice.name}`);
+          console.log(`使用语音: ${selectedVoice.name}, 偏好: ${preference}`);
         }
       }
       
       // 播放语音
       window.speechSynthesis.speak(utterance);
       
-      console.log(`使用浏览器内置API播放语音: "${referenceText}"`);
+      console.log(`使用浏览器内置API播放语音: "${referenceText}", 偏好: ${preference}`);
     } catch (err) {
       console.error('浏览器语音合成失败:', err);
       setError(`浏览器语音合成失败: ${err.message}`);
       setIsLoading(false);
     }
+  };
+
+  // 保存浏览器语音偏好
+  const saveBrowserVoicePreference = (preference) => {
+    setBrowserVoicePreference(preference);
+    localStorage.setItem('browserVoicePreference', preference);
   };
 
   // 确保在组件加载时预加载语音
@@ -955,6 +1005,58 @@ export default function PronunciationAssessment() {
         </div>
       )}
       
+      {/* 浏览器语音设置面板 */}
+      {!useBackend && !azureKey && (
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          background: "#2a2e39", 
+          borderRadius: 8,
+          border: "1px solid #4caf50"
+        }}>
+          <h3 style={{ color: "#4caf50", marginTop: 0 }}>浏览器语音设置</h3>
+          <p style={{ color: "#bbb" }}>当前使用浏览器内置语音功能。请选择您喜欢的语音风格：</p>
+          
+          <div style={{ display: "flex", marginBottom: 12 }}>
+            <button 
+              onClick={() => saveBrowserVoicePreference('standard')} 
+              style={{ 
+                padding: "8px 16px", 
+                background: browserVoicePreference === 'standard' ? "#4caf50" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 4, 
+                cursor: "pointer",
+                marginRight: 12,
+                fontWeight: browserVoicePreference === 'standard' ? "bold" : "normal"
+              }}
+            >
+              标准语速
+            </button>
+            
+            <button 
+              onClick={() => saveBrowserVoicePreference('slow')} 
+              style={{ 
+                padding: "8px 16px", 
+                background: browserVoicePreference === 'slow' ? "#4caf50" : "#333", 
+                color: "#fff", 
+                border: "none", 
+                borderRadius: 4, 
+                cursor: "pointer",
+                fontWeight: browserVoicePreference === 'slow' ? "bold" : "normal"
+              }}
+            >
+              慢速清晰
+            </button>
+          </div>
+          
+          <p style={{ fontSize: "0.9em", color: "#bbb" }}>
+            标准语速：正常语速和音调，适合日常使用<br/>
+            慢速清晰：语速较慢，发音更清晰，适合学习和练习
+          </p>
+        </div>
+      )}
+      
       <div style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 12 }}>
           <textarea
@@ -1033,16 +1135,16 @@ export default function PronunciationAssessment() {
               onClick={toggleApiMode} 
               style={{ 
                 padding: "4px 8px", 
-                background: useBackend ? "#9c27b0" : "#3f51b5", 
+                background: useBackend ? "#9c27b0" : azureKey ? "#3f51b5" : "#4caf50", 
                 color: "#fff", 
                 border: "none", 
                 borderRadius: 4, 
                 fontWeight: "bold"
               }}
             >
-              {useBackend ? "後端API" : "直連Azure"}
+              {useBackend ? "後端API" : azureKey ? "直連Azure" : "浏览器语音"}
             </button>
-            {!useBackend && (
+            {!useBackend && azureKey && (
               <button 
                 onClick={() => setShowAzureSettings(!showAzureSettings)} 
                 style={{ 
