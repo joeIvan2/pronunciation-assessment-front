@@ -167,6 +167,60 @@ export default function PronunciationAssessment() {
     return savedRate !== null ? parseFloat(savedRate) : 1.0; // 默认1.0正常语速
   }); // 语音速度
 
+  // 标签系统
+  const [tags, setTags] = useState(() => {
+    const savedTags = localStorage.getItem('tags');
+    return savedTags ? JSON.parse(savedTags) : [
+      { id: '1', name: '基礎句型', color: '#4caf50', createdAt: Date.now() },
+      { id: '2', name: '商務英語', color: '#2196f3', createdAt: Date.now() },
+      { id: '3', name: '日常對話', color: '#ff9800', createdAt: Date.now() },
+      { id: '4', name: '難詞發音', color: '#9c27b0', createdAt: Date.now() }
+    ];
+  });
+  const [nextTagId, setNextTagId] = useState(() => {
+    const savedNextId = localStorage.getItem('nextTagId');
+    return savedNextId ? parseInt(savedNextId) : 5;
+  });
+
+  // 收藏系统 - 新数据结构
+  const [favorites, setFavorites] = useState(() => {
+    const savedFavorites = localStorage.getItem('favorites');
+    // 检查是否是旧版数据结构(字符串数组)
+    if (savedFavorites) {
+      try {
+        const parsed = JSON.parse(savedFavorites);
+        if (Array.isArray(parsed)) {
+          // 旧版数据
+          if (typeof parsed[0] === 'string') {
+            // 将旧版字符串数组转换为新结构
+            return parsed.map((text, index) => ({
+              id: (index + 1).toString(),
+              text: text,
+              tagIds: [],
+              createdAt: Date.now() - (parsed.length - index) * 1000 // 按顺序创建时间
+            }));
+          }
+          // 已经是新版数据结构
+          return parsed;
+        }
+      } catch (e) {
+        console.error('解析收藏夹数据出错:', e);
+      }
+    }
+    // 默认值
+    return [];
+  });
+  
+  const [nextFavoriteId, setNextFavoriteId] = useState(() => {
+    const savedNextId = localStorage.getItem('nextFavoriteId');
+    return savedNextId ? parseInt(savedNextId) : (favorites.length > 0 ? favorites.length + 1 : 1);
+  });
+  
+  const [showTagManager, setShowTagManager] = useState(false); // 控制标签管理器的显示
+  const [selectedTags, setSelectedTags] = useState([]); // 当前选中的标签ID列表
+  const [editingTagId, setEditingTagId] = useState(null); // 当前正在编辑的标签ID
+  const [newTagName, setNewTagName] = useState(''); // 新标签名或编辑标签时的暂存名
+
   // 從 localStorage 讀取初始值，若無則使用預設值
   const [referenceText, setReferenceText] = useState(
     localStorage.getItem("referenceText") || "Hello, how are you?"
@@ -174,10 +228,6 @@ export default function PronunciationAssessment() {
   const [fontSize, setFontSize] = useState(() => {
     const savedFontSize = localStorage.getItem('fontSize');
     return savedFontSize !== null ? parseInt(savedFontSize, 10) : 16;
-  });
-  const [favorites, setFavorites] = useState(() => {
-    const savedFavorites = localStorage.getItem('favorites');
-    return savedFavorites !== null ? JSON.parse(savedFavorites) : [];
   });
 
   const recognizerRef = useRef(null);
@@ -662,22 +712,95 @@ export default function PronunciationAssessment() {
   }, [selectedVoice]);
 
   // 收藏夹相关函数
-  const addToFavorites = () => {
-    if (referenceText && !favorites.includes(referenceText)) {
-      setFavorites(prevFavorites => [...prevFavorites, referenceText].slice(-10)); // 最多只保留最近10筆
-    } else if (favorites.includes(referenceText)) {
-      alert("此句子已在我的最愛！");
-    } else {
+  const addToFavorites = (text, tagIds = []) => {
+    if (!text) {
       alert("請先輸入句子再加入我的最愛！");
+      return;
+    }
+    
+    // 检查是否已存在相同文本
+    const existingFavorite = favorites.find(fav => fav.text === text);
+    if (existingFavorite) {
+      // 如果存在，只更新标签
+      updateFavoriteTags(existingFavorite.id, tagIds);
+      alert("此句子已在我的最愛！已更新標籤。");
+      return;
+    }
+    
+    // 添加新收藏
+    const newFavorite = {
+      id: nextFavoriteId.toString(),
+      text: text,
+      tagIds: tagIds.length ? tagIds : selectedTags, // 使用当前选中的标签或指定的标签
+      createdAt: Date.now()
+    };
+    
+    setFavorites(prevFavorites => [...prevFavorites].slice(-19).concat(newFavorite));
+    setNextFavoriteId(prevId => prevId + 1);
+  };
+  
+  const removeFromFavorite = (id) => {
+    setFavorites(prevFavorites => prevFavorites.filter(fav => fav.id !== id));
+  };
+  
+  const loadFavorite = (id) => {
+    const favorite = favorites.find(fav => fav.id === id);
+    if (favorite) {
+      setReferenceText(favorite.text);
+      setSelectedTags(favorite.tagIds); // 更新当前选中的标签
     }
   };
-
-  const removeFromFavorite = (textToRemove) => {
-    setFavorites(prevFavorites => prevFavorites.filter(fav => fav !== textToRemove));
+  
+  const updateFavoriteTags = (id, tagIds) => {
+    setFavorites(prevFavorites => 
+      prevFavorites.map(fav => 
+        fav.id === id 
+          ? { ...fav, tagIds: tagIds } 
+          : fav
+      )
+    );
   };
-
-  const loadFavorite = (textToLoad) => {
-    setReferenceText(textToLoad);
+  
+  const toggleTagOnFavorite = (favoriteId, tagId) => {
+    setFavorites(prevFavorites => 
+      prevFavorites.map(fav => {
+        if (fav.id === favoriteId) {
+          // 如果标签已存在，则移除；否则添加
+          const hasTag = fav.tagIds.includes(tagId);
+          return {
+            ...fav,
+            tagIds: hasTag 
+              ? fav.tagIds.filter(id => id !== tagId) 
+              : [...fav.tagIds, tagId]
+          };
+        }
+        return fav;
+      })
+    );
+  };
+  
+  // 标签选择相关
+  const toggleTagSelection = (tagId) => {
+    setSelectedTags(prevSelected => 
+      prevSelected.includes(tagId)
+        ? prevSelected.filter(id => id !== tagId)
+        : [...prevSelected, tagId]
+    );
+  };
+  
+  const clearTagSelection = () => {
+    setSelectedTags([]);
+  };
+  
+  // 获取带标签筛选的收藏列表
+  const getFilteredFavorites = () => {
+    if (selectedTags.length === 0) {
+      return favorites;
+    }
+    
+    return favorites.filter(fav => 
+      selectedTags.some(tagId => fav.tagIds.includes(tagId))
+    );
   };
 
   // 切换API模式
@@ -753,6 +876,56 @@ export default function PronunciationAssessment() {
     localStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
 
+  // 保存标签
+  useEffect(() => {
+    localStorage.setItem('tags', JSON.stringify(tags));
+  }, [tags]);
+  
+  // 保存下一个ID
+  useEffect(() => {
+    localStorage.setItem('nextTagId', nextTagId.toString());
+  }, [nextTagId]);
+  
+  useEffect(() => {
+    localStorage.setItem('nextFavoriteId', nextFavoriteId.toString());
+  }, [nextFavoriteId]);
+  
+  // 标签相关函数
+  const addTag = (name, color = '#' + Math.floor(Math.random()*16777215).toString(16)) => {
+    const newTag = {
+      id: nextTagId.toString(),
+      name: name,
+      color: color,
+      createdAt: Date.now()
+    };
+    setTags(prevTags => [...prevTags, newTag]);
+    setNextTagId(prevId => prevId + 1);
+    return newTag.id; // 返回新创建的标签ID
+  };
+  
+  const editTag = (id, newName, newColor) => {
+    setTags(prevTags => 
+      prevTags.map(tag => 
+        tag.id === id 
+          ? { ...tag, name: newName || tag.name, color: newColor || tag.color } 
+          : tag
+      )
+    );
+  };
+  
+  const deleteTag = (id) => {
+    // 删除标签
+    setTags(prevTags => prevTags.filter(tag => tag.id !== id));
+    
+    // 从所有收藏中移除该标签
+    setFavorites(prevFavorites => 
+      prevFavorites.map(favorite => ({
+        ...favorite,
+        tagIds: favorite.tagIds.filter(tagId => tagId !== id)
+      }))
+    );
+  };
+  
   // 保存Azure设置
   const saveAzureSettings = () => {
     localStorage.setItem('azureKey', azureKey);
@@ -1124,270 +1297,398 @@ export default function PronunciationAssessment() {
         </button>
 
         <button 
-          onClick={addToFavorites} 
-          disabled={isLoading}
+          onClick={() => setShowTagManager(!showTagManager)} 
           style={{ 
             padding: "8px 20px", 
-            background: isLoading ? "#666" : "#ff9800", 
+            background: "#2196f3", 
             color: "#fff", 
             border: "none", 
             borderRadius: 4, 
-            fontWeight: "bold", 
-            marginLeft: "0",
-            cursor: isLoading ? "not-allowed" : "pointer"
+            fontWeight: "bold",
+            cursor: "pointer",
+            marginRight: "8px"
           }}
         >
-          加入我的最愛
+          管理標籤
         </button>
-        
-        {/* 语音选择面板 */}
-        {showVoiceOptions && (
-          <div style={{ 
-            marginTop: "16px", 
-            background: "#2a2e39", 
-            padding: "16px", 
-            borderRadius: "8px", 
-            maxHeight: "400px", 
-            overflowY: "auto",
-            border: "1px solid #444"
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-              <h3 style={{ color: "#4cafef", margin: 0 }}>可用語音選項 ({availableVoices.length})</h3>
+
+        {showTagManager && (
+          <div style={{ marginTop: 16, padding: 16, background: "#2a2e39", borderRadius: 8, maxHeight: 400, overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+              <h3 style={{ color: "#4cafef", margin: 0 }}>管理標籤</h3>
               <button 
-                onClick={() => setShowVoiceOptions(false)}
+                onClick={() => setShowTagManager(false)}
                 style={{ background: "transparent", border: "none", color: "#999", cursor: "pointer", fontSize: "16px" }}
               >
                 X
               </button>
             </div>
             
-            <div style={{ display: "flex", marginBottom: "12px", gap: "8px" }}>
-              <input 
-                type="text" 
-                placeholder="搜索語音..." 
-                style={{ 
-                  padding: "8px", 
-                  borderRadius: "4px", 
-                  border: "1px solid #444", 
-                  background: "#23272f", 
-                  color: "#fff", 
-                  flexGrow: 1
-                }} 
-                id="voice-search"
-                value={voiceSearchTerm}
-                onChange={(e) => setVoiceSearchTerm(e.target.value)}
-              />
-              
-              <button 
-                onClick={() => setVoiceSearchTerm('')}
-                style={{ 
-                  padding: "4px 12px", 
-                  background: voiceSearchTerm === '' ? "#4caf50" : "#333", 
-                  color: "#fff", 
-                  border: "none", 
-                  borderRadius: "4px", 
-                  fontWeight: "bold",
-                  fontSize: "12px"
-                }}
-              >
-                全部
-              </button>
-              
-              <button 
-                onClick={() => setVoiceSearchTerm('english')}
-                style={{ 
-                  padding: "4px 12px", 
-                  background: voiceSearchTerm === 'english' ? "#2196f3" : "#333", 
-                  color: "#fff", 
-                  border: "none", 
-                  borderRadius: "4px", 
-                  fontWeight: "bold",
-                  fontSize: "12px"
-                }}
-              >
-                英文
-              </button>
-              
-              <button 
-                onClick={() => setVoiceSearchTerm('chinese')}
-                style={{ 
-                  padding: "4px 12px", 
-                  background: voiceSearchTerm === 'chinese' ? "#ff9800" : "#333", 
-                  color: "#fff", 
-                  border: "none", 
-                  borderRadius: "4px", 
-                  fontWeight: "bold",
-                  fontSize: "12px"
-                }}
-              >
-                中文
-              </button>
-            </div>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "12px" }}>
-              {availableVoices
-                .filter(voice => {
-                  if (!voiceSearchTerm) return true;
-                  const searchTermLower = voiceSearchTerm.toLowerCase();
-                  return (
-                    voice.name.toLowerCase().includes(searchTermLower) ||
-                    voice.lang.toLowerCase().includes(searchTermLower)
-                  );
-                })
-                .map((voice, index) => (
-                <div 
-                  key={index} 
-                  onClick={() => {
-                    setSelectedVoice(voice);
-                    // 可选：自动播放一小段示例
-                    const utterance = new SpeechSynthesisUtterance("This is a sample voice");
-                    utterance.voice = voice;
-                    speechSynthesis.speak(utterance);
-                  }}
+            {/* 添加新标签 */}
+            <div style={{ marginBottom: 16, background: "#23272f", padding: 12, borderRadius: 4 }}>
+              <h4 style={{ color: "#4cafef", margin: "0 0 8px 0" }}>{editingTagId ? "編輯標籤" : "添加新標籤"}</h4>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input 
+                  type="text" 
+                  placeholder="標籤名稱..." 
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
                   style={{ 
-                    padding: "10px", 
-                    borderRadius: "4px", 
-                    background: selectedVoice?.name === voice.name ? "#3f51b5" : "#23272f",
-                    cursor: "pointer",
-                    border: selectedVoice?.name === voice.name ? "1px solid #7986cb" : "1px solid #444"
+                    padding: 8, 
+                    borderRadius: 4, 
+                    border: "1px solid #444", 
+                    background: "#1a1e25", 
+                    color: "#fff", 
+                    flexGrow: 1 
+                  }} 
+                />
+                
+                <button 
+                  onClick={() => {
+                    if (!newTagName.trim()) {
+                      alert("請輸入標籤名稱");
+                      return;
+                    }
+                    
+                    if (editingTagId) {
+                      editTag(editingTagId, newTagName);
+                      setEditingTagId(null);
+                    } else {
+                      addTag(newTagName);
+                    }
+                    
+                    setNewTagName('');
+                  }} 
+                  style={{ 
+                    padding: "0 12px", 
+                    background: "#4caf50", 
+                    color: "#fff", 
+                    border: "none", 
+                    borderRadius: 4, 
+                    cursor: "pointer" 
                   }}
                 >
-                  <div style={{ fontWeight: "bold", color: "#fff", marginBottom: "4px" }}>{voice.name}</div>
-                  <div style={{ fontSize: "0.9em", color: "#bbb" }}>
-                    {voice.lang} {voice.default ? "- 默認" : ""}
-                    {voice.localService ? " - 本地" : " - 在線"}
-                  </div>
-                  {selectedVoice?.name === voice.name && (
-                    <div style={{ marginTop: "4px", color: "#4caf50", fontSize: "0.9em" }}>✓ 已選擇</div>
-                  )}
-                </div>
-              ))}
+                  {editingTagId ? "更新" : "添加"}
+                </button>
+                
+                {editingTagId && (
+                  <button 
+                    onClick={() => {
+                      setEditingTagId(null);
+                      setNewTagName('');
+                    }} 
+                    style={{ 
+                      padding: "0 12px", 
+                      background: "#e53935", 
+                      color: "#fff", 
+                      border: "none", 
+                      borderRadius: 4, 
+                      cursor: "pointer" 
+                    }}
+                  >
+                    取消
+                  </button>
+                )}
+              </div>
             </div>
             
-            {selectedVoice && (
-              <div style={{ marginTop: "16px", padding: "10px", background: "#23272f", borderRadius: "4px" }}>
-                <div style={{ fontWeight: "bold", color: "#4cafef", marginBottom: "4px" }}>當前選擇的語音:</div>
-                <div style={{ color: "#fff" }}>{selectedVoice.name} ({selectedVoice.lang})</div>
-                
-                {/* 添加语音控制 */}
-                <div style={{ marginTop: "12px" }}>
-                  <div style={{ fontWeight: "bold", color: "#4cafef", marginBottom: "4px" }}>語音速度: {speechRate.toFixed(1)}</div>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ color: "#bbb", marginRight: "8px" }}>慢</span>
-                    <input 
-                      type="range" 
-                      min="0.1" 
-                      max="3.0" 
-                      step="0.1" 
-                      value={speechRate}
-                      onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                      style={{ 
-                        flex: 1, 
-                        background: "#444", 
-                        height: "8px", 
-                        borderRadius: "4px", 
-                        WebkitAppearance: "none", 
-                        appearance: "none",
-                        outline: "none"
-                      }}
-                    />
-                    <span style={{ color: "#bbb", marginLeft: "8px" }}>快</span>
-                  </div>
-                  <div style={{ display: "flex", marginTop: "8px", justifyContent: "space-between" }}>
-                    <button 
-                      onClick={() => setSpeechRate(0.7)}
-                      style={{ 
-                        padding: "4px 8px", 
-                        background: speechRate === 0.7 ? "#ff9800" : "#333", 
-                        color: "#fff", 
-                        border: "none", 
-                        borderRadius: "4px", 
-                        fontSize: "12px"
-                      }}
-                    >
-                      慢速 (0.7)
-                    </button>
-                    <button 
-                      onClick={() => setSpeechRate(1.0)}
-                      style={{ 
-                        padding: "4px 8px", 
-                        background: speechRate === 1.0 ? "#4caf50" : "#333", 
-                        color: "#fff", 
-                        border: "none", 
-                        borderRadius: "4px", 
-                        fontSize: "12px"
-                      }}
-                    >
-                      正常 (1.0)
-                    </button>
-                    <button 
-                      onClick={() => setSpeechRate(1.5)}
-                      style={{ 
-                        padding: "4px 8px", 
-                        background: speechRate === 1.5 ? "#2196f3" : "#333", 
-                        color: "#fff", 
-                        border: "none", 
-                        borderRadius: "4px", 
-                        fontSize: "12px"
-                      }}
-                    >
-                      快速 (1.5)
-                    </button>
-                    <button 
-                      onClick={() => setSpeechRate(2.0)}
-                      style={{ 
-                        padding: "4px 8px", 
-                        background: speechRate === 2.0 ? "#f44336" : "#333", 
-                        color: "#fff", 
-                        border: "none", 
-                        borderRadius: "4px", 
-                        fontSize: "12px"
-                      }}
-                    >
-                      極速 (2.0)
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* 标签列表 */}
+            <div>
+              <h4 style={{ color: "#4cafef", margin: "0 0 8px 0" }}>現有標籤</h4>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {tags.map(tag => (
+                  <li 
+                    key={tag.id} 
+                    style={{
+                      padding: 8,
+                      background: "#23272f",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 4,
+                      borderRadius: 4,
+                      border: "1px solid #333"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <span style={{ 
+                        width: 16, 
+                        height: 16, 
+                        borderRadius: 16, 
+                        background: tag.color,
+                        marginRight: 8
+                      }}></span>
+                      <span>{tag.name}</span>
+                      <span style={{ color: "#777", marginLeft: 8, fontSize: 12 }}>ID: {tag.id}</span>
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => {
+                          setEditingTagId(tag.id);
+                          setNewTagName(tag.name);
+                        }}
+                        style={{ 
+                          background: "#2196f3", 
+                          color: "#fff", 
+                          border: "none", 
+                          borderRadius: 4, 
+                          padding: "4px 8px",
+                          marginRight: 4,
+                          cursor: "pointer"
+                        }}
+                      >
+                        編輯
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`確定要刪除標籤 "${tag.name}" 嗎？`)) {
+                            deleteTag(tag.id);
+                          }
+                        }}
+                        style={{ 
+                          background: "#e53935", 
+                          color: "#fff", 
+                          border: "none", 
+                          borderRadius: 4, 
+                          padding: "4px 8px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        刪除
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
       </div>
       
-      {favorites.length > 0 && (
-        <div style={{ marginTop: 24, marginBottom: 16 }}>
-          <h3 style={{ color: "#4cafef", marginBottom: 8 }}>我的最愛</h3>
+      {/* 移除了favorites.length > 0條件判斷，使"我的最愛"區域始終顯示 */}
+      <div style={{ marginTop: 24, marginBottom: 16 }}>
+        <h3 style={{ color: "#4cafef", marginBottom: 8 }}>我的最愛</h3>
+        
+        {/* 标签筛选区 */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <button
+            onClick={clearTagSelection}
+            style={{
+              padding: "4px 8px",
+              background: selectedTags.length === 0 ? "#4caf50" : "#333",
+              color: "#fff",
+              border: "none",
+              borderRadius: 4,
+              fontSize: 12,
+              cursor: "pointer"
+            }}
+          >
+            全部
+          </button>
+          
+          {tags.map(tag => (
+            <button
+              key={tag.id}
+              onClick={() => toggleTagSelection(tag.id)}
+              style={{
+                padding: "4px 8px",
+                background: selectedTags.includes(tag.id) ? tag.color : "#333",
+                color: "#fff",
+                border: "none",
+                borderRadius: 4,
+                fontSize: 12,
+                cursor: "pointer"
+              }}
+            >
+              {tag.name}
+            </button>
+          ))}
+          
+          <button
+            onClick={() => {
+              setNewTagName('');
+              setEditingTagId(null);
+              setShowTagManager(true);
+            }}
+            style={{
+              padding: "4px 8px",
+              background: "#666",
+              color: "#fff",
+              border: "none",
+              borderRadius: 4,
+              fontSize: 12,
+              cursor: "pointer"
+            }}
+          >
+            管理標籤
+          </button>
+        </div>
+        
+        {/* 添加按钮 */}
+        <div style={{ display: "flex", marginBottom: 12 }}>
+          <button
+            onClick={() => {
+              addToFavorites(referenceText);
+            }}
+            style={{
+              padding: "8px 12px",
+              background: "#ff9800",
+              color: "#fff",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center"
+            }}
+          >
+            <span style={{ marginRight: 4 }}>+</span> 添加當前句子
+          </button>
+          
+          {selectedTags.length > 0 && (
+            <div style={{ marginLeft: 12, display: "flex", alignItems: "center" }}>
+              <span style={{ color: "#bbb", fontSize: 14 }}>已選標籤:</span>
+              {tags
+                .filter(tag => selectedTags.includes(tag.id))
+                .map(tag => (
+                  <span
+                    key={tag.id}
+                    style={{
+                      padding: "2px 6px",
+                      background: tag.color,
+                      color: "#fff",
+                      borderRadius: 4,
+                      marginLeft: 4,
+                      fontSize: 12
+                    }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+            </div>
+          )}
+        </div>
+        
+        {/* 收藏列表 - 只在有收藏項目時顯示 */}
+        {favorites.length > 0 ? (
           <ul style={{ listStyle: "none", padding: 0 }}>
-            {favorites.map((fav, index) => (
+            {getFilteredFavorites().map((fav) => (
               <li 
-                key={index} 
+                key={fav.id} 
                 style={{
                   background: "#23272f", 
-                  padding: "8px 12px", 
+                  padding: "12px", 
                   borderRadius: 4, 
                   marginBottom: 8, 
                   display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "center"
+                  flexDirection: "column"
                 }}
               >
-                <span 
-                  onClick={() => loadFavorite(fav)} 
-                  style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee" }}
-                >
-                  {fav}
-                </span>
-                <button 
-                  onClick={() => removeFromFavorite(fav)} 
-                  style={{ background: "#e53935", color: "#fff", border: "none", borderRadius: "50%", width: 24, height: 24, cursor: "pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize: 14, padding:0 }}
-                >
-                  X
-                </button>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                  <span 
+                    onClick={() => loadFavorite(fav.id)} 
+                    style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee", fontSize: 16 }}
+                  >
+                    {fav.text}
+                  </span>
+                  <button 
+                    onClick={() => removeFromFavorite(fav.id)} 
+                    style={{ 
+                      background: "#e53935", 
+                      color: "#fff", 
+                      border: "none", 
+                      borderRadius: "50%", 
+                      width: 24, 
+                      height: 24, 
+                      cursor: "pointer", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      justifyContent: "center", 
+                      fontSize: 14, 
+                      padding: 0 
+                    }}
+                  >
+                    X
+                  </button>
+                </div>
+                
+                {/* 标签展示 */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {tags
+                    .filter(tag => fav.tagIds.includes(tag.id))
+                    .map(tag => (
+                      <span
+                        key={tag.id}
+                        onClick={() => toggleTagOnFavorite(fav.id, tag.id)}
+                        style={{
+                          padding: "2px 6px",
+                          background: tag.color,
+                          color: "#fff",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          cursor: "pointer"
+                        }}
+                      >
+                        {tag.name} ✓
+                      </span>
+                    ))}
+                  
+                  {/* 添加标签按钮 */}
+                  {tags
+                    .filter(tag => !fav.tagIds.includes(tag.id))
+                    .slice(0, 3) // 只显示前3个未添加的标签
+                    .map(tag => (
+                      <span
+                        key={tag.id}
+                        onClick={() => toggleTagOnFavorite(fav.id, tag.id)}
+                        style={{
+                          padding: "2px 6px",
+                          background: "#444",
+                          color: "#ccc",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          cursor: "pointer"
+                        }}
+                      >
+                        + {tag.name}
+                      </span>
+                    ))}
+                  
+                  {/* 更多标签选项 */}
+                  {tags.filter(tag => !fav.tagIds.includes(tag.id)).length > 3 && (
+                    <span
+                      style={{
+                        padding: "2px 6px",
+                        background: "#333",
+                        color: "#aaa",
+                        borderRadius: 4,
+                        fontSize: 12,
+                        cursor: "pointer"
+                      }}
+                      onClick={() => {
+                        // 在这里可以实现一个弹出选择更多标签的功能
+                        alert("此功能將在未來版本實現！");
+                      }}
+                    >
+                      +{tags.filter(tag => !fav.tagIds.includes(tag.id)).length - 3} 更多...
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        ) : (
+          // 收藏列表為空時顯示提示
+          <div style={{ 
+            padding: "12px", 
+            background: "#23272f", 
+            borderRadius: 4, 
+            color: "#bbb",
+            textAlign: "center"
+          }}>
+            還沒有收藏的句子，請使用上方的「添加當前句子」按鈕添加
+          </div>
+        )}
+      </div>
       
       {result && (() => {
         try {
