@@ -641,13 +641,6 @@ const PronunciationAssessment: React.FC = () => {
             {showVoiceOptions ? "關閉語音列表" : "選擇語音"}
           </button>
           
-          <button
-            onClick={() => setShowTagManager(!showTagManager)}
-            className="btn btn-purple"
-          >
-            {showTagManager ? "關閉標籤管理" : "管理標籤"}
-          </button>
-          
           {/* 切換 API 模式 */}
           <button onClick={toggleApiMode} className="btn btn-info">
             {useBackend ? "使用直連 Azure" : "使用後端伺服器"}
