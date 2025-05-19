@@ -401,8 +401,13 @@ h4 {
 
 /* 特殊标题颜色 */
 .special-title {
-  color: var(--ios-primary); /* iOS蓝色作为标题颜色 */
+  color: var(--ios-primary) !important; /* iOS蓝色作为标题颜色，使用!important确保优先级 */
   font-weight: 700;
+}
+
+/* 覆盖主内容区h3的颜色设置 */
+.pa-main-content h3.section-header {
+  color: var(--ios-primary); /* 确保所有section-header标题都是蓝色 */
 }
 
 .section-header .icon {
