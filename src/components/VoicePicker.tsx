@@ -173,6 +173,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                           referenceText.slice(0, 20) + "..."
                         );
                         testUtterance.voice = voice;
+                        testUtterance.lang = "en-US";
                         testUtterance.rate = speechRate;
                         
                         // 播放測試語音

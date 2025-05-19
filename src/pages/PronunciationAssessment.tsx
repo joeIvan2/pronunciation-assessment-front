@@ -230,7 +230,7 @@ const PronunciationAssessment: React.FC = () => {
       const speak = (txt: string) => {
         const u = new SpeechSynthesisUtterance(txt);
         u.voice = voice;
-        u.lang = voice.lang; // 使用語音自帶的語言設置
+        u.lang = "en-US"; // 使用語音自帶的語言設置
         u.rate = voiceSettings.rate;
         
         // 添加事件監聽
@@ -509,6 +509,7 @@ const PronunciationAssessment: React.FC = () => {
     // 預先測試一下選擇的語音
     const testUtterance = new SpeechSynthesisUtterance('Test');
     testUtterance.voice = voice;
+    testUtterance.lang = "en-US";
     testUtterance.volume = 0; // 靜音測試
     window.speechSynthesis.speak(testUtterance);
   };
