@@ -430,6 +430,21 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveReferenceText(newText);
   };
   
+  // 字體大小調整
+  const increaseFontSize = () => {
+    const newSize = fontSize + 1;
+    setFontSize(newSize);
+    storage.saveFontSize(newSize);
+  };
+  
+  const decreaseFontSize = () => {
+    if (fontSize > 12) { // 避免字體太小
+      const newSize = fontSize - 1;
+      setFontSize(newSize);
+      storage.saveFontSize(newSize);
+    }
+  };
+  
   // 语音设置相关
   const handleVoiceSearchChange = (term: string) => {
     const updatedSettings = { ...voiceSettings, searchTerm: term };
@@ -564,15 +579,26 @@ const PronunciationAssessment: React.FC = () => {
         {/* 输入区域 */}
         <div>
           <h3>輸入文本</h3>
-          <textarea
-            ref={textareaRef}
-            value={referenceText}
-            onChange={handleReferenceTextChange}
-            onPaste={handlePaste}
-            className="textarea-input"
-            style={{ fontSize: `${fontSize}px` }}
-            placeholder="輸入或粘貼要練習的文本..."
-          />
+          <div className="input-container">
+            <textarea
+              ref={textareaRef}
+              value={referenceText}
+              onChange={handleReferenceTextChange}
+              onPaste={handlePaste}
+              className="textarea-input"
+              style={{ fontSize: `${fontSize}px` }}
+              placeholder="輸入或粘貼要練習的文本..."
+            />
+            <div className="font-size-controls">
+              <button onClick={decreaseFontSize} className="btn btn-size-control">
+                <span style={{ fontSize: "14px" }}>A-</span>
+              </button>
+              <span className="font-size-display">{fontSize}px</span>
+              <button onClick={increaseFontSize} className="btn btn-size-control">
+                <span style={{ fontSize: "14px" }}>A+</span>
+              </button>
+            </div>
+          </div>
         </div>
         
         {/* 控制按钮区域 */}

@@ -189,4 +189,49 @@
 
 .form-button-primary:hover {
   background: #66bb6a;
+}
+
+/* 文本輸入區相關樣式 */
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
+.font-size-controls {
+  position: absolute;
+  top: -36px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(40, 44, 52, 0.6);
+  padding: 4px 10px;
+  border-radius: 30px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.btn-size-control {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3b4252;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-size-control:hover {
+  transform: translateY(-1px);
+  background: #4c566a;
+}
+
+.font-size-display {
+  font-size: 12px;
+  color: #d8dee9;
+  min-width: 40px;
+  text-align: center;
 } 

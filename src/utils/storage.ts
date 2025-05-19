@@ -38,12 +38,13 @@ export const saveReferenceText = (text: string): void => {
 
 // 获取字体大小
 export const getFontSize = (): number => {
-  return getItem<number>('fontSize', 16);
+  const saved = localStorage.getItem('fontSize');
+  return saved ? parseInt(saved, 10) : 16; // 默認值為16px
 };
 
 // 保存字体大小
-export const saveFontSize = (size: number): void => {
-  setItem('fontSize', size);
+export const saveFontSize = (size: number) => {
+  localStorage.setItem('fontSize', size.toString());
 };
 
 // 获取严格模式设置
