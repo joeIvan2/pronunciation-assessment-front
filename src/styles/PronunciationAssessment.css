@@ -1,0 +1,192 @@
+.pa-container {
+  background: linear-gradient(135deg, #1e2026 0%, #16191f 100%);
+  min-height: 100vh;
+  color: #ffffff;
+  padding: 24px;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.pa-title {
+  color: #42b6ff;
+  margin-bottom: 4px;
+}
+
+.pa-subtitle {
+  color: #b0b0b0;
+  margin-bottom: 24px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.btn-primary {
+  background: #42b6ff;
+}
+
+.btn-danger {
+  background: #f44336;
+}
+
+.btn-success {
+  background: #38c172;
+}
+
+.btn-warning {
+  background: #ff9800;
+}
+
+.btn-gray {
+  background: #607d8b;
+}
+
+.btn-purple {
+  background: #9c27b0;
+}
+
+.btn-info {
+  background: #03a9f4;
+}
+
+.textarea-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  background: #282c34;
+  color: #ffffff;
+  border: 1px solid #3f4148;
+  border-radius: 6px;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.textarea-input:focus {
+  outline: none;
+  border-color: #42b6ff;
+}
+
+.pa-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pa-button-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.error-message {
+  background: #c62828;
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.azure-settings-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.azure-settings-content {
+  background: #2a2e39;
+  padding: 28px;
+  border-radius: 8px;
+  width: 340px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.azure-settings-title {
+  color: #42b6ff;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.azure-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  color: #bbbbbb;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px;
+  background: #23272f;
+  color: #ffffff;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.form-button {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #757575;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.form-button:hover {
+  background: #8e8e8e;
+}
+
+.form-button-primary {
+  background: #4caf50;
+}
+
+.form-button-primary:hover {
+  background: #66bb6a;
+} 

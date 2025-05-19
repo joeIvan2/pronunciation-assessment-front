@@ -1,5 +1,5 @@
 import React from "react";
-import PronunciationAssessment from "./PronunciationAssessment";
+import PronunciationAssessment from "./pages/PronunciationAssessment";
 import './App.css';
 
 function App() {
