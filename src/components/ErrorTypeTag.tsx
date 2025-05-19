@@ -20,10 +20,17 @@ const ErrorTypeTag: React.FC<ErrorTypeTagProps> = ({ type, style }) => {
     <span style={{
       background: color,
       color: "#fff",
-      borderRadius: 4,
+      borderRadius: 8,
       padding: "2px 6px",
-      marginLeft: 6,
-      fontSize: 12,
+      margin: "2px",
+      display: "inline-block",
+      fontSize: 11,
+      fontWeight: 500,
+      lineHeight: 1.2,
+      maxWidth: '70px',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
       ...style
     }}>
       {type}

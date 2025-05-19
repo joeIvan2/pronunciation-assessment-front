@@ -23,27 +23,16 @@ const TagManager: React.FC<TagManagerProps> = ({
   const [newTagName, setNewTagName] = useState<string>('');
 
   return (
-    <div className="card-section">
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isExpanded ? 12 : 0 }}>
-        <h3 className="section-header special-title">管理標籤</h3>
-        <button 
+    <div>
+      {!isExpanded && (
+        <h3 
+          className="section-header special-title"
           onClick={onToggleExpand}
-          style={{ 
-            background: "transparent", 
-            border: "none", 
-            color: "var(--ios-primary)", 
-            cursor: "pointer", 
-            fontSize: "16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "30px",
-            height: "30px"
-          }}
+          style={{ cursor: 'pointer' }}
         >
-          {isExpanded ? "▲" : "▼"}
-        </button>
-      </div>
+          管理標籤
+        </h3>
+      )}
       
       {isExpanded && (
         <>

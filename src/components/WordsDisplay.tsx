@@ -15,21 +15,36 @@ const WordsDisplay: React.FC<WordsDisplayProps> = ({ words }) => {
 
   return (
     <div style={{ 
-      marginTop: '10px',
-      padding: '15px',
-      background: '#282c34',
-      borderRadius: '4px',
-      lineHeight: '2'
+      marginTop: '16px',
+      marginBottom: '20px',
+      padding: '16px 12px',
+      background: 'rgba(20, 20, 24, 0.6)',
+      borderRadius: '12px',
+      border: '1px solid var(--ios-border)',
+      wordBreak: 'break-word',
+      overflowWrap: 'break-word',
+      position: 'relative',
+      zIndex: 1
     }}>
-      {words.map((word, index) => (
-        <Word 
-          key={`${word.Word}-${index}`}
-          word={word}
-          index={index}
-          isSelected={selected === index}
-          onClick={() => setSelected(selected === index ? null : index)}
-        />
-      ))}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        width: '100%',
+        position: 'relative',
+        marginBottom: '10px'
+      }}>
+        {words.map((word, index) => (
+          <Word 
+            key={`${word.Word}-${index}`}
+            word={word}
+            index={index}
+            isSelected={selected === index}
+            onClick={() => setSelected(selected === index ? null : index)}
+          />
+        ))}
+      </div>
     </div>
   );
 };

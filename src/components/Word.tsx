@@ -26,41 +26,59 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
   const hasError = assessment?.ErrorType && assessment.ErrorType !== 'None';
   
   return (
-    <span 
-      key={`word-${index}`}
-      style={{ 
-        color: getScoreColor(assessment?.AccuracyScore),
-        fontWeight: hasError ? 'bold' : 'normal',
-        position: 'relative',
-        marginRight: '6px',
-        display: 'inline-block',
-        cursor: 'pointer'
-      }}
-      onClick={onClick}
-    >
-      {word.Word}
-      
-      {/* 显示评分 */}
+    <div className="word-container" style={{
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      margin: '8px',
+      width: '70px',
+      maxWidth: '80px',
+      overflow: 'visible'
+    }}>
+      {/* 分数显示 */}
       {assessment?.AccuracyScore !== undefined && (
-        <span 
-          style={{
-            fontSize: '10px',
-            position: 'absolute',
-            top: '-12px',
-            right: '0',
-            color: '#aaa'
-          }}
-        >
+        <div style={{
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#fff',
+          marginBottom: '4px',
+          background: 'rgba(0, 0, 0, 0.5)',
+          padding: '2px 6px',
+          borderRadius: '8px',
+          minWidth: '20px',
+          textAlign: 'center'
+        }}>
           {Math.round(assessment.AccuracyScore)}
-        </span>
+        </div>
       )}
       
-      {/* 错误标签 */}
+      {/* 单词本身 */}
+      <div 
+        onClick={onClick}
+        style={{
+          color: getScoreColor(assessment?.AccuracyScore),
+          fontWeight: hasError ? 'bold' : 'normal',
+          cursor: 'pointer',
+          padding: '4px',
+          marginBottom: '4px',
+          textAlign: 'center'
+        }}
+      >
+        {word.Word}
+      </div>
+      
+      {/* 错误标签 - 内联显示而非绝对定位 */}
       {hasError && (
-        <ErrorTypeTag 
-          type={assessment?.ErrorType || ''} 
-          style={{ position: 'absolute', bottom: '-12px', left: '50%', transform: 'translateX(-50%)' }}
-        />
+        <div style={{ 
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: '4px'
+        }}>
+          <ErrorTypeTag 
+            type={assessment?.ErrorType || ''} 
+          />
+        </div>
       )}
 
       {/* 音素 Tooltip */}
@@ -71,14 +89,15 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
           left: '50%', 
           transform: 'translateX(-50%)',
           background: '#23272f',
-          padding: '8px',
-          borderRadius: '4px',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+          padding: '10px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
           zIndex: 20,
-          marginTop: '6px'
+          marginTop: '8px',
+          minWidth: '120px'
         }}>
           {word.Phonemes!.map((p: Phoneme, i: number) => (
-            <div key={i} style={{ color: '#ddd', margin: '4px 0' }}>
+            <div key={i} style={{ color: '#ddd', margin: '6px 0', textAlign: 'left' }}>
               {p.Phoneme}: <span style={{ color: getScoreColor(p.PronunciationAssessment?.AccuracyScore) }}>
                 {p.PronunciationAssessment?.AccuracyScore ?? '-'}
               </span>
@@ -86,7 +105,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
           ))}
         </div>
       )}
-    </span>
+    </div>
   );
 };
 

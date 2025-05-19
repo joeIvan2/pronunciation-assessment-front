@@ -188,4 +188,91 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
 // 保存下一个收藏ID
 export const saveNextFavoriteId = (id: number): void => {
   setItem('nextFavoriteId', id);
+};
+
+// 卡片展开状态相关函数
+type CardExpandState = {
+  favoriteList: boolean;
+  tagManager: boolean;
+  voicePicker: boolean;
+  historyRecord: boolean;
+};
+
+// 获取卡片展开状态
+export const getCardExpandStates = (): CardExpandState => {
+  return getItem<CardExpandState>('cardExpandStates', {
+    favoriteList: true,
+    tagManager: false,
+    voicePicker: false,
+    historyRecord: true
+  });
+};
+
+// 保存单个卡片展开状态
+export const saveCardExpandState = (cardName: keyof CardExpandState, isExpanded: boolean): void => {
+  const states = getCardExpandStates();
+  states[cardName] = isExpanded;
+  setItem('cardExpandStates', states);
+};
+
+// 历史记录相关类型和函数
+export interface HistoryItem {
+  id: string;
+  text: string;
+  scoreAccuracy: number;
+  scoreFluency: number;
+  scoreCompleteness: number;
+  scorePronunciation: number;
+  timestamp: number;
+  recognizedText?: string;
+  words?: any[]; // 添加单词评分数据字段
+}
+
+// 获取历史记录
+export const getHistoryRecords = (): HistoryItem[] => {
+  return getItem<HistoryItem[]>('historyRecords', []);
+};
+
+// 保存历史记录
+export const saveHistoryRecords = (records: HistoryItem[]): void => {
+  setItem('historyRecords', records);
+};
+
+// 添加历史记录
+export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>): void => {
+  const records = getHistoryRecords();
+  const newRecord: HistoryItem = {
+    ...record,
+    id: Date.now().toString(),
+    timestamp: Date.now()
+  };
+  
+  // 限制历史记录数量，只保留最近的20条
+  const updatedRecords = [newRecord, ...records].slice(0, 20);
+  saveHistoryRecords(updatedRecords);
+};
+
+// 删除单个历史记录
+export const deleteHistoryRecord = (id: string): void => {
+  const records = getHistoryRecords();
+  const updatedRecords = records.filter(record => record.id !== id);
+  saveHistoryRecords(updatedRecords);
+};
+
+// 清空历史记录
+export const clearHistoryRecords = (): void => {
+  saveHistoryRecords([]);
+};
+
+// 标签页相关类型和函数
+export type TabName = 'history' | 'favorites' | 'tags' | 'voices';
+
+// 获取当前激活的标签页
+export const getActiveTab = (): TabName => {
+  return getItem<TabName>('activeTab', 'history'); // 默认显示历史记录
+};
+
+// 保存当前激活的标签页
+export const saveActiveTab = (tab: TabName): void => {
+  setItem('activeTab', tab);
 }; 

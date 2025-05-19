@@ -28,27 +28,16 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   onToggleExpand
 }) => {
   return (
-    <div className="card-section">
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isExpanded ? 12 : 0 }}>
-        <h3 className="section-header special-title">選擇語音</h3>
-        <button 
+    <div>
+      {!isExpanded && (
+        <h3 
+          className="section-header special-title"
           onClick={onToggleExpand}
-          style={{ 
-            background: "transparent", 
-            border: "none", 
-            color: "var(--ios-primary)", 
-            cursor: "pointer", 
-            fontSize: "16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "30px",
-            height: "30px"
-          }}
+          style={{ cursor: 'pointer' }}
         >
-          {isExpanded ? "▲" : "▼"}
-        </button>
-      </div>
+          選擇語音
+        </h3>
+      )}
       
       {isExpanded && (
         <>
@@ -59,14 +48,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
               placeholder="搜索語音..." 
               value={voiceSearchTerm}
               onChange={(e) => onChangeSearchTerm(e.target.value)}
-              style={{ 
-                width: "100%", 
-                padding: "8px 12px", 
-                background: "rgba(20, 20, 24, 0.7)", 
-                border: "1px solid var(--ios-border)", 
-                borderRadius: 12, 
-                color: "var(--ios-text)" 
-              }}
+              className="search-input"
             />
           </div>
           

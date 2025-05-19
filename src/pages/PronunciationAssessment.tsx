@@ -10,6 +10,7 @@ import WordsDisplay from "../components/WordsDisplay";
 import TagManager from "../components/TagManager";
 import VoicePicker from "../components/VoicePicker";
 import FavoriteList from "../components/FavoriteList";
+import HistoryRecord from "../components/HistoryRecord";
 
 // 钩子导入
 import { useRecorder } from "../hooks/useRecorder";
@@ -38,11 +39,11 @@ const PronunciationAssessment: React.FC = () => {
   // 语音设置
   const [availableVoices, setAvailableVoices] = useState<VoiceOption[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null);
-  const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(false);
+  const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(() => storage.getCardExpandStates().voicePicker);
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
   
   // 标签系统
-  const [isTagExpanded, setIsTagExpanded] = useState<boolean>(false);
+  const [isTagExpanded, setIsTagExpanded] = useState<boolean>(() => storage.getCardExpandStates().tagManager);
   const [tags, setTags] = useState<Tag[]>(() => storage.getTags());
   const [nextTagId, setNextTagId] = useState<number>(() => storage.getNextTagId());
   
@@ -54,6 +55,13 @@ const PronunciationAssessment: React.FC = () => {
   // 文本和界面设置
   const [referenceText, setReferenceText] = useState<string>(() => storage.getReferenceText());
   const [fontSize, setFontSize] = useState<number>(() => storage.getFontSize());
+  
+  // 历史记录状态
+  const [historyRecords, setHistoryRecords] = useState<storage.HistoryItem[]>(() => storage.getHistoryRecords());
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(() => storage.getCardExpandStates().historyRecord);
+  
+  // 标签页状态
+  const [activeTab, setActiveTab] = useState<storage.TabName>(() => storage.getActiveTab());
   
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -547,6 +555,75 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
+  // 保存卡片展开状态
+  const handleTagExpandToggle = () => {
+    const newState = !isTagExpanded;
+    setIsTagExpanded(newState);
+    storage.saveCardExpandState('tagManager', newState);
+  };
+  
+  const handleVoiceExpandToggle = () => {
+    const newState = !isVoiceExpanded;
+    setIsVoiceExpanded(newState);
+    storage.saveCardExpandState('voicePicker', newState);
+  };
+
+  // 历史记录相关函数
+  const handleDeleteHistoryRecord = (id: string) => {
+    storage.deleteHistoryRecord(id);
+    setHistoryRecords(storage.getHistoryRecords());
+  };
+  
+  const handleClearHistoryRecords = () => {
+    storage.clearHistoryRecords();
+    setHistoryRecords([]);
+  };
+  
+  const handleHistoryExpandToggle = () => {
+    const newState = !isHistoryExpanded;
+    setIsHistoryExpanded(newState);
+    storage.saveCardExpandState('historyRecord', newState);
+  };
+  
+  const handleLoadHistoryText = (text: string) => {
+    setReferenceText(text);
+    storage.saveReferenceText(text);
+  };
+
+  // 将评估结果添加到历史记录
+  useEffect(() => {
+    if (result) {
+      // 提取单词评分数据
+      let words = [];
+      try {
+        const nbestArray = result.NBest || result.nBest || result.nbest;
+        if (Array.isArray(nbestArray) && nbestArray.length > 0) {
+          const nbest = nbestArray[0];
+          words = nbest.Words || (nbest as any).words || [];
+        }
+      } catch (err) {
+        console.error('提取单词评分数据失败:', err);
+      }
+
+      storage.addHistoryRecord({
+        text: referenceText,
+        scoreAccuracy: result.accuracyScore || 0,
+        scoreFluency: result.fluencyScore || 0,
+        scoreCompleteness: result.completenessScore || 0,
+        scorePronunciation: result.pronunciationScore || 0,
+        recognizedText: result.DisplayText || result.text || '',
+        words: words // 保存单词评分数据
+      });
+      setHistoryRecords(storage.getHistoryRecords());
+    }
+  }, [result, referenceText]);
+
+  // 切换标签页
+  const handleTabChange = (tab: storage.TabName) => {
+    setActiveTab(tab);
+    storage.saveActiveTab(tab);
+  };
+
   // JSX 渲染部分
   return (
     <div className="pa-container">
@@ -583,7 +660,16 @@ const PronunciationAssessment: React.FC = () => {
       <div className="pa-main-content">
         {/* 输入区域 */}
         <div className="card-section">
-          <h3 className="section-header special-title">輸入文本</h3>
+          <h3 
+            className="section-header special-title"
+            onClick={() => {
+              // 输入文本区域始终保持展开状态
+              textareaRef.current?.focus();
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            輸入文本
+          </h3>
           <div className="input-container">
             <textarea
               ref={textareaRef}
@@ -617,27 +703,38 @@ const PronunciationAssessment: React.FC = () => {
         </div>
         
         {/* 控制按钮区域 */}
-        <div className="pa-button-container">
-          <button
-            onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
-            disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
-            className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"}`}
+        <div className="card-section">
+          <h3 
+            className="section-header special-title"
+            onClick={() => {
+              // 录音评分区域始终保持展开状态
+            }}
+            style={{ cursor: 'pointer' }}
           >
-            {isAssessing || recorder.recording
-              ? "停止錄音"
-              : isLoading
-              ? "處理中..."
-              : "開始錄音評分"}
-          </button>
-          
-          <button
-            onClick={speakText}
-            disabled={isLoading || !referenceText}
-            className="btn btn-success"
-            style={{ opacity: isLoading || !referenceText ? 0.55 : 1, cursor: isLoading || !referenceText ? "not-allowed" : "pointer" }}
-          >
-            朗讀文本
-          </button>
+            錄音評分
+          </h3>
+          <div className="button-controls">
+            <button
+              onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
+              disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
+              className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"}`}
+            >
+              {isAssessing || recorder.recording
+                ? "停止錄音"
+                : isLoading
+                ? "處理中..."
+                : "開始錄音評分"}
+            </button>
+            
+            <button
+              onClick={speakText}
+              disabled={isLoading || !referenceText}
+              className="btn btn-success"
+              style={{ opacity: isLoading || !referenceText ? 0.55 : 1, cursor: isLoading || !referenceText ? "not-allowed" : "pointer" }}
+            >
+              朗讀文本
+            </button>
+          </div>
         </div>
         
         {/* 结果显示区域 */}
@@ -650,7 +747,7 @@ const PronunciationAssessment: React.FC = () => {
               const pa = (nbest as any).pronunciationAssessment || nbest.PronunciationAssessment || {};
               const words = nbest.Words || (nbest as any).words || [];
               return (
-                <div className="result-section">
+                <div className="card-section">
                   <h3 className="section-header special-title">總分</h3>
                   <ScoreBar label="Accuracy" value={pa.AccuracyScore ?? pa.accuracyScore ?? 0} />
                   <ScoreBar label="Fluency" value={pa.FluencyScore ?? pa.fluencyScore ?? 0} />
@@ -672,7 +769,7 @@ const PronunciationAssessment: React.FC = () => {
 
             // 後端扁平化結果 (無 NBest)
             return (
-              <div className="result-section">
+              <div className="card-section">
                 <h3 className="section-header special-title">評分結果</h3>
                 <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
                 <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
@@ -686,44 +783,96 @@ const PronunciationAssessment: React.FC = () => {
           }
         })()}
         
-        {/* 收藏列表 */}
-        <FavoriteList
-          favorites={favorites}
-          tags={tags}
-          selectedTags={selectedTags}
-          onLoadFavorite={loadFavorite}
-          onRemoveFavorite={removeFromFavorite}
-          onToggleTag={toggleTagOnFavorite}
-          onToggleTagSelection={toggleTagSelection}
-          onClearTagSelection={clearTagSelection}
-          onAddFavorite={addToFavorites}
-          onManageTags={() => setIsTagExpanded(!isTagExpanded)}
-          currentText={referenceText}
-        />
-        
-        {/* 標籤管理面板 */}
-        <TagManager
-          tags={tags}
-          onAddTag={addTag}
-          onEditTag={editTag}
-          onDeleteTag={deleteTag}
-          isExpanded={isTagExpanded}
-          onToggleExpand={() => setIsTagExpanded(!isTagExpanded)}
-        />
-        
-        {/* 語音選擇面板 */}
-        <VoicePicker
-          availableVoices={availableVoices}
-          selectedVoice={selectedVoice}
-          voiceSearchTerm={voiceSettings.searchTerm}
-          speechRate={voiceSettings.rate}
-          referenceText={referenceText}
-          onSelectVoice={handleSelectVoice}
-          onChangeSearchTerm={handleVoiceSearchChange}
-          onChangeSpeechRate={handleSpeechRateChange}
-          isExpanded={isVoiceExpanded}
-          onToggleExpand={() => setIsVoiceExpanded(!isVoiceExpanded)}
-        />
+        {/* 标签页导航区域 */}
+        <div className="card-section">
+          <div className="tabs-container">
+            <div className="tabs-nav">
+              <button 
+                className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
+                onClick={() => handleTabChange('history')}
+              >
+                發音歷史
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'favorites' ? 'active' : ''}`}
+                onClick={() => handleTabChange('favorites')}
+              >
+                我的最愛
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'tags' ? 'active' : ''}`}
+                onClick={() => handleTabChange('tags')}
+              >
+                管理標籤
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'voices' ? 'active' : ''}`}
+                onClick={() => handleTabChange('voices')}
+              >
+                選擇語音
+              </button>
+            </div>
+            
+            <div className="tab-content">
+              {/* 历史记录标签页 */}
+              {activeTab === 'history' && (
+                <HistoryRecord
+                  historyRecords={historyRecords}
+                  onDeleteRecord={handleDeleteHistoryRecord}
+                  onClearRecords={handleClearHistoryRecords}
+                  onLoadText={handleLoadHistoryText}
+                  isExpanded={true} // 标签页模式下始终展开
+                  onToggleExpand={() => {}} // 标签页模式下不需要切换展开状态
+                />
+              )}
+              
+              {/* 收藏列表标签页 */}
+              {activeTab === 'favorites' && (
+                <FavoriteList
+                  favorites={favorites}
+                  tags={tags}
+                  selectedTags={selectedTags}
+                  onLoadFavorite={loadFavorite}
+                  onRemoveFavorite={removeFromFavorite}
+                  onToggleTag={toggleTagOnFavorite}
+                  onToggleTagSelection={toggleTagSelection}
+                  onClearTagSelection={clearTagSelection}
+                  onAddFavorite={addToFavorites}
+                  onManageTags={() => handleTabChange('tags')}
+                  currentText={referenceText}
+                />
+              )}
+              
+              {/* 标签管理标签页 */}
+              {activeTab === 'tags' && (
+                <TagManager
+                  tags={tags}
+                  onAddTag={addTag}
+                  onEditTag={editTag}
+                  onDeleteTag={deleteTag}
+                  isExpanded={true} // 标签页模式下始终展开
+                  onToggleExpand={() => {}} // 标签页模式下不需要切换展开状态
+                />
+              )}
+              
+              {/* 语音选择标签页 */}
+              {activeTab === 'voices' && (
+                <VoicePicker
+                  availableVoices={availableVoices}
+                  selectedVoice={selectedVoice}
+                  voiceSearchTerm={voiceSettings.searchTerm}
+                  speechRate={voiceSettings.rate}
+                  referenceText={referenceText}
+                  onSelectVoice={handleSelectVoice}
+                  onChangeSearchTerm={handleVoiceSearchChange}
+                  onChangeSpeechRate={handleSpeechRateChange}
+                  isExpanded={true} // 标签页模式下始终展开
+                  onToggleExpand={() => {}} // 标签页模式下不需要切换展开状态
+                />
+              )}
+            </div>
+          </div>
+        </div>
         
         {/* Azure 設定面板 */}
         {showAzureSettings && (
