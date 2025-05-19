@@ -701,6 +701,16 @@ const PronunciationAssessment: React.FC = () => {
           currentText={referenceText}
         />
         
+        {/* 標籤管理面板 */}
+        <TagManager
+          tags={tags}
+          onAddTag={addTag}
+          onEditTag={editTag}
+          onDeleteTag={deleteTag}
+          isExpanded={isTagExpanded}
+          onToggleExpand={() => setIsTagExpanded(!isTagExpanded)}
+        />
+        
         {/* 語音選擇面板 */}
         <VoicePicker
           availableVoices={availableVoices}
@@ -713,16 +723,6 @@ const PronunciationAssessment: React.FC = () => {
           onChangeSpeechRate={handleSpeechRateChange}
           isExpanded={isVoiceExpanded}
           onToggleExpand={() => setIsVoiceExpanded(!isVoiceExpanded)}
-        />
-        
-        {/* 標籤管理面板 */}
-        <TagManager
-          tags={tags}
-          onAddTag={addTag}
-          onEditTag={editTag}
-          onDeleteTag={deleteTag}
-          isExpanded={isTagExpanded}
-          onToggleExpand={() => setIsTagExpanded(!isTagExpanded)}
         />
         
         {/* Azure 設定面板 */}
