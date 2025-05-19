@@ -230,7 +230,7 @@ const PronunciationAssessment: React.FC = () => {
       const speak = (txt: string) => {
         const u = new SpeechSynthesisUtterance(txt);
         u.voice = voice;
-        u.lang = "en-US"; // 使用語音自帶的語言設置
+        u.lang = voice.lang; // 使用語音自帶的語言設置
         u.rate = voiceSettings.rate;
         
         // 添加事件監聽
@@ -500,17 +500,20 @@ const PronunciationAssessment: React.FC = () => {
     // 立即更新當前語音
     setSelectedVoice(voice);
     
-    // 保存語音設置到本地存儲
-    storage.saveVoiceSettings({
+    // 保存語音設置到本地存儲，保留現有設置（如語速）
+    const updatedSettings = {
+      ...voiceSettings,
       voiceName: voice.name,
       voiceLang: voice.lang
-    });
+    };
+    setVoiceSettings(updatedSettings);
+    storage.saveVoiceSettings(updatedSettings);
     
     // 預先測試一下選擇的語音
     const testUtterance = new SpeechSynthesisUtterance('Test');
     testUtterance.voice = voice;
     testUtterance.lang = "en-US";
-    testUtterance.volume = 0; // 靜音測試
+    testUtterance.volume = 30; // 靜音測試
     window.speechSynthesis.speak(testUtterance);
   };
   
@@ -535,17 +538,34 @@ const PronunciationAssessment: React.FC = () => {
         console.log(`加載了${enVoices.length}個英文語音選項`);
         setAvailableVoices(enVoices);
         
-        // 如果沒有選擇過語音，默認選擇一個可用的英文語音
+        // 從 localStorage 中獲取保存的語音設置
+        const savedSettings = storage.getVoiceSettings();
+        
+        // 如果已經保存了語音名稱，嘗試在可用語音中尋找匹配的語音
+        if (savedSettings.voiceName && !selectedVoice) {
+          const savedVoice = enVoices.find(v => v.name === savedSettings.voiceName);
+          
+          if (savedVoice) {
+            console.log(`從存儲中恢復語音: ${savedVoice.name}, ${savedVoice.lang}`);
+            setSelectedVoice(savedVoice);
+            return; // 已找到保存的語音，無需設置默認語音
+          } else {
+            console.log(`未找到已保存的語音 "${savedSettings.voiceName}"，將選擇默認語音`);
+          }
+        }
+        
+        // 如果沒有找到保存的語音或者沒有保存過，選擇一個默認語音
         if (!selectedVoice && enVoices.length > 0) {
           // 優先選擇 en-US 語音，如果沒有則用第一個
           const usVoice = enVoices.find(v => v.lang === 'en-US');
           const preferredVoice = usVoice || enVoices[0];
           
-          console.log(`設置語音: ${preferredVoice.name}, ${preferredVoice.lang}`);
+          console.log(`設置默認語音: ${preferredVoice.name}, ${preferredVoice.lang}`);
           setSelectedVoice(preferredVoice);
           
           // 保存語音設置
           storage.saveVoiceSettings({
+            ...voiceSettings,
             voiceName: preferredVoice.name,
             voiceLang: preferredVoice.lang
           });
@@ -792,7 +812,47 @@ const PronunciationAssessment: React.FC = () => {
               英文朗讀
             </button>
             
-            
+            <button
+              onClick={() => {
+                const synth = window.speechSynthesis;
+                
+                // 獲取當前選擇的語音
+                let voice = null;
+                if (selectedVoice) {
+                  // 使用選定的語音
+                  voice = synth.getVoices().find(v => v.name === selectedVoice.name);
+                }
+                
+                // 如果沒有找到選定的語音，尋找任何英文語音
+                if (!voice) {
+                  voice = synth.getVoices().find(v => 
+                    v.lang.toLowerCase().includes('en') || 
+                    v.name.toLowerCase().includes('english')
+                  );
+                }
+                
+                // 使用找到的語音播放測試語句
+                if (voice) {
+                  const u = new SpeechSynthesisUtterance("How are you?");
+                  u.voice = voice;
+                  u.lang = voice.lang;
+                  u.rate = voiceSettings.rate;
+                  synth.speak(u);
+                  console.log(`使用語音 ${voice.name} (${voice.lang}) 測試發音`);
+                } else {
+                  // 如果沒有找到合適的語音，使用默認設置
+                  const u = new SpeechSynthesisUtterance("How are you?");
+                  u.lang = "en-US";
+                  synth.speak(u);
+                  console.log('無可用語音，使用默認設置測試發音');
+                }
+              }}
+              className="btn btn-info"
+              style={{ cursor: "pointer" }}
+              title="播放'How are you?'測試語音合成"
+            >
+              測試發音
+            </button>
           </div>
         </div>
         
