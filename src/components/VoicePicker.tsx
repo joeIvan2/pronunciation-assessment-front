@@ -125,7 +125,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
           
           {/* 語音列表 */}
           <div>
-            <h4 style={{ color: "var(--ios-primary)", margin: "0 0 8px 0", fontSize: 15, fontWeight: 600 }}>可用 en-US 語音 ({availableVoices.length})</h4>
+            <h4 style={{ color: "var(--ios-primary)", margin: "0 0 8px 0", fontSize: 15, fontWeight: 600 }}>可用英文語音 ({availableVoices.length})</h4>
             
             <div style={{ 
               background: "var(--ios-card)", 
@@ -135,11 +135,11 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
               fontSize: "14px",
               color: "var(--ios-text-secondary)"
             }}>
-              本應用現在僅使用瀏覽器內建的 en-US 語音，在 iOS 設備上長文本會自動分段處理以提高穩定性。
+              本應用使用瀏覽器內建的英文語音，在 iOS 設備上長文本會自動分段處理以提高穩定性。
             </div>
             
             {availableVoices.length === 0 ? (
-              <p style={{ color: "var(--ios-text-secondary)" }}>未找到 en-US 語音選項，請確認您的瀏覽器是否支援此語言。</p>
+              <p style={{ color: "var(--ios-text-secondary)" }}>未找到英文語音選項，請確認您的瀏覽器是否支援英文語音。</p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0 }}>
                 {availableVoices.map((voice, index) => (

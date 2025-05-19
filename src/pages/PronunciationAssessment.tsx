@@ -205,18 +205,32 @@ const PronunciationAssessment: React.FC = () => {
       }
 
       const synth = window.speechSynthesis;
-      const usVoice = synth.getVoices().find(v => v.lang === 'en-US');
+      
+      // 優先使用選定的語音，其次尋找任何英文語音
+      let voice = null;
+      if (selectedVoice) {
+        // 使用選定的語音
+        voice = synth.getVoices().find(v => v.name === selectedVoice.name);
+      }
+      
+      // 如果沒有找到選定的語音，尋找任何英文語音
+      if (!voice) {
+        voice = synth.getVoices().find(v => 
+          v.lang.toLowerCase().includes('en') || 
+          v.name.toLowerCase().includes('english')
+        );
+      }
 
-      if (!usVoice) {
-        setError('裝置未提供 en-US 內建語音');   // 只能讓使用者自行安裝
+      if (!voice) {
+        setError('裝置未提供英文語音，請選擇一個可用的語音');
         setIsLoading(false);
         return;
       }
 
       const speak = (txt: string) => {
         const u = new SpeechSynthesisUtterance(txt);
-        u.voice = usVoice;
-        u.lang = 'en-US';
+        u.voice = voice;
+        u.lang = voice.lang; // 使用語音自帶的語言設置
         u.rate = voiceSettings.rate;
         
         // 添加事件監聽
@@ -242,7 +256,7 @@ const PronunciationAssessment: React.FC = () => {
       synth.cancel();
       chunks.forEach(c => speak(c.trim()));
       
-      console.log(`使用瀏覽器內置API播放語音: "${referenceText.substring(0, 30)}..."${isiOS ? '（iOS分段模式）' : ''}`);
+      console.log(`使用語音 ${voice.name} (${voice.lang}) 播放: "${referenceText.substring(0, 30)}..."${isiOS ? '（iOS分段模式）' : ''}`);
       
       // 設置延時檢查所有片段是否播放完畢
       const checkAllChunksCompleted = () => {
@@ -511,15 +525,20 @@ const PronunciationAssessment: React.FC = () => {
           return;
         }
 
-        // 只過濾 en-US 語音
-        const usVoices = voices.filter(v => v.lang === 'en-US');
+        // 過濾所有包含 en 的語音
+        const enVoices = voices.filter(v => 
+          v.lang.toLowerCase().includes('en') || 
+          v.name.toLowerCase().includes('english')
+        );
         
-        console.log(`加載了${usVoices.length}個 en-US 語音選項`);
-        setAvailableVoices(usVoices);
+        console.log(`加載了${enVoices.length}個英文語音選項`);
+        setAvailableVoices(enVoices);
         
-        // 如果沒有選擇過語音，默認選擇一個可用的 en-US 語音
-        if (!selectedVoice && usVoices.length > 0) {
-          const preferredVoice = usVoices[0];
+        // 如果沒有選擇過語音，默認選擇一個可用的英文語音
+        if (!selectedVoice && enVoices.length > 0) {
+          // 優先選擇 en-US 語音，如果沒有則用第一個
+          const usVoice = enVoices.find(v => v.lang === 'en-US');
+          const preferredVoice = usVoice || enVoices[0];
           
           console.log(`設置語音: ${preferredVoice.name}, ${preferredVoice.lang}`);
           setSelectedVoice(preferredVoice);
@@ -548,7 +567,7 @@ const PronunciationAssessment: React.FC = () => {
         window.speechSynthesis.onvoiceschanged = null;
       };
     }
-  }, []);  // 移除對 voiceSettings 的依賴，因為我們現在只關心 en-US 語音
+  }, []);
   
   // 處理錄音狀態變化
   useEffect(() => {
