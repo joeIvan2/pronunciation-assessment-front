@@ -812,47 +812,7 @@ const PronunciationAssessment: React.FC = () => {
               英文朗讀
             </button>
             
-            <button
-              onClick={() => {
-                const synth = window.speechSynthesis;
-                
-                // 獲取當前選擇的語音
-                let voice = null;
-                if (selectedVoice) {
-                  // 使用選定的語音
-                  voice = synth.getVoices().find(v => v.name === selectedVoice.name);
-                }
-                
-                // 如果沒有找到選定的語音，尋找任何英文語音
-                if (!voice) {
-                  voice = synth.getVoices().find(v => 
-                    v.lang.toLowerCase().includes('en') || 
-                    v.name.toLowerCase().includes('english')
-                  );
-                }
-                
-                // 使用找到的語音播放測試語句
-                if (voice) {
-                  const u = new SpeechSynthesisUtterance("How are you?");
-                  u.voice = voice;
-                  u.lang = voice.lang;
-                  u.rate = voiceSettings.rate;
-                  synth.speak(u);
-                  console.log(`使用語音 ${voice.name} (${voice.lang}) 測試發音`);
-                } else {
-                  // 如果沒有找到合適的語音，使用默認設置
-                  const u = new SpeechSynthesisUtterance("How are you?");
-                  u.lang = "en-US";
-                  synth.speak(u);
-                  console.log('無可用語音，使用默認設置測試發音');
-                }
-              }}
-              className="btn btn-info"
-              style={{ cursor: "pointer" }}
-              title="播放'How are you?'測試語音合成"
-            >
-              測試發音
-            </button>
+
           </div>
         </div>
         
