@@ -38,11 +38,11 @@ const PronunciationAssessment: React.FC = () => {
   // 语音设置
   const [availableVoices, setAvailableVoices] = useState<VoiceOption[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null);
-  const [showVoiceOptions, setShowVoiceOptions] = useState<boolean>(false);
+  const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(false);
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
   
   // 标签系统
-  const [showTagManager, setShowTagManager] = useState<boolean>(false);
+  const [isTagExpanded, setIsTagExpanded] = useState<boolean>(false);
   const [tags, setTags] = useState<Tag[]>(() => storage.getTags());
   const [nextTagId, setNextTagId] = useState<number>(() => storage.getNextTagId());
   
@@ -638,13 +638,6 @@ const PronunciationAssessment: React.FC = () => {
           >
             朗讀文本
           </button>
-          
-          <button
-            onClick={() => setShowVoiceOptions(!showVoiceOptions)}
-            className="btn btn-gray"
-          >
-            {showVoiceOptions ? "關閉語音列表" : "選擇語音"}
-          </button>
         </div>
         
         {/* 结果显示区域 */}
@@ -704,35 +697,33 @@ const PronunciationAssessment: React.FC = () => {
           onToggleTagSelection={toggleTagSelection}
           onClearTagSelection={clearTagSelection}
           onAddFavorite={addToFavorites}
-          onManageTags={() => setShowTagManager(true)}
+          onManageTags={() => setIsTagExpanded(!isTagExpanded)}
           currentText={referenceText}
         />
         
         {/* 語音選擇面板 */}
-        {showVoiceOptions && (
-          <VoicePicker
-            availableVoices={availableVoices}
-            selectedVoice={selectedVoice}
-            voiceSearchTerm={voiceSettings.searchTerm}
-            speechRate={voiceSettings.rate}
-            referenceText={referenceText}
-            onSelectVoice={handleSelectVoice}
-            onChangeSearchTerm={handleVoiceSearchChange}
-            onChangeSpeechRate={handleSpeechRateChange}
-            onClose={() => setShowVoiceOptions(false)}
-          />
-        )}
+        <VoicePicker
+          availableVoices={availableVoices}
+          selectedVoice={selectedVoice}
+          voiceSearchTerm={voiceSettings.searchTerm}
+          speechRate={voiceSettings.rate}
+          referenceText={referenceText}
+          onSelectVoice={handleSelectVoice}
+          onChangeSearchTerm={handleVoiceSearchChange}
+          onChangeSpeechRate={handleSpeechRateChange}
+          isExpanded={isVoiceExpanded}
+          onToggleExpand={() => setIsVoiceExpanded(!isVoiceExpanded)}
+        />
         
         {/* 標籤管理面板 */}
-        {showTagManager && (
-          <TagManager
-            tags={tags}
-            onAddTag={addTag}
-            onEditTag={editTag}
-            onDeleteTag={deleteTag}
-            onClose={() => setShowTagManager(false)}
-          />
-        )}
+        <TagManager
+          tags={tags}
+          onAddTag={addTag}
+          onEditTag={editTag}
+          onDeleteTag={deleteTag}
+          isExpanded={isTagExpanded}
+          onToggleExpand={() => setIsTagExpanded(!isTagExpanded)}
+        />
         
         {/* Azure 設定面板 */}
         {showAzureSettings && (

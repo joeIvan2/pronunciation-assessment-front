@@ -7,7 +7,8 @@ interface TagManagerProps {
   onAddTag: (name: string, color?: string) => string;
   onEditTag: (id: string, newName: string, newColor?: string) => void;
   onDeleteTag: (id: string) => void;
-  onClose: () => void;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
 }
 
 const TagManager: React.FC<TagManagerProps> = ({ 
@@ -15,160 +16,200 @@ const TagManager: React.FC<TagManagerProps> = ({
   onAddTag, 
   onEditTag, 
   onDeleteTag, 
-  onClose 
+  isExpanded,
+  onToggleExpand
 }) => {
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [newTagName, setNewTagName] = useState<string>('');
 
   return (
     <div className="card-section">
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isExpanded ? 12 : 0 }}>
         <h3 className="section-header"><span className="icon">⚙️</span> 管理標籤</h3>
         <button 
-          onClick={onClose}
-          style={{ background: "transparent", border: "none", color: "#999", cursor: "pointer", fontSize: "16px" }}
+          onClick={onToggleExpand}
+          style={{ 
+            background: "transparent", 
+            border: "none", 
+            color: "var(--ios-primary)", 
+            cursor: "pointer", 
+            fontSize: "16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "30px",
+            height: "30px"
+          }}
         >
-          X
+          {isExpanded ? "▲" : "▼"}
         </button>
       </div>
       
-      {/* 添加新标签 */}
-      <div style={{ marginBottom: 16, background: "#23272f", padding: 12, borderRadius: 4 }}>
-        <h4 style={{ color: "#4cafef", margin: "0 0 8px 0" }}>{editingTagId ? "編輯標籤" : "添加新標籤"}</h4>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input 
-            type="text" 
-            placeholder="標籤名稱..." 
-            value={newTagName}
-            onChange={(e) => setNewTagName(e.target.value)}
-            style={{ 
-              padding: 8, 
-              borderRadius: 4, 
-              border: "1px solid #444", 
-              background: "#1a1e25", 
-              color: "#fff", 
-              flexGrow: 1 
-            }} 
-          />
-          
-          <button 
-            onClick={() => {
-              if (!newTagName.trim()) {
-                alert("請輸入標籤名稱");
-                return;
-              }
+      {isExpanded && (
+        <>
+          {/* 添加新标签 */}
+          <div style={{ 
+            marginBottom: 16, 
+            background: "var(--ios-card)", 
+            padding: 12, 
+            borderRadius: 12,
+            border: "1px solid var(--ios-border)"
+          }}>
+            <h4 style={{ 
+              color: "var(--ios-primary)", 
+              margin: "0 0 8px 0",
+              fontSize: 15,
+              fontWeight: 600
+            }}>{editingTagId ? "編輯標籤" : "添加新標籤"}</h4>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input 
+                type="text" 
+                placeholder="標籤名稱..." 
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                style={{ 
+                  padding: 8, 
+                  borderRadius: 12, 
+                  border: "1px solid var(--ios-border)", 
+                  background: "rgba(20, 20, 24, 0.7)", 
+                  color: "var(--ios-text)", 
+                  flexGrow: 1 
+                }} 
+              />
               
-              if (editingTagId) {
-                onEditTag(editingTagId, newTagName);
-                setEditingTagId(null);
-              } else {
-                onAddTag(newTagName);
-              }
+              <button 
+                onClick={() => {
+                  if (!newTagName.trim()) {
+                    alert("請輸入標籤名稱");
+                    return;
+                  }
+                  
+                  if (editingTagId) {
+                    onEditTag(editingTagId, newTagName);
+                    setEditingTagId(null);
+                  } else {
+                    onAddTag(newTagName);
+                  }
+                  
+                  setNewTagName('');
+                }} 
+                style={{ 
+                  padding: "0 12px", 
+                  background: "var(--ios-success)", 
+                  color: "var(--ios-text)", 
+                  border: "none", 
+                  borderRadius: 12, 
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: 500
+                }}
+              >
+                {editingTagId ? "更新" : "添加"}
+              </button>
               
-              setNewTagName('');
-            }} 
-            style={{ 
-              padding: "0 12px", 
-              background: "#4caf50", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4, 
-              cursor: "pointer" 
-            }}
-          >
-            {editingTagId ? "更新" : "添加"}
-          </button>
-          
-          {editingTagId && (
-            <button 
-              onClick={() => {
-                setEditingTagId(null);
-                setNewTagName('');
-              }} 
-              style={{ 
-                padding: "0 12px", 
-                background: "#e53935", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4, 
-                cursor: "pointer" 
-              }}
-            >
-              取消
-            </button>
-          )}
-        </div>
-      </div>
-      
-      {/* 标签列表 */}
-      <div>
-        <h4 style={{ color: "#4cafef", margin: "0 0 8px 0" }}>現有標籤</h4>
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {tags.map(tag => (
-            <li 
-              key={tag.id} 
-              style={{
-                padding: 8,
-                background: "#23272f",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 4,
-                borderRadius: 4,
-                border: "1px solid #333"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={{ 
-                  width: 16, 
-                  height: 16, 
-                  borderRadius: 16, 
-                  background: tag.color,
-                  marginRight: 8
-                }}></span>
-                <span>{tag.name}</span>
-                <span style={{ color: "#777", marginLeft: 8, fontSize: 12 }}>ID: {tag.id}</span>
-              </div>
-              <div>
-                <button
+              {editingTagId && (
+                <button 
                   onClick={() => {
-                    setEditingTagId(tag.id);
-                    setNewTagName(tag.name);
-                  }}
+                    setEditingTagId(null);
+                    setNewTagName('');
+                  }} 
                   style={{ 
-                    background: "#2196f3", 
-                    color: "#fff", 
+                    padding: "0 12px", 
+                    background: "var(--ios-danger)", 
+                    color: "var(--ios-text)", 
                     border: "none", 
-                    borderRadius: 4, 
-                    padding: "4px 8px",
-                    marginRight: 4,
-                    cursor: "pointer"
+                    borderRadius: 12, 
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: 500
                   }}
                 >
-                  編輯
+                  取消
                 </button>
-                <button
-                  onClick={() => {
-                    if (window.confirm(`確定要刪除標籤 "${tag.name}" 嗎？`)) {
-                      onDeleteTag(tag.id);
-                    }
-                  }}
-                  style={{ 
-                    background: "#e53935", 
-                    color: "#fff", 
-                    border: "none", 
-                    borderRadius: 4, 
-                    padding: "4px 8px",
-                    cursor: "pointer"
+              )}
+            </div>
+          </div>
+          
+          {/* 标签列表 */}
+          <div>
+            <h4 style={{ 
+              color: "var(--ios-primary)", 
+              margin: "0 0 8px 0",
+              fontSize: 15,
+              fontWeight: 600
+            }}>現有標籤</h4>
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {tags.map(tag => (
+                <li 
+                  key={tag.id} 
+                  style={{
+                    padding: 12,
+                    background: "var(--ios-card)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    borderRadius: 12,
+                    border: "1px solid var(--ios-border)"
                   }}
                 >
-                  刪除
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ 
+                      width: 16, 
+                      height: 16, 
+                      borderRadius: 16, 
+                      background: tag.color,
+                      marginRight: 8
+                    }}></span>
+                    <span style={{ color: "var(--ios-text)" }}>{tag.name}</span>
+                    <span style={{ color: "var(--ios-text-secondary)", marginLeft: 8, fontSize: 12 }}>ID: {tag.id}</span>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => {
+                        setEditingTagId(tag.id);
+                        setNewTagName(tag.name);
+                      }}
+                      style={{ 
+                        background: "var(--ios-primary)", 
+                        color: "var(--ios-text)", 
+                        border: "none", 
+                        borderRadius: 12, 
+                        padding: "4px 8px",
+                        marginRight: 4,
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: 500
+                      }}
+                    >
+                      編輯
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`確定要刪除標籤 "${tag.name}" 嗎？`)) {
+                          onDeleteTag(tag.id);
+                        }
+                      }}
+                      style={{ 
+                        background: "var(--ios-danger)", 
+                        color: "var(--ios-text)", 
+                        border: "none", 
+                        borderRadius: 12, 
+                        padding: "4px 8px",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: 500
+                      }}
+                    >
+                      刪除
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 };
