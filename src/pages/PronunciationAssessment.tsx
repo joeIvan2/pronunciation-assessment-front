@@ -204,82 +204,61 @@ const PronunciationAssessment: React.FC = () => {
         throw new Error('您的瀏覽器不支援語音合成API');
       }
 
-      // 檢查是否有可用的語音
-      if (availableVoices.length === 0) {
-        setError('語音選項尚未加載，請稍後再試或點擊"選擇語音"按鈕查看狀態');
+      const synth = window.speechSynthesis;
+      const usVoice = synth.getVoices().find(v => v.lang === 'en-US');
+
+      if (!usVoice) {
+        setError('裝置未提供 en-US 內建語音');   // 只能讓使用者自行安裝
         setIsLoading(false);
         return;
       }
-      
-      // 創建新的語音合成話語
-      const utterance = new SpeechSynthesisUtterance(referenceText);
-      
-      // 設置語速
-      utterance.rate = voiceSettings.rate;
-      
-      // 檢測是否為Android設備
-      const isAndroid = /android/i.test(navigator.userAgent);
-      console.log(`設備檢測: ${isAndroid ? '安卓設備' : '非安卓設備'}`);
-      
-      // 如果有選擇語音，使用選擇的語音
-      if (selectedVoice) {
-        // 確保使用的是當前可用的語音實例，而不是存儲的引用
-        const currentVoice = window.speechSynthesis.getVoices().find(
-          voice => voice.name === selectedVoice.name
-        );
+
+      const speak = (txt: string) => {
+        const u = new SpeechSynthesisUtterance(txt);
+        u.voice = usVoice;
+        u.lang = 'en-US';
+        u.rate = voiceSettings.rate;
         
-        if (currentVoice) {
-          utterance.voice = currentVoice;
-          
-          // 在Android設備上，再次設置語言以確保生效
-          if (isAndroid) {
-            utterance.lang = currentVoice.lang;
-            console.log(`Android設備：強制設置語言為 ${currentVoice.lang}`);
-          }
-          
-          console.log(`使用選擇的語音: ${currentVoice.name}, ${currentVoice.lang}`);
+        // 添加事件監聽
+        u.onend = () => {
+          console.log('語音片段播放結束');
+        };
+        
+        u.onerror = (err) => {
+          console.error('語音合成錯誤:', err);
+          setError(`瀏覽器語音合成出錯: ${err.error || '未知錯誤'}`);
+          setIsLoading(false);
+        };
+        
+        synth.speak(u);
+      };
+
+      // iOS: 長文本分段，其他一次唸
+      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const chunks = isiOS && referenceText.length > 150
+        ? referenceText.match(/[^.!?…。\n]+[.!?…。\n]?/g) || []
+        : [referenceText];
+
+      synth.cancel();
+      chunks.forEach(c => speak(c.trim()));
+      
+      console.log(`使用瀏覽器內置API播放語音: "${referenceText.substring(0, 30)}..."${isiOS ? '（iOS分段模式）' : ''}`);
+      
+      // 設置延時檢查所有片段是否播放完畢
+      const checkAllChunksCompleted = () => {
+        if (synth.speaking) {
+          // 如果還在播放，繼續等待
+          setTimeout(checkAllChunksCompleted, 300);
         } else {
-          console.warn(`無法找到選擇的語音: ${selectedVoice.name}，將使用默認語音`);
+          // 所有片段播放完畢
+          setIsLoading(false);
+          console.log('所有語音片段播放完畢');
         }
-      } else {
-        // 如果沒有選擇語音，嘗試使用默認英文語音
-        const englishVoices = availableVoices.filter(voice => 
-          voice.lang.toLowerCase().includes('en') || 
-          voice.name.toLowerCase().includes('english')
-        );
-        
-        if (englishVoices.length > 0) {
-          utterance.voice = englishVoices[0];
-          
-          // 在Android設備上，再次設置語言以確保生效
-          if (isAndroid) {
-            utterance.lang = englishVoices[0].lang;
-            console.log(`Android設備：強制設置語言為 ${englishVoices[0].lang}`);
-          }
-          
-          console.log(`使用默認英文語音: ${englishVoices[0].name}`);
-        }
-      }
-      
-      // 添加事件監聽
-      utterance.onend = () => {
-        setIsLoading(false);
-        console.log('語音播放結束');
       };
       
-      utterance.onerror = (err) => {
-        console.error('語音合成錯誤:', err);
-        setError(`瀏覽器語音合成出錯: ${err.error || '未知錯誤'}`);
-        setIsLoading(false);
-      };
+      // 開始檢查
+      setTimeout(checkAllChunksCompleted, 300);
       
-      // 停止之前可能正在播放的語音
-      window.speechSynthesis.cancel();
-      
-      // 播放語音
-      window.speechSynthesis.speak(utterance);
-      
-      console.log(`使用瀏覽器內置API播放語音: "${referenceText.substring(0, 30)}..."`);
     } catch (err) {
       console.error('瀏覽器語音合成失敗:', err);
       setError(`瀏覽器語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
@@ -504,9 +483,6 @@ const PronunciationAssessment: React.FC = () => {
   const handleSelectVoice = (voice: SpeechSynthesisVoice) => {
     console.log(`選擇語音: ${voice.name}, ${voice.lang}`);
     
-    // 檢測是否為Android設備
-    const isAndroid = /android/i.test(navigator.userAgent);
-    
     // 立即更新當前語音
     setSelectedVoice(voice);
     
@@ -519,22 +495,6 @@ const PronunciationAssessment: React.FC = () => {
     // 預先測試一下選擇的語音
     const testUtterance = new SpeechSynthesisUtterance('Test');
     testUtterance.voice = voice;
-    
-    // 在Android設備上，強制設置語言屬性
-    if (isAndroid) {
-      testUtterance.lang = voice.lang;
-      console.log(`Android設備：為語音測試設置語言為 ${voice.lang}`);
-      
-      // 針對Android設備提供更多控制台信息，幫助調試
-      console.log(`Android語音詳情:`, {
-        name: voice.name,
-        lang: voice.lang,
-        localService: voice.localService,
-        default: voice.default,
-        voiceURI: voice.voiceURI
-      });
-    }
-    
     testUtterance.volume = 0; // 靜音測試
     window.speechSynthesis.speak(testUtterance);
   };
@@ -551,52 +511,24 @@ const PronunciationAssessment: React.FC = () => {
           return;
         }
 
-        console.log(`加載了${voices.length}個語音選項`);
-        setAvailableVoices(voices);
+        // 只過濾 en-US 語音
+        const usVoices = voices.filter(v => v.lang === 'en-US');
         
-        // 如果沒有選擇過語音，默認選擇一個合適的
-        if (!selectedVoice && voices.length > 0) {
-          // 嘗試找到一個合適的默認語音
-          const savedVoiceName = voiceSettings.voiceName;
-          const savedVoiceLang = voiceSettings.voiceLang;
+        console.log(`加載了${usVoices.length}個 en-US 語音選項`);
+        setAvailableVoices(usVoices);
+        
+        // 如果沒有選擇過語音，默認選擇一個可用的 en-US 語音
+        if (!selectedVoice && usVoices.length > 0) {
+          const preferredVoice = usVoices[0];
           
-          // 將null改為undefined以修復類型錯誤
-          let preferredVoice: SpeechSynthesisVoice | undefined = undefined;
+          console.log(`設置語音: ${preferredVoice.name}, ${preferredVoice.lang}`);
+          setSelectedVoice(preferredVoice);
           
-          // 如果之前有選擇過語音，嘗試找到相同的語音
-          if (savedVoiceName) {
-            console.log(`嘗試查找保存的語音: ${savedVoiceName}, ${savedVoiceLang}`);
-            preferredVoice = voices.find(voice => voice.name === savedVoiceName);
-            
-            if (preferredVoice) {
-              console.log(`找到保存的語音: ${preferredVoice.name}`);
-            } else {
-              console.log(`未找到保存的語音，將選擇默認語音`);
-            }
-          }
-          
-          // 如果沒有找到相同的語音，則嘗試找到一個合適的英文語音
-          if (!preferredVoice) {
-            // 在所有語音中選擇一個英文語音
-            const englishVoices = voices.filter(voice => 
-              voice.name.toLowerCase().includes('english') || 
-              voice.lang.toLowerCase().includes('en')
-            );
-            
-            // 如果沒有找到英文語音，則選擇第一個語音
-            preferredVoice = englishVoices.length > 0 ? englishVoices[0] : voices[0];
-          }
-          
-          if (preferredVoice) {
-            console.log(`設置語音: ${preferredVoice.name}, ${preferredVoice.lang}`);
-            setSelectedVoice(preferredVoice);
-            
-            // 保存語音設置
-            storage.saveVoiceSettings({
-              voiceName: preferredVoice.name,
-              voiceLang: preferredVoice.lang
-            });
-          }
+          // 保存語音設置
+          storage.saveVoiceSettings({
+            voiceName: preferredVoice.name,
+            voiceLang: preferredVoice.lang
+          });
         }
       };
       
@@ -616,7 +548,7 @@ const PronunciationAssessment: React.FC = () => {
         window.speechSynthesis.onvoiceschanged = null;
       };
     }
-  }, [voiceSettings]);
+  }, []);  // 移除對 voiceSettings 的依賴，因為我們現在只關心 en-US 語音
   
   // 處理錄音狀態變化
   useEffect(() => {
@@ -837,7 +769,7 @@ const PronunciationAssessment: React.FC = () => {
               className="btn btn-success"
               style={{ opacity: isLoading || !referenceText ? 0.55 : 1, cursor: isLoading || !referenceText ? "not-allowed" : "pointer" }}
             >
-              朗讀文本
+              英文朗讀
             </button>
           </div>
         </div>

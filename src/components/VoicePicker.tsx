@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { VoiceOption } from '../types/speech';
 import '../styles/PronunciationAssessment.css';
 
@@ -27,13 +27,6 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   isExpanded,
   onToggleExpand
 }) => {
-  // 檢測是否為Android設備
-  const [isAndroid, setIsAndroid] = useState<boolean>(false);
-  
-  useEffect(() => {
-    setIsAndroid(/android/i.test(navigator.userAgent));
-  }, []);
-  
   return (
     <div>
       {!isExpanded && (
@@ -48,32 +41,6 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
       
       {isExpanded && (
         <>
-          {/* 搜索框 */}
-          <div style={{ marginBottom: 16 }}>
-            <input 
-              type="text" 
-              placeholder="搜索語音..." 
-              value={voiceSearchTerm}
-              onChange={(e) => onChangeSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
-          
-          {/* Android設備提示信息 */}
-          {isAndroid && (
-            <div style={{ 
-              marginBottom: 16, 
-              padding: '8px 12px', 
-              background: 'rgba(255, 152, 0, 0.2)',
-              border: '1px solid rgba(255, 152, 0, 0.5)',
-              borderRadius: 8,
-              fontSize: 13
-            }}>
-              <p style={{ margin: '0 0 6px 0', color: '#ff9800', fontWeight: 'bold' }}>Android裝置注意</p>
-              <p style={{ margin: 0, color: '#eee' }}>由於Android系統限制，語音選擇可能無法正常工作。請嘗試選擇不同語言（非方言）的語音以獲得更好效果。</p>
-            </div>
-          )}
-          
           {/* 語速選擇 */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: "var(--ios-text-secondary)", marginBottom: 8 }}>語速選擇：</label>
@@ -158,73 +125,74 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
           
           {/* 語音列表 */}
           <div>
-            <h4 style={{ color: "var(--ios-primary)", margin: "0 0 8px 0", fontSize: 15, fontWeight: 600 }}>可用語音 ({availableVoices.length})</h4>
+            <h4 style={{ color: "var(--ios-primary)", margin: "0 0 8px 0", fontSize: 15, fontWeight: 600 }}>可用 en-US 語音 ({availableVoices.length})</h4>
+            
+            <div style={{ 
+              background: "var(--ios-card)", 
+              padding: "12px", 
+              borderRadius: "12px",
+              marginBottom: "16px",
+              fontSize: "14px",
+              color: "var(--ios-text-secondary)"
+            }}>
+              本應用現在僅使用瀏覽器內建的 en-US 語音，在 iOS 設備上長文本會自動分段處理以提高穩定性。
+            </div>
             
             {availableVoices.length === 0 ? (
-              <p style={{ color: "var(--ios-text-secondary)" }}>未找到語音選項，請等待瀏覽器加載語音。</p>
+              <p style={{ color: "var(--ios-text-secondary)" }}>未找到 en-US 語音選項，請確認您的瀏覽器是否支援此語言。</p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0 }}>
-                {availableVoices
-                  .filter(voice => 
-                    voice.name.toLowerCase().includes(voiceSearchTerm.toLowerCase()) || 
-                    voice.lang.toLowerCase().includes(voiceSearchTerm.toLowerCase())
-                  )
-                  .map((voice, index) => (
-                    <li 
-                      key={index} 
-                      onClick={() => onSelectVoice(voice)}
-                      style={{
-                        padding: "12px",
-                        background: selectedVoice && selectedVoice.name === voice.name ? "var(--ios-primary)" : "var(--ios-card)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
+                {availableVoices.map((voice, index) => (
+                  <li 
+                    key={index} 
+                    onClick={() => onSelectVoice(voice)}
+                    style={{
+                      padding: "12px",
+                      background: selectedVoice && selectedVoice.name === voice.name ? "var(--ios-primary)" : "var(--ios-card)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                      borderRadius: 12,
+                      border: "1px solid var(--ios-border)",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: "bold", color: "var(--ios-text)" }}>{voice.name}</div>
+                      <div style={{ fontSize: "0.8em", color: "var(--ios-text-secondary)", marginTop: 4 }}>
+                        {voice.lang} | {voice.default ? "預設" : "可選"} | {voice.localService ? "本地" : "遠程"}
+                      </div>
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation(); // 阻止點擊事件冒泡
+                        
+                        // 創建臨時話語對象來測試語音
+                        const testUtterance = new SpeechSynthesisUtterance(
+                          referenceText.slice(0, 20) + "..."
+                        );
+                        testUtterance.voice = voice;
+                        testUtterance.rate = speechRate;
+                        
+                        // 播放測試語音
+                        window.speechSynthesis.speak(testUtterance);
+                      }}
+                      style={{ 
+                        padding: "6px 12px", 
+                        background: "var(--ios-success)", 
+                        color: "var(--ios-text)", 
+                        border: "none", 
                         borderRadius: 12,
-                        border: "1px solid var(--ios-border)",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: 500
                       }}
                     >
-                      <div>
-                        <div style={{ fontWeight: "bold", color: "var(--ios-text)" }}>{voice.name}</div>
-                        <div style={{ fontSize: "0.8em", color: "var(--ios-text-secondary)", marginTop: 4 }}>
-                          {voice.lang} | {voice.default ? "預設" : "可選"} | {voice.localService ? "本地" : "遠程"}
-                        </div>
-                      </div>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation(); // 阻止點擊事件冒泡
-                          
-                          // 創建臨時話語對象來測試語音
-                          const testUtterance = new SpeechSynthesisUtterance(
-                            referenceText.slice(0, 20) + "..."
-                          );
-                          testUtterance.voice = voice;
-                          testUtterance.rate = speechRate;
-                          
-                          // 在Android設備上，設置語言屬性以確保生效
-                          if (isAndroid) {
-                            testUtterance.lang = voice.lang;
-                          }
-                          
-                          // 播放測試語音
-                          window.speechSynthesis.speak(testUtterance);
-                        }}
-                        style={{ 
-                          padding: "6px 12px", 
-                          background: "var(--ios-success)", 
-                          color: "var(--ios-text)", 
-                          border: "none", 
-                          borderRadius: 12,
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          fontWeight: 500
-                        }}
-                      >
-                        測試
-                      </button>
-                    </li>
-                  ))}
+                      測試
+                    </button>
+                  </li>
+                ))}
               </ul>
             )}
           </div>
