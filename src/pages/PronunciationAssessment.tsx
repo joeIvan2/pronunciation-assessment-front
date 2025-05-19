@@ -663,20 +663,20 @@ const PronunciationAssessment: React.FC = () => {
               const pa = (nbest as any).pronunciationAssessment || nbest.PronunciationAssessment || {};
               const words = nbest.Words || (nbest as any).words || [];
               return (
-                <div>
-                  <h3 style={{ color: "#4cafef" }}>總分</h3>
+                <div className="result-section">
+                  <h3>總分</h3>
                   <ScoreBar label="Accuracy" value={pa.AccuracyScore ?? pa.accuracyScore ?? 0} />
                   <ScoreBar label="Fluency" value={pa.FluencyScore ?? pa.fluencyScore ?? 0} />
                   <ScoreBar label="Completeness" value={pa.CompletenessScore ?? pa.completenessScore ?? 0} />
                   <ScoreBar label="Pronunciation" value={pa.PronScore ?? pa.pronScore ?? result.pronunciationScore ?? 0} />
-                  <h3 style={{ color: "#4cafef" }}>句子分析</h3>
+                  <h3>句子分析</h3>
                   {words.length > 0 ? (
                     <WordsDisplay words={words} />
                   ) : (
-                    <p style={{ color: "#fff" }}>無法獲取詳細單詞評分數據</p>
+                    <p>無法獲取詳細單詞評分數據</p>
                   )}
-                  <h4 style={{ color: "#4cafef", marginTop: 20 }}>識別文本</h4>
-                  <p style={{ color: "#fff", fontSize: "1.1em", padding: "10px", background: "#23272f", borderRadius: "4px" }}>
+                  <h4>識別文本</h4>
+                  <p className="recognized-text">
                     {nbest.Display || nbest.display || result.DisplayText || result.text || "--"}
                   </p>
                 </div>
@@ -685,8 +685,8 @@ const PronunciationAssessment: React.FC = () => {
 
             // 後端扁平化結果 (無 NBest)
             return (
-              <div>
-                <h3 style={{ color: "#4cafef" }}>評分結果</h3>
+              <div className="result-section">
+                <h3>評分結果</h3>
                 <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
                 <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
                 <ScoreBar label="Completeness" value={result.completenessScore || 0} />
