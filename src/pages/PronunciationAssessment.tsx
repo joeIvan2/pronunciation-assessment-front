@@ -590,14 +590,24 @@ const PronunciationAssessment: React.FC = () => {
               placeholder="輸入或粘貼要練習的文本..."
             />
           </div>
-          <div className="font-size-controls">
-            <button onClick={decreaseFontSize} className="btn-size-control">
-              <span style={{ fontSize: "14px" }}>A-</span>
+          <div className="text-controls">
+            <button
+              onClick={() => addToFavorites(referenceText)}
+              disabled={!referenceText}
+              className="btn-favorite"
+              title="添加到收藏"
+            >
+              <span>★</span>
             </button>
-            <span className="font-size-display">{fontSize}px</span>
-            <button onClick={increaseFontSize} className="btn-size-control">
-              <span style={{ fontSize: "14px" }}>A+</span>
-            </button>
+            <div className="font-size-controls">
+              <button onClick={decreaseFontSize} className="btn-size-control">
+                <span style={{ fontSize: "14px" }}>A-</span>
+              </button>
+              <span className="font-size-display">{fontSize}px</span>
+              <button onClick={increaseFontSize} className="btn-size-control">
+                <span style={{ fontSize: "14px" }}>A+</span>
+              </button>
+            </div>
           </div>
         </div>
         
@@ -622,15 +632,6 @@ const PronunciationAssessment: React.FC = () => {
             style={{ opacity: isLoading || !referenceText ? 0.55 : 1, cursor: isLoading || !referenceText ? "not-allowed" : "pointer" }}
           >
             朗讀文本
-          </button>
-          
-          <button
-            onClick={() => addToFavorites(referenceText)}
-            disabled={!referenceText}
-            className="btn btn-warning"
-            style={{ opacity: !referenceText ? 0.55 : 1, cursor: !referenceText ? "not-allowed" : "pointer" }}
-          >
-            添加到收藏
           </button>
           
           <button
