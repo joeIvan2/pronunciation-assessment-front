@@ -169,9 +169,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                         e.stopPropagation(); // 阻止點擊事件冒泡
                         
                         // 創建臨時話語對象來測試語音
-                        const testUtterance = new SpeechSynthesisUtterance(
-                          referenceText.slice(0, 20) + "..."
-                        );
+                        const testUtterance = new SpeechSynthesisUtterance(referenceText);
                         testUtterance.voice = voice;
                         testUtterance.lang = "en-US";
                         testUtterance.rate = speechRate;
