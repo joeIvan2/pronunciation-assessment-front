@@ -605,16 +605,33 @@ const PronunciationAssessment: React.FC = () => {
         console.error('提取单词评分数据失败:', err);
       }
 
-      storage.addHistoryRecord({
-        text: referenceText,
-        scoreAccuracy: result.accuracyScore || 0,
-        scoreFluency: result.fluencyScore || 0,
-        scoreCompleteness: result.completenessScore || 0,
-        scorePronunciation: result.pronunciationScore || 0,
-        recognizedText: result.DisplayText || result.text || '',
-        words: words // 保存单词评分数据
-      });
-      setHistoryRecords(storage.getHistoryRecords());
+      // 生成一个唯一ID，使用时间戳加随机数
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // 检查当前记录是否已经存在相似记录（同一文本和相近时间）
+      const existingRecords = storage.getHistoryRecords();
+      const last5Seconds = Date.now() - 5000; // 5秒内
+      
+      const hasSimilarRecord = existingRecords.some(record => 
+        record.text === referenceText && 
+        record.timestamp > last5Seconds
+      );
+      
+      // 只有不存在相似记录时才添加
+      if (!hasSimilarRecord) {
+        storage.addHistoryRecord({
+          text: referenceText,
+          scoreAccuracy: result.accuracyScore || 0,
+          scoreFluency: result.fluencyScore || 0,
+          scoreCompleteness: result.completenessScore || 0,
+          scorePronunciation: result.pronunciationScore || 0,
+          recognizedText: result.DisplayText || result.text || '',
+          words: words // 保存单词评分数据
+        });
+        setHistoryRecords(storage.getHistoryRecords());
+      } else {
+        console.log('检测到重复的历史记录，已忽略');
+      }
     }
   }, [result, referenceText]);
 
