@@ -651,18 +651,18 @@ const PronunciationAssessment: React.FC = () => {
               const words = nbest.Words || (nbest as any).words || [];
               return (
                 <div className="result-section">
-                  <h3>總分</h3>
+                  <h3 className="section-header special-title">總分</h3>
                   <ScoreBar label="Accuracy" value={pa.AccuracyScore ?? pa.accuracyScore ?? 0} />
                   <ScoreBar label="Fluency" value={pa.FluencyScore ?? pa.fluencyScore ?? 0} />
                   <ScoreBar label="Completeness" value={pa.CompletenessScore ?? pa.completenessScore ?? 0} />
                   <ScoreBar label="Pronunciation" value={pa.PronScore ?? pa.pronScore ?? result.pronunciationScore ?? 0} />
-                  <h3>句子分析</h3>
+                  <h3 className="section-header special-title">句子分析</h3>
                   {words.length > 0 ? (
                     <WordsDisplay words={words} />
                   ) : (
                     <p>無法獲取詳細單詞評分數據</p>
                   )}
-                  <h4>識別文本</h4>
+                  <h4 className="section-header special-title">識別文本</h4>
                   <p className="recognized-text">
                     {nbest.Display || nbest.display || result.DisplayText || result.text || "--"}
                   </p>
@@ -673,7 +673,7 @@ const PronunciationAssessment: React.FC = () => {
             // 後端扁平化結果 (無 NBest)
             return (
               <div className="result-section">
-                <h3>評分結果</h3>
+                <h3 className="section-header special-title">評分結果</h3>
                 <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
                 <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
                 <ScoreBar label="Completeness" value={result.completenessScore || 0} />
