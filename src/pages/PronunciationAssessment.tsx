@@ -533,20 +533,6 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [recorder.audioData, recorder.recording, recorder.error, useBackend, processPronunciationAssessment]);
 
-  // 切換 API 模式 (後端 <-> 直連 Azure)
-  const toggleApiMode = () => {
-    // 如果當前是後端模式→要切到直連模式，先確認已填 Azure key、region
-    if (useBackend) {
-      if (!azureSettings.key || !azureSettings.region) {
-        setShowAzureSettings(true);
-        return; // 等使用者填完設定再切
-      }
-    }
-    const newMode = !useBackend;
-    setUseBackend(newMode);
-    storage.saveUseBackend(newMode);
-  };
-
   // 保存 Azure key/region
   const saveAzureSettings = () => {
     storage.saveAzureSettings(azureSettings.key, azureSettings.region);
@@ -565,7 +551,26 @@ const PronunciationAssessment: React.FC = () => {
   return (
     <div className="pa-container">
       <h2 className="pa-title">發音評分</h2>
-      <p className="pa-subtitle">測試中25年0519更新</p>
+      <p 
+        className="pa-subtitle" 
+        onClick={() => {
+          // 如果从后端切换到前端，需要检查Azure凭据
+          if (useBackend && (!azureSettings.key || !azureSettings.region)) {
+            setShowAzureSettings(true);
+            return; // 等用户填写设置后再切换
+          }
+          
+          const newMode = !useBackend; // 切换模式
+          setUseBackend(newMode);
+          storage.saveUseBackend(newMode);
+        }}
+        style={{ 
+          color: useBackend ? 'var(--ios-text-secondary)' : 'var(--ios-primary)',
+          cursor: 'pointer'
+        }}
+      >
+        測試中25年0519更新
+      </p>
       
       {/* 错误提示 */}
       {error && (
@@ -577,8 +582,8 @@ const PronunciationAssessment: React.FC = () => {
       {/* 主要功能区域 */}
       <div className="pa-main-content">
         {/* 输入区域 */}
-        <div className="text-input-section">
-          <h3>輸入文本</h3>
+        <div className="card-section">
+          <h3 className="section-header">輸入文本</h3>
           <div className="input-container">
             <textarea
               ref={textareaRef}
@@ -639,11 +644,6 @@ const PronunciationAssessment: React.FC = () => {
             className="btn btn-gray"
           >
             {showVoiceOptions ? "關閉語音列表" : "選擇語音"}
-          </button>
-          
-          {/* 切換 API 模式 */}
-          <button onClick={toggleApiMode} className="btn btn-info">
-            {useBackend ? "使用直連 Azure" : "使用後端伺服器"}
           </button>
         </div>
         

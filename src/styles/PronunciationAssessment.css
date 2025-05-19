@@ -385,4 +385,82 @@ h4 {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+}
+
+/* Card section header */
+.section-header {
+  color: var(--ios-text);
+  font-size: 17px;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-header .icon {
+  font-size: 15px;
+  opacity: 0.9;
+}
+
+/* 统一卡片内容区样式 */
+.card-section {
+  background: var(--ios-card);
+  border: 1px solid var(--ios-border);
+  border-radius: 16px;
+  padding: 18px 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px var(--ios-shadow);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 标签管理区样式 */
+.tag-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tag-button {
+  padding: 6px 10px;
+  background: var(--ios-card);
+  color: var(--ios-text);
+  border: 1px solid var(--ios-border);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-button:hover {
+  filter: brightness(1.1);
+}
+
+.tag-button.active {
+  background: var(--ios-primary);
+  border-color: var(--ios-primary);
+}
+
+.manage-tags-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--ios-gray);
+  color: var(--ios-text);
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.manage-tags-button:hover {
+  filter: brightness(1.1);
 } 

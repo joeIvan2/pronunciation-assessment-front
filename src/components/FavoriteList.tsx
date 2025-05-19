@@ -1,5 +1,6 @@
 import React from 'react';
 import { Favorite, Tag } from '../types/speech';
+import '../styles/PronunciationAssessment.css';
 
 interface FavoriteListProps {
   favorites: Favorite[];
@@ -42,22 +43,14 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   const filteredFavorites = getFilteredFavorites();
   
   return (
-    <div style={{ marginTop: 24, marginBottom: 16 }}>
-      <h3 style={{ color: "#4cafef", marginBottom: 8 }}>我的最愛</h3>
+    <div className="card-section">
+      <h3 className="section-header">我的最愛</h3>
       
       {/* 标签筛选区 */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+      <div className="tag-controls">
         <button
           onClick={onClearTagSelection}
-          style={{
-            padding: "4px 8px",
-            background: selectedTags.length === 0 ? "#4caf50" : "#333",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            fontSize: 12,
-            cursor: "pointer"
-          }}
+          className={`tag-button ${selectedTags.length === 0 ? 'active' : ''}`}
         >
           全部
         </button>
@@ -66,14 +59,9 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
           <button
             key={tag.id}
             onClick={() => onToggleTagSelection(tag.id)}
+            className={`tag-button ${selectedTags.includes(tag.id) ? 'active' : ''}`}
             style={{
-              padding: "4px 8px",
-              background: selectedTags.includes(tag.id) ? tag.color : "#333",
-              color: "#fff",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 12,
-              cursor: "pointer"
+              background: selectedTags.includes(tag.id) ? tag.color : '',
             }}
           >
             {tag.name}
@@ -82,60 +70,10 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
         
         <button
           onClick={onManageTags}
-          style={{
-            padding: "4px 8px",
-            background: "#666",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            fontSize: 12,
-            cursor: "pointer"
-          }}
+          className="manage-tags-button"
         >
-          管理標籤
+          <span className="icon">⚙️</span> 管理標籤
         </button>
-      </div>
-      
-      {/* 添加按钮 */}
-      <div style={{ display: "flex", marginBottom: 12 }}>
-        <button
-          onClick={() => onAddFavorite(currentText)}
-          style={{
-            padding: "8px 12px",
-            background: "#ff9800",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center"
-          }}
-        >
-          <span style={{ marginRight: 4 }}>+</span> 添加當前句子
-        </button>
-        
-        {selectedTags.length > 0 && (
-          <div style={{ marginLeft: 12, display: "flex", alignItems: "center" }}>
-            <span style={{ color: "#bbb", fontSize: 14 }}>已選標籤:</span>
-            {tags
-              .filter(tag => selectedTags.includes(tag.id))
-              .map(tag => (
-                <span
-                  key={tag.id}
-                  style={{
-                    padding: "2px 6px",
-                    background: tag.color,
-                    color: "#fff",
-                    borderRadius: 4,
-                    marginLeft: 4,
-                    fontSize: 12
-                  }}
-                >
-                  {tag.name}
-                </span>
-              ))}
-          </div>
-        )}
       </div>
       
       {/* 收藏列表 */}
@@ -255,7 +193,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
           color: "#bbb",
           textAlign: "center"
         }}>
-          還沒有收藏的句子，請使用上方的「添加當前句子」按鈕添加
+          還沒有收藏的句子，請使用文本輸入框右下方的星號按鈕(★)添加
         </div>
       )}
     </div>

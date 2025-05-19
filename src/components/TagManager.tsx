@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tag } from '../types/speech';
+import '../styles/PronunciationAssessment.css';
 
 interface TagManagerProps {
   tags: Tag[];
@@ -20,9 +21,9 @@ const TagManager: React.FC<TagManagerProps> = ({
   const [newTagName, setNewTagName] = useState<string>('');
 
   return (
-    <div style={{ marginTop: 16, padding: 16, background: "#2a2e39", borderRadius: 8, maxHeight: 400, overflowY: "auto" }}>
+    <div className="card-section">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <h3 style={{ color: "#4cafef", margin: 0 }}>管理標籤</h3>
+        <h3 className="section-header"><span className="icon">⚙️</span> 管理標籤</h3>
         <button 
           onClick={onClose}
           style={{ background: "transparent", border: "none", color: "#999", cursor: "pointer", fontSize: "16px" }}
