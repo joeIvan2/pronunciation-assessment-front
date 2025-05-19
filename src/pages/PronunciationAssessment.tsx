@@ -577,7 +577,7 @@ const PronunciationAssessment: React.FC = () => {
       {/* 主要功能区域 */}
       <div className="pa-main-content">
         {/* 输入区域 */}
-        <div>
+        <div className="text-input-section">
           <h3>輸入文本</h3>
           <div className="input-container">
             <textarea
