@@ -790,6 +790,19 @@ const PronunciationAssessment: React.FC = () => {
             >
               英文朗讀
             </button>
+            
+            <button
+              onClick={() => {
+                let u = new SpeechSynthesisUtterance("How are you?");
+                u.lang = "en-US";
+                speechSynthesis.speak(u);
+              }}
+              className="btn btn-info"
+              style={{ cursor: "pointer" }}
+              title="播放'How are you?'測試語音合成"
+            >
+              測試發音
+            </button>
           </div>
         </div>
         
