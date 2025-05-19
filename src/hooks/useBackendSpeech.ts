@@ -24,7 +24,7 @@ export const useBackendSpeech = (): BackendSpeechResult => {
     error: null
   });
   
-  // 使用后端API进行语音评估
+  // 使用後端API進行語音評估
   const assessWithBackend = async (
     audioBlob: Blob,
     referenceText: string,
@@ -36,21 +36,21 @@ export const useBackendSpeech = (): BackendSpeechResult => {
       setState({ isLoading: true, error: null });
       
       if (audioBlob.size === 0) {
-        throw new Error('录音数据为空，请检查麦克风权限和设置');
+        throw new Error('錄音數據為空，請檢查麥克風權限和設置');
       }
       
-      // 将Blob转换为base64
+      // 將Blob轉換為base64
       const base64Data = await blobToBase64(audioBlob);
-      console.log(`音频转换为base64完成，数据长度: ${base64Data.length}`);
+      console.log(`音頻轉換為base64完成，數據長度: ${base64Data.length}`);
       
-      // 发送到后端并处理响应
+      // 發送到後端並處理響應
       const response = await sendAssessmentRequest(referenceText, base64Data, strictMode);
       const data = await response.json();
-      console.log(`收到评分数据:`, data);
+      console.log(`收到評分數據:`, data);
       
       if (data.accuracyScore === 0 && data.fluencyScore === 0 && 
           data.completenessScore === 0 && data.pronunciationScore === 0) {
-        console.warn('警告: 所有分数都是0，可能音频处理有问题');
+        console.warn('警告: 所有分數都是0，可能音頻處理有問題');
       }
       
       // 解析 json 字符串，提取 NBest 供前端顯示單字
@@ -75,10 +75,10 @@ export const useBackendSpeech = (): BackendSpeechResult => {
         json: data.json
       } as any;
     } catch (err) {
-      console.error('处理录音失败:', err);
+      console.error('處理錄音失敗:', err);
       setState({ 
         isLoading: false, 
-        error: `后端API连接失败: ${err instanceof Error ? err.message : String(err)}` 
+        error: `後端API連接失敗: ${err instanceof Error ? err.message : String(err)}` 
       });
       return null;
     } finally {
@@ -86,7 +86,7 @@ export const useBackendSpeech = (): BackendSpeechResult => {
     }
   };
   
-  // 使用后端API进行文本转语音
+  // 使用後端API進行文本轉語音
   const speakWithBackend = async (text: string): Promise<void> => {
     try {
       if (!text) {
@@ -95,19 +95,19 @@ export const useBackendSpeech = (): BackendSpeechResult => {
       
       setState({ isLoading: true, error: null });
       
-      // 发送请求到后端
+      // 發送請求到後端
       const response = await sendTTSRequest(text);
       
-      // 获取音频数据并播放
+      // 獲取音頻數據並播放
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       audio.play();
     } catch (err) {
-      console.error('文本转语音失败:', err);
+      console.error('文本轉語音失敗:', err);
       setState({ 
         isLoading: false, 
-        error: `文本转语音失败: ${err instanceof Error ? err.message : String(err)}` 
+        error: `文本轉語音失敗: ${err instanceof Error ? err.message : String(err)}` 
       });
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));

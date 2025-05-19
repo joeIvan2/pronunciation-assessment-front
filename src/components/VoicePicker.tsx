@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { VoiceOption } from '../types/speech';
 import '../styles/PronunciationAssessment.css';
 
@@ -27,6 +27,13 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   isExpanded,
   onToggleExpand
 }) => {
+  // 檢測是否為Android設備
+  const [isAndroid, setIsAndroid] = useState<boolean>(false);
+  
+  useEffect(() => {
+    setIsAndroid(/android/i.test(navigator.userAgent));
+  }, []);
+  
   return (
     <div>
       {!isExpanded && (
@@ -52,7 +59,22 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             />
           </div>
           
-          {/* 语速选择 */}
+          {/* Android設備提示信息 */}
+          {isAndroid && (
+            <div style={{ 
+              marginBottom: 16, 
+              padding: '8px 12px', 
+              background: 'rgba(255, 152, 0, 0.2)',
+              border: '1px solid rgba(255, 152, 0, 0.5)',
+              borderRadius: 8,
+              fontSize: 13
+            }}>
+              <p style={{ margin: '0 0 6px 0', color: '#ff9800', fontWeight: 'bold' }}>Android裝置注意</p>
+              <p style={{ margin: 0, color: '#eee' }}>由於Android系統限制，語音選擇可能無法正常工作。請嘗試選擇不同語言（非方言）的語音以獲得更好效果。</p>
+            </div>
+          )}
+          
+          {/* 語速選擇 */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: "var(--ios-text-secondary)", marginBottom: 8 }}>語速選擇：</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -134,7 +156,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             </div>
           </div>
           
-          {/* 语音列表 */}
+          {/* 語音列表 */}
           <div>
             <h4 style={{ color: "var(--ios-primary)", margin: "0 0 8px 0", fontSize: 15, fontWeight: 600 }}>可用語音 ({availableVoices.length})</h4>
             
@@ -166,21 +188,26 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                       <div>
                         <div style={{ fontWeight: "bold", color: "var(--ios-text)" }}>{voice.name}</div>
                         <div style={{ fontSize: "0.8em", color: "var(--ios-text-secondary)", marginTop: 4 }}>
-                          {voice.lang} | {voice.default ? "默認" : "可選"} | {voice.localService ? "本地" : "遠程"}
+                          {voice.lang} | {voice.default ? "預設" : "可選"} | {voice.localService ? "本地" : "遠程"}
                         </div>
                       </div>
                       <button 
                         onClick={(e) => {
-                          e.stopPropagation(); // 阻止点击事件冒泡
+                          e.stopPropagation(); // 阻止點擊事件冒泡
                           
-                          // 创建临时话语对象来测试语音
+                          // 創建臨時話語對象來測試語音
                           const testUtterance = new SpeechSynthesisUtterance(
                             referenceText.slice(0, 20) + "..."
                           );
                           testUtterance.voice = voice;
                           testUtterance.rate = speechRate;
                           
-                          // 播放测试语音
+                          // 在Android設備上，設置語言屬性以確保生效
+                          if (isAndroid) {
+                            testUtterance.lang = voice.lang;
+                          }
+                          
+                          // 播放測試語音
                           window.speechSynthesis.speak(testUtterance);
                         }}
                         style={{ 

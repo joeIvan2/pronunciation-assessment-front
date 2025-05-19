@@ -30,10 +30,10 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onManageTags,
   currentText
 }) => {
-  // 添加列表展开/收起状态
+  // 添加列表展開/收起狀態
   const [isExpanded, setIsExpanded] = useState<boolean>(() => storage.getCardExpandStates().favoriteList);
   
-  // 获取带标签筛选的收藏列表
+  // 獲取帶標籤篩選的收藏列表
   const getFilteredFavorites = () => {
     if (selectedTags.length === 0) {
       return favorites;
@@ -46,7 +46,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   
   const filteredFavorites = getFilteredFavorites();
   
-  // 保存展开状态
+  // 保存展開狀態
   const handleExpandToggle = () => {
     const newState = !isExpanded;
     setIsExpanded(newState);
@@ -67,7 +67,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
       
       {isExpanded && (
         <>
-          {/* 标签筛选区 */}
+          {/* 標籤篩選區 */}
           <div className="tag-controls">
             <button
               onClick={onClearTagSelection}
@@ -116,13 +116,13 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                     <button 
                       onClick={() => onRemoveFavorite(fav.id)} 
                       className="btn-delete"
-                      title="删除"
+                      title="刪除"
                     >
                       <span>×</span>
                     </button>
                   </div>
                   
-                  {/* 标签展示 */}
+                  {/* 標籤展示 */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                     {tags
                       .filter(tag => fav.tagIds.includes(tag.id))
@@ -143,10 +143,10 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                         </span>
                       ))}
                     
-                    {/* 添加标签按钮 */}
+                    {/* 添加標籤按鈕 */}
                     {tags
                       .filter(tag => !fav.tagIds.includes(tag.id))
-                      .slice(0, 3) // 只显示前3个未添加的标签
+                      .slice(0, 3) // 只顯示前3個未添加的標籤
                       .map(tag => (
                         <span
                           key={tag.id}
@@ -164,7 +164,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                         </span>
                       ))}
                     
-                    {/* 更多标签选项 */}
+                    {/* 更多標籤選項 */}
                     {tags.filter(tag => !fav.tagIds.includes(tag.id)).length > 3 && (
                       <span
                         style={{
@@ -176,7 +176,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                           cursor: "pointer"
                         }}
                         onClick={() => {
-                          // 在这里可以实现一个弹出选择更多标签的功能
+                          // 在這裡可以實現一個彈出選擇更多標籤的功能
                           alert("此功能將在未來版本實現！");
                         }}
                       >

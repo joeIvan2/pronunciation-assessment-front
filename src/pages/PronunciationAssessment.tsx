@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import Tesseract from "tesseract.js";
 import "../styles/PronunciationAssessment.css";
 
-// 组件导入
+// 組件導入
 import ScoreBar from "../components/ScoreBar";
 import ErrorTypeTag from "../components/ErrorTypeTag";
 import Word from "../components/Word";
@@ -12,19 +11,19 @@ import VoicePicker from "../components/VoicePicker";
 import FavoriteList from "../components/FavoriteList";
 import HistoryRecord from "../components/HistoryRecord";
 
-// 钩子导入
+// 鉤子導入
 import { useRecorder } from "../hooks/useRecorder";
 import { useBackendSpeech } from "../hooks/useBackendSpeech";
 import { useAzureSpeech } from "../hooks/useAzureSpeech";
 
-// 工具导入
+// 工具導入
 import * as storage from "../utils/storage";
 
-// 类型导入
+// 類型導入
 import { SpeechAssessmentResult, Favorite, Tag, VoiceOption } from "../types/speech";
 
 const PronunciationAssessment: React.FC = () => {
-  // 状态定义
+  // 狀態定義
   const [result, setResult] = useState<SpeechAssessmentResult | null>(null);
   const [strictMode, setStrictMode] = useState<boolean>(() => storage.getStrictMode());
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -32,41 +31,41 @@ const PronunciationAssessment: React.FC = () => {
   const [useBackend, setUseBackend] = useState<boolean>(() => storage.getUseBackend());
   const [error, setError] = useState<string | null>(null);
   
-  // Azure设置
+  // Azure設置
   const [azureSettings, setAzureSettings] = useState(() => storage.getAzureSettings());
   const [showAzureSettings, setShowAzureSettings] = useState<boolean>(false);
   
-  // 语音设置
+  // 語音設置
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(() => storage.getCardExpandStates().voicePicker);
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
   
-  // 标签系统
+  // 標籤系統
   const [isTagExpanded, setIsTagExpanded] = useState<boolean>(() => storage.getCardExpandStates().tagManager);
   const [tags, setTags] = useState<Tag[]>(() => storage.getTags());
   const [nextTagId, setNextTagId] = useState<number>(() => storage.getNextTagId());
   
-  // 收藏系统
+  // 收藏系統
   const [favorites, setFavorites] = useState<Favorite[]>(() => storage.getFavorites());
   const [nextFavoriteId, setNextFavoriteId] = useState<number>(() => storage.getNextFavoriteId(favorites));
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
-  // 文本和界面设置
+  // 文本和界面設置
   const [referenceText, setReferenceText] = useState<string>(() => storage.getReferenceText());
   const [fontSize, setFontSize] = useState<number>(() => storage.getFontSize());
   
-  // 历史记录状态
+  // 歷史記錄狀態
   const [historyRecords, setHistoryRecords] = useState<storage.HistoryItem[]>(() => storage.getHistoryRecords());
   const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(() => storage.getCardExpandStates().historyRecord);
   
-  // 标签页状态
+  // 標籤頁狀態
   const [activeTab, setActiveTab] = useState<storage.TabName>(() => storage.getActiveTab());
   
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  // 使用自定义钩子
+  // 使用自定義鉤子
   const recorder = useRecorder();
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
@@ -74,7 +73,7 @@ const PronunciationAssessment: React.FC = () => {
   // 在 state 定義區域下方新增 processingRef
   const processingRef = useRef(false);
 
-  // 统一的开始评估入口
+  // 統一的開始評估入口
   const startAssessment = async () => {
     try {
       setError(null);
@@ -82,13 +81,13 @@ const PronunciationAssessment: React.FC = () => {
       setIsAssessing(true);
       
       if (useBackend) {
-        // 使用后端API
+        // 使用後端API
         await recorder.startRecording();
       } else {
         // 直接使用Azure
-        // 检查API key和region是否已设置
+        // 檢查API key和region是否已設置
         if (!azureSettings.key || !azureSettings.region) {
-          setError('请先设置Azure API key和区域');
+          setError('請先設置Azure API key和區域');
           setIsAssessing(false);
           return;
         }
@@ -106,8 +105,8 @@ const PronunciationAssessment: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('启动评估失败:', err);
-      setError(`启动评估失败: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('啟動評估失敗:', err);
+      setError(`啟動評估失敗: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       if (!useBackend) {
         setIsAssessing(false);
@@ -116,12 +115,12 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
   
-  // 停止评估
+  // 停止評估
   const stopAssessment = () => {
     if (recorder.recording) {
       recorder.stopRecording();
       
-      // 如果有录音数据并且使用后端API，则发送到后端
+      // 如果有錄音數據並且使用後端API，則發送到後端
       if (recorder.audioData && useBackend) {
         processPronunciationAssessment();
       }
@@ -131,16 +130,16 @@ const PronunciationAssessment: React.FC = () => {
     setIsAssessing(false);
   };
   
-  // 处理录音评估
+  // 處理錄音評估
   const processPronunciationAssessment = async () => {
     if (!recorder.audioData || processingRef.current) return;
     processingRef.current = true;
     
     try {
-      setIsLoading(true); // 在处理录音结果时设置isLoading为true
+      setIsLoading(true); // 在處理錄音結果時設置isLoading為true
       
       if (useBackend) {
-        // 使用后端API
+        // 使用後端API
         const result = await backendSpeech.assessWithBackend(
           recorder.audioData,
           referenceText,
@@ -152,14 +151,14 @@ const PronunciationAssessment: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('评估处理失败:', err);
-      setError(`评估处理失败: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('評估處理失敗:', err);
+      setError(`評估處理失敗: ${err instanceof Error ? err.message : String(err)}`);
       
-      // 如果后端失败，尝试回退到Azure
+      // 如果後端失敗，嘗試回退到Azure
       if (useBackend) {
         setUseBackend(false);
         storage.saveUseBackend(false);
-        alert('后端连接失败，将使用直接连接Azure模式');
+        alert('後端連接失敗，將使用直接連接Azure模式');
       }
     } finally {
       setIsLoading(false);
@@ -168,7 +167,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
   
-  // 统一的文本转语音入口
+  // 統一的文本轉語音入口
   const speakText = async () => {
     try {
       if (!referenceText) {
@@ -178,11 +177,11 @@ const PronunciationAssessment: React.FC = () => {
       
       setIsLoading(true);
       
-      // 始终使用浏览器内置的Web Speech API
+      // 始終使用瀏覽器內置的Web Speech API
       if ('speechSynthesis' in window) {
         speakTextWithBrowserAPI();
       } else {
-        // 如果不支持Web Speech API，尝试使用后端或Azure
+        // 如果不支持Web Speech API，嘗試使用後端或Azure
         if (useBackend) {
           await backendSpeech.speakWithBackend(referenceText);
         } else {
@@ -190,35 +189,39 @@ const PronunciationAssessment: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('文本转语音失败:', err);
-      setError(`文本转语音失败: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('文本轉語音失敗:', err);
+      setError(`文本轉語音失敗: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
     }
   };
   
-  // 使用浏览器内置的Web Speech API进行本地文本转语音
+  // 使用瀏覽器內置的Web Speech API進行本地文本轉語音
   const speakTextWithBrowserAPI = () => {
     try {
-      // 检查是否支持语音合成
+      // 檢查是否支援語音合成
       if (!('speechSynthesis' in window)) {
-        throw new Error('您的浏览器不支持语音合成API');
+        throw new Error('您的瀏覽器不支援語音合成API');
       }
 
-      // 检查是否有可用的语音
+      // 檢查是否有可用的語音
       if (availableVoices.length === 0) {
-        setError('语音选项尚未加载，请稍后再试或点击"选择语音"按钮查看状态');
+        setError('語音選項尚未加載，請稍後再試或點擊"選擇語音"按鈕查看狀態');
         setIsLoading(false);
         return;
       }
       
-      // 创建新的语音合成话语
+      // 創建新的語音合成話語
       const utterance = new SpeechSynthesisUtterance(referenceText);
       
-      // 设置语速
+      // 設置語速
       utterance.rate = voiceSettings.rate;
       
-      // 如果有选择语音，使用选择的语音
+      // 檢測是否為Android設備
+      const isAndroid = /android/i.test(navigator.userAgent);
+      console.log(`設備檢測: ${isAndroid ? '安卓設備' : '非安卓設備'}`);
+      
+      // 如果有選擇語音，使用選擇的語音
       if (selectedVoice) {
         // 確保使用的是當前可用的語音實例，而不是存儲的引用
         const currentVoice = window.speechSynthesis.getVoices().find(
@@ -227,12 +230,19 @@ const PronunciationAssessment: React.FC = () => {
         
         if (currentVoice) {
           utterance.voice = currentVoice;
+          
+          // 在Android設備上，再次設置語言以確保生效
+          if (isAndroid) {
+            utterance.lang = currentVoice.lang;
+            console.log(`Android設備：強制設置語言為 ${currentVoice.lang}`);
+          }
+          
           console.log(`使用選擇的語音: ${currentVoice.name}, ${currentVoice.lang}`);
         } else {
           console.warn(`無法找到選擇的語音: ${selectedVoice.name}，將使用默認語音`);
         }
       } else {
-        // 如果没有选择语音，尝试使用默认英文语音
+        // 如果沒有選擇語音，嘗試使用默認英文語音
         const englishVoices = availableVoices.filter(voice => 
           voice.lang.toLowerCase().includes('en') || 
           voice.name.toLowerCase().includes('english')
@@ -240,69 +250,85 @@ const PronunciationAssessment: React.FC = () => {
         
         if (englishVoices.length > 0) {
           utterance.voice = englishVoices[0];
-          console.log(`使用默认英文语音: ${englishVoices[0].name}`);
+          
+          // 在Android設備上，再次設置語言以確保生效
+          if (isAndroid) {
+            utterance.lang = englishVoices[0].lang;
+            console.log(`Android設備：強制設置語言為 ${englishVoices[0].lang}`);
+          }
+          
+          console.log(`使用默認英文語音: ${englishVoices[0].name}`);
         }
       }
       
-      // 添加事件监听
+      // 添加事件監聽
       utterance.onend = () => {
         setIsLoading(false);
-        console.log('语音播放结束');
+        console.log('語音播放結束');
       };
       
       utterance.onerror = (err) => {
-        console.error('语音合成错误:', err);
-        setError(`浏览器语音合成出错: ${err.error || '未知错误'}`);
+        console.error('語音合成錯誤:', err);
+        setError(`瀏覽器語音合成出錯: ${err.error || '未知錯誤'}`);
         setIsLoading(false);
       };
       
-      // 停止之前可能正在播放的语音
+      // 停止之前可能正在播放的語音
       window.speechSynthesis.cancel();
       
-      // 播放语音
+      // 播放語音
       window.speechSynthesis.speak(utterance);
       
-      console.log(`使用浏览器内置API播放语音: "${referenceText.substring(0, 30)}..."`);
+      console.log(`使用瀏覽器內置API播放語音: "${referenceText.substring(0, 30)}..."`);
     } catch (err) {
-      console.error('浏览器语音合成失败:', err);
-      setError(`浏览器语音合成失败: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('瀏覽器語音合成失敗:', err);
+      setError(`瀏覽器語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
       setIsLoading(false);
     }
   };
   
-  // 处理粘贴事件，支持文本和图片
+  // 處理粘貼事件，支持文本和圖片
   const handlePaste = async (e: React.ClipboardEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     
     try {
-      // 检查是否有图片
+      // 檢查是否有圖片
       if (e.clipboardData.files.length > 0) {
         const file = e.clipboardData.files[0];
         
         if (file.type.startsWith('image/')) {
-          // 处理图片OCR
-          const result = await Tesseract.recognize(file, 'eng+chi_sim');
-          const text = result.data.text.trim();
-          setReferenceText(text);
+          // 動態導入Tesseract.js
+          try {
+            const Tesseract = await import('tesseract.js');
+            // 處理圖片OCR
+            setIsLoading(true);
+            setError(null);
+            const result = await Tesseract.default.recognize(file, 'eng+chi_sim');
+            const text = result.data.text.trim();
+            setReferenceText(text);
+          } catch (ocrError) {
+            console.error("OCR庫加載失敗:", ocrError);
+            setError(`OCR庫加載失敗: ${ocrError instanceof Error ? ocrError.message : String(ocrError)}`);
+          }
           setIsLoading(false);
           return;
         }
       }
       
-      // 处理纯文本
+      // 處理純文本
       let text = e.clipboardData.getData('text').trim();
       setReferenceText(text);
     } catch (error) {
-      console.error("粘贴处理出错:", error);
-      setError(`粘贴内容处理失败: ${error instanceof Error ? error.message : String(error)}`);
+      console.error("粘貼處理出錯:", error);
+      setError(`粘貼內容處理失敗: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsLoading(false);
     }
   };
   
-  // 标签相关函数
+  // 標籤相關函數
   const addTag = (name: string, color = '#' + Math.floor(Math.random()*16777215).toString(16)) => {
     const newTag = {
       id: nextTagId.toString(),
@@ -319,7 +345,7 @@ const PronunciationAssessment: React.FC = () => {
     setNextTagId(newNextId);
     storage.saveNextTagId(newNextId);
     
-    return newTag.id; // 返回新创建的标签ID
+    return newTag.id; // 返回新創建的標籤ID
   };
   
   const editTag = (id: string, newName: string, newColor?: string) => {
@@ -334,12 +360,12 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   const deleteTag = (id: string) => {
-    // 删除标签
+    // 刪除標籤
     const updatedTags = tags.filter(tag => tag.id !== id);
     setTags(updatedTags);
     storage.saveTags(updatedTags);
     
-    // 从所有收藏中移除该标签
+    // 從所有收藏中移除該標籤
     const updatedFavorites = favorites.map(favorite => ({
       ...favorite,
       tagIds: favorite.tagIds.filter(tagId => tagId !== id)
@@ -349,17 +375,17 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveFavorites(updatedFavorites);
   };
   
-  // 收藏夹相关函数
+  // 收藏夾相關函數
   const addToFavorites = (text: string, tagIds: string[] = []) => {
     if (!text) {
       alert("請先輸入句子再加入我的最愛！");
       return;
     }
     
-    // 检查是否已存在相同文本
+    // 檢查是否已存在相同文本
     const existingFavorite = favorites.find(fav => fav.text === text);
     if (existingFavorite) {
-      // 如果存在，只更新标签
+      // 如果存在，只更新標籤
       updateFavoriteTags(existingFavorite.id, tagIds.length ? tagIds : selectedTags);
       alert("此句子已在我的最愛！已更新標籤。");
       return;
@@ -369,7 +395,7 @@ const PronunciationAssessment: React.FC = () => {
     const newFavorite = {
       id: nextFavoriteId.toString(),
       text: text,
-      tagIds: tagIds.length ? tagIds : selectedTags, // 使用当前选中的标签或指定的标签
+      tagIds: tagIds.length ? tagIds : selectedTags, // 使用當前選中的標籤或指定的標籤
       createdAt: Date.now()
     };
     
@@ -392,7 +418,7 @@ const PronunciationAssessment: React.FC = () => {
     const favorite = favorites.find(fav => fav.id === id);
     if (favorite) {
       setReferenceText(favorite.text);
-      setSelectedTags(favorite.tagIds); // 更新当前选中的标签
+      setSelectedTags(favorite.tagIds); // 更新當前選中的標籤
       storage.saveReferenceText(favorite.text);
     }
   };
@@ -411,7 +437,7 @@ const PronunciationAssessment: React.FC = () => {
   const toggleTagOnFavorite = (favoriteId: string, tagId: string) => {
     const updatedFavorites = favorites.map(fav => {
       if (fav.id === favoriteId) {
-        // 如果标签已存在，则移除；否则添加
+        // 如果標籤已存在，則移除；否則添加
         const hasTag = fav.tagIds.includes(tagId);
         return {
           ...fav,
@@ -427,7 +453,7 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveFavorites(updatedFavorites);
   };
   
-  // 标签选择相关
+  // 標籤選擇相關
   const toggleTagSelection = (tagId: string) => {
     const updatedSelection = selectedTags.includes(tagId)
       ? selectedTags.filter(id => id !== tagId)
@@ -440,7 +466,7 @@ const PronunciationAssessment: React.FC = () => {
     setSelectedTags([]);
   };
   
-  // 处理参考文本变更
+  // 處理參考文本變更
   const handleReferenceTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
     setReferenceText(newText);
@@ -462,7 +488,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
   
-  // 语音设置相关
+  // 語音設置相關
   const handleVoiceSearchChange = (term: string) => {
     const updatedSettings = { ...voiceSettings, searchTerm: term };
     setVoiceSettings(updatedSettings);
@@ -476,29 +502,48 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   const handleSelectVoice = (voice: SpeechSynthesisVoice) => {
-    console.log(`选择语音: ${voice.name}, ${voice.lang}`);
+    console.log(`選擇語音: ${voice.name}, ${voice.lang}`);
     
-    // 立即更新当前语音
+    // 檢測是否為Android設備
+    const isAndroid = /android/i.test(navigator.userAgent);
+    
+    // 立即更新當前語音
     setSelectedVoice(voice);
     
-    // 保存语音设置到本地存储
+    // 保存語音設置到本地存儲
     storage.saveVoiceSettings({
       voiceName: voice.name,
       voiceLang: voice.lang
     });
     
-    // 预先测试一下选择的语音
+    // 預先測試一下選擇的語音
     const testUtterance = new SpeechSynthesisUtterance('Test');
     testUtterance.voice = voice;
-    testUtterance.volume = 0; // 静音测试
+    
+    // 在Android設備上，強制設置語言屬性
+    if (isAndroid) {
+      testUtterance.lang = voice.lang;
+      console.log(`Android設備：為語音測試設置語言為 ${voice.lang}`);
+      
+      // 針對Android設備提供更多控制台信息，幫助調試
+      console.log(`Android語音詳情:`, {
+        name: voice.name,
+        lang: voice.lang,
+        localService: voice.localService,
+        default: voice.default,
+        voiceURI: voice.voiceURI
+      });
+    }
+    
+    testUtterance.volume = 0; // 靜音測試
     window.speechSynthesis.speak(testUtterance);
   };
   
-  // 确保在组件加载时预加载语音
+  // 確保在組件加載時預加載語音
   useEffect(() => {
-    // 在某些浏览器中，voices列表可能需要时间加载
+    // 在某些瀏覽器中，voices列表可能需要時間加載
     if ('speechSynthesis' in window) {
-      // 获取当前可用的语音
+      // 獲取當前可用的語音
       const loadVoices = () => {
         const voices = window.speechSynthesis.getVoices();
         if (voices.length === 0) {
@@ -506,47 +551,47 @@ const PronunciationAssessment: React.FC = () => {
           return;
         }
 
-        console.log(`加载了${voices.length}个语音选项`);
+        console.log(`加載了${voices.length}個語音選項`);
         setAvailableVoices(voices);
         
-        // 如果没有选择过语音，默认选择一个合适的
+        // 如果沒有選擇過語音，默認選擇一個合適的
         if (!selectedVoice && voices.length > 0) {
-          // 尝试找到一个合适的默认语音
+          // 嘗試找到一個合適的默認語音
           const savedVoiceName = voiceSettings.voiceName;
           const savedVoiceLang = voiceSettings.voiceLang;
           
-          // 将null改为undefined以修复类型错误
+          // 將null改為undefined以修復類型錯誤
           let preferredVoice: SpeechSynthesisVoice | undefined = undefined;
           
-          // 如果之前有选择过语音，尝试找到相同的语音
+          // 如果之前有選擇過語音，嘗試找到相同的語音
           if (savedVoiceName) {
-            console.log(`尝试查找保存的语音: ${savedVoiceName}, ${savedVoiceLang}`);
+            console.log(`嘗試查找保存的語音: ${savedVoiceName}, ${savedVoiceLang}`);
             preferredVoice = voices.find(voice => voice.name === savedVoiceName);
             
             if (preferredVoice) {
-              console.log(`找到保存的语音: ${preferredVoice.name}`);
+              console.log(`找到保存的語音: ${preferredVoice.name}`);
             } else {
-              console.log(`未找到保存的语音，将选择默认语音`);
+              console.log(`未找到保存的語音，將選擇默認語音`);
             }
           }
           
-          // 如果没有找到相同的语音，则尝试找到一个合适的英文语音
+          // 如果沒有找到相同的語音，則嘗試找到一個合適的英文語音
           if (!preferredVoice) {
-            // 在所有语音中选择一个英文语音
+            // 在所有語音中選擇一個英文語音
             const englishVoices = voices.filter(voice => 
               voice.name.toLowerCase().includes('english') || 
               voice.lang.toLowerCase().includes('en')
             );
             
-            // 如果没有找到英文语音，则选择第一个语音
+            // 如果沒有找到英文語音，則選擇第一個語音
             preferredVoice = englishVoices.length > 0 ? englishVoices[0] : voices[0];
           }
           
           if (preferredVoice) {
-            console.log(`设置语音: ${preferredVoice.name}, ${preferredVoice.lang}`);
+            console.log(`設置語音: ${preferredVoice.name}, ${preferredVoice.lang}`);
             setSelectedVoice(preferredVoice);
             
-            // 保存语音设置
+            // 保存語音設置
             storage.saveVoiceSettings({
               voiceName: preferredVoice.name,
               voiceLang: preferredVoice.lang
@@ -555,25 +600,25 @@ const PronunciationAssessment: React.FC = () => {
         }
       };
       
-      // 首次加载尝试
+      // 首次加載嘗試
       loadVoices();
       
-      // 监听voices加载完成事件
+      // 監聽voices加載完成事件
       window.speechSynthesis.onvoiceschanged = loadVoices;
       
-      // 确保语音列表已加载 - 在某些浏览器中需要触发一下
+      // 確保語音列表已加載 - 在某些瀏覽器中需要觸發一下
       if (window.speechSynthesis.getVoices().length === 0) {
         window.speechSynthesis.cancel();
       }
       
-      // 清理函数
+      // 清理函數
       return () => {
         window.speechSynthesis.onvoiceschanged = null;
       };
     }
   }, [voiceSettings]);
   
-  // 处理录音状态变化
+  // 處理錄音狀態變化
   useEffect(() => {
     if (recorder.audioData && !recorder.recording && useBackend) {
       processPronunciationAssessment();
@@ -598,7 +643,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  // 保存卡片展开状态
+  // 保存卡片展開狀態
   const handleTagExpandToggle = () => {
     const newState = !isTagExpanded;
     setIsTagExpanded(newState);
@@ -611,7 +656,7 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveCardExpandState('voicePicker', newState);
   };
 
-  // 历史记录相关函数
+  // 歷史記錄相關函數
   const handleDeleteHistoryRecord = (id: string) => {
     storage.deleteHistoryRecord(id);
     setHistoryRecords(storage.getHistoryRecords());
@@ -633,10 +678,10 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveReferenceText(text);
   };
 
-  // 将评估结果添加到历史记录
+  // 將評估結果添加到歷史記錄
   useEffect(() => {
     if (result) {
-      // 提取单词评分数据
+      // 提取單詞評分數據
       let words = [];
       try {
         const nbestArray = result.NBest || result.nBest || result.nbest;
@@ -645,22 +690,22 @@ const PronunciationAssessment: React.FC = () => {
           words = nbest.Words || (nbest as any).words || [];
         }
       } catch (err) {
-        console.error('提取单词评分数据失败:', err);
+        console.error('提取單詞評分數據失敗:', err);
       }
 
-      // 生成一个唯一ID，使用时间戳加随机数
+      // 生成一個唯一ID，使用時間戳加隨機數
       const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      // 检查当前记录是否已经存在相似记录（同一文本和相近时间）
+      // 檢查當前記錄是否已經存在相似記錄（同一文本和相近時間）
       const existingRecords = storage.getHistoryRecords();
-      const last5Seconds = Date.now() - 5000; // 5秒内
+      const last5Seconds = Date.now() - 5000; // 5秒內
       
       const hasSimilarRecord = existingRecords.some(record => 
         record.text === referenceText && 
         record.timestamp > last5Seconds
       );
       
-      // 只有不存在相似记录时才添加
+      // 只有不存在相似記錄時才添加
       if (!hasSimilarRecord) {
         storage.addHistoryRecord({
           text: referenceText,
@@ -669,16 +714,16 @@ const PronunciationAssessment: React.FC = () => {
           scoreCompleteness: result.completenessScore || 0,
           scorePronunciation: result.pronunciationScore || 0,
           recognizedText: result.DisplayText || result.text || '',
-          words: words // 保存单词评分数据
+          words: words // 保存單詞評分數據
         });
         setHistoryRecords(storage.getHistoryRecords());
       } else {
-        console.log('检测到重复的历史记录，已忽略');
+        console.log('檢測到重複的歷史記錄，已忽略');
       }
     }
   }, [result, referenceText]);
 
-  // 切换标签页
+  // 切換標籤頁
   const handleTabChange = (tab: storage.TabName) => {
     setActiveTab(tab);
     storage.saveActiveTab(tab);
@@ -691,13 +736,13 @@ const PronunciationAssessment: React.FC = () => {
       <p 
         className="pa-subtitle" 
         onClick={() => {
-          // 如果从后端切换到前端，需要检查Azure凭据
+          // 如果從後端切換到前端，需要檢查Azure憑據
           if (useBackend && (!azureSettings.key || !azureSettings.region)) {
             setShowAzureSettings(true);
-            return; // 等用户填写设置后再切换
+            return; // 等用戶填寫設置后再切換
           }
           
-          const newMode = !useBackend; // 切换模式
+          const newMode = !useBackend; // 切換模式
           setUseBackend(newMode);
           storage.saveUseBackend(newMode);
         }}
@@ -709,21 +754,21 @@ const PronunciationAssessment: React.FC = () => {
         測試中25年0519更新
       </p>
       
-      {/* 错误提示 */}
+      {/* 錯誤提示 */}
       {error && (
         <div className="error-message">
           <p>{error}</p>
         </div>
       )}
       
-      {/* 主要功能区域 */}
+      {/* 主要功能區域 */}
       <div className="pa-main-content">
-        {/* 输入区域 */}
+        {/* 輸入區域 */}
         <div className="card-section">
           <h3 
             className="section-header special-title"
             onClick={() => {
-              // 输入文本区域始终保持展开状态
+              // 輸入文本區域始終保持展開狀態
               textareaRef.current?.focus();
             }}
             style={{ cursor: 'pointer' }}
@@ -762,12 +807,12 @@ const PronunciationAssessment: React.FC = () => {
           </div>
         </div>
         
-        {/* 控制按钮区域 */}
+        {/* 控制按鈕區域 */}
         <div className="card-section">
           <h3 
             className="section-header special-title"
             onClick={() => {
-              // 录音评分区域始终保持展开状态
+              // 錄音評分區域始終保持展開狀態
             }}
             style={{ cursor: 'pointer' }}
           >
@@ -797,7 +842,7 @@ const PronunciationAssessment: React.FC = () => {
           </div>
         </div>
         
-        {/* 结果显示区域 */}
+        {/* 結果顯示區域 */}
         {result && (() => {
           try {
             // Azure 直連或後端含 NBest
@@ -843,7 +888,7 @@ const PronunciationAssessment: React.FC = () => {
           }
         })()}
         
-        {/* 标签页导航区域 */}
+        {/* 標籤頁導航區域 */}
         <div className="card-section">
           <div className="tabs-container">
             <div className="tabs-nav">
@@ -874,19 +919,19 @@ const PronunciationAssessment: React.FC = () => {
             </div>
             
             <div className="tab-content">
-              {/* 历史记录标签页 */}
+              {/* 歷史記錄標籤頁 */}
               {activeTab === 'history' && (
                 <HistoryRecord
                   historyRecords={historyRecords}
                   onDeleteRecord={handleDeleteHistoryRecord}
                   onClearRecords={handleClearHistoryRecords}
                   onLoadText={handleLoadHistoryText}
-                  isExpanded={true} // 标签页模式下始终展开
-                  onToggleExpand={() => {}} // 标签页模式下不需要切换展开状态
+                  isExpanded={true} // 標籤頁模式下始終展開
+                  onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
                 />
               )}
               
-              {/* 收藏列表标签页 */}
+              {/* 收藏列表標籤頁 */}
               {activeTab === 'favorites' && (
                 <FavoriteList
                   favorites={favorites}
@@ -903,19 +948,19 @@ const PronunciationAssessment: React.FC = () => {
                 />
               )}
               
-              {/* 标签管理标签页 */}
+              {/* 標籤管理標籤頁 */}
               {activeTab === 'tags' && (
                 <TagManager
                   tags={tags}
                   onAddTag={addTag}
                   onEditTag={editTag}
                   onDeleteTag={deleteTag}
-                  isExpanded={true} // 标签页模式下始终展开
-                  onToggleExpand={() => {}} // 标签页模式下不需要切换展开状态
+                  isExpanded={true} // 標籤頁模式下始終展開
+                  onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
                 />
               )}
               
-              {/* 语音选择标签页 */}
+              {/* 語音選擇標籤頁 */}
               {activeTab === 'voices' && (
                 <VoicePicker
                   availableVoices={availableVoices}
@@ -926,8 +971,8 @@ const PronunciationAssessment: React.FC = () => {
                   onSelectVoice={handleSelectVoice}
                   onChangeSearchTerm={handleVoiceSearchChange}
                   onChangeSpeechRate={handleSpeechRateChange}
-                  isExpanded={true} // 标签页模式下始终展开
-                  onToggleExpand={() => {}} // 标签页模式下不需要切换展开状态
+                  isExpanded={true} // 標籤頁模式下始終展開
+                  onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
                 />
               )}
             </div>

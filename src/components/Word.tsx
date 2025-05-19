@@ -10,19 +10,19 @@ interface WordProps {
 }
 
 const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
-  // 获取评估结果
+  // 獲取評估結果
   const assessment: WordAssessment | undefined = word.PronunciationAssessment;
   
-  // 计算显示颜色
+  // 計算顯示顏色
   const getScoreColor = (score: number | undefined) => {
-    if (score === undefined) return '#ffffff'; // 默认白色
+    if (score === undefined) return '#ffffff'; // 默認白色
     
-    if (score >= 80) return '#4caf50'; // 绿色
+    if (score >= 80) return '#4caf50'; // 綠色
     if (score >= 60) return '#ff9800'; // 橙色
-    return '#f44336'; // 红色
+    return '#f44336'; // 紅色
   };
   
-  // 检查是否有错误
+  // 檢查是否有錯誤
   const hasError = assessment?.ErrorType && assessment.ErrorType !== 'None';
   
   return (
@@ -35,7 +35,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
       maxWidth: '80px',
       overflow: 'visible'
     }}>
-      {/* 分数显示 */}
+      {/* 分數顯示 */}
       {assessment?.AccuracyScore !== undefined && (
         <div style={{
           fontSize: '14px',
@@ -52,7 +52,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
         </div>
       )}
       
-      {/* 单词本身 */}
+      {/* 單詞本身 */}
       <div 
         onClick={onClick}
         style={{
@@ -67,7 +67,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
         {word.Word}
       </div>
       
-      {/* 错误标签 - 内联显示而非绝对定位 */}
+      {/* 錯誤標籤 - 內聯顯示而非絕對定位 */}
       {hasError && (
         <div style={{ 
           width: '100%',

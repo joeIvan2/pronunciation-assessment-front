@@ -20,10 +20,10 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
   isExpanded,
   onToggleExpand
 }) => {
-  // 添加词语评分的显示状态
+  // 添加詞語評分的顯示狀態
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
   
-  // 切换显示单词评分详情
+  // 切換顯示單詞評分詳情
   const toggleWordsDisplay = (recordId: string) => {
     if (expandedRecordId === recordId) {
       setExpandedRecordId(null);
@@ -38,7 +38,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
     return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  // 获取分数的颜色
+  // 獲取分數的顏色
   const getScoreColor = (score: number): string => {
     if (score >= 80) return 'var(--ios-success)';
     if (score >= 60) return 'var(--ios-warning)';
@@ -117,7 +117,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                       <button
                         onClick={() => onDeleteRecord(record.id)}
                         className="btn-delete"
-                        title="删除"
+                        title="刪除"
                       >
                         <span>×</span>
                       </button>
@@ -135,7 +135,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                         fontSize: '12px',
                         color: getScoreColor(record.scoreAccuracy)
                       }}>
-                        准确性: {record.scoreAccuracy}
+                        準確性: {record.scoreAccuracy}
                       </div>
                       <div style={{ 
                         background: 'rgba(20, 20, 24, 0.6)', 
@@ -144,7 +144,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                         fontSize: '12px',
                         color: getScoreColor(record.scoreFluency)
                       }}>
-                        流畅性: {record.scoreFluency}
+                        流暢性: {record.scoreFluency}
                       </div>
                       <div style={{ 
                         background: 'rgba(20, 20, 24, 0.6)', 
@@ -162,7 +162,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                         fontSize: '12px',
                         color: getScoreColor(record.scorePronunciation)
                       }}>
-                        发音: {record.scorePronunciation}
+                        發音: {record.scorePronunciation}
                       </div>
                     </div>
                     
@@ -180,7 +180,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                       </div>
                     )}
                     
-                    {/* 单词评分按钮和详情 */}
+                    {/* 單詞評分按鈕和詳情 */}
                     {record.words && record.words.length > 0 && (
                       <>
                         <button 
@@ -196,7 +196,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                             marginTop: '8px'
                           }}
                         >
-                          {expandedRecordId === record.id ? '隐藏單詞評分' : '顯示單詞評分'}
+                          {expandedRecordId === record.id ? '隱藏單詞評分' : '顯示單詞評分'}
                         </button>
                         
                         {expandedRecordId === record.id && (
@@ -219,7 +219,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
               textAlign: 'center',
               border: '1px solid var(--ios-border)'
             }}>
-              暂无历史记录，完成发音评估后会自动记录
+              暫無歷史紀錄，錄製完畢後會自動出現紀錄
             </div>
           )}
         </>

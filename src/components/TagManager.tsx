@@ -36,7 +36,7 @@ const TagManager: React.FC<TagManagerProps> = ({
       
       {isExpanded && (
         <>
-          {/* 添加新标签 */}
+          {/* 添加新標籤 */}
           <div style={{ 
             marginBottom: 16, 
             background: "var(--ios-card)", 
@@ -119,7 +119,7 @@ const TagManager: React.FC<TagManagerProps> = ({
             </div>
           </div>
           
-          {/* 标签列表 */}
+          {/* 標籤列表 */}
           <div>
             <h4 style={{ 
               color: "var(--ios-primary)", 
