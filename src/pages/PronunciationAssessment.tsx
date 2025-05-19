@@ -37,8 +37,8 @@ const PronunciationAssessment: React.FC = () => {
   const [showAzureSettings, setShowAzureSettings] = useState<boolean>(false);
   
   // 语音设置
-  const [availableVoices, setAvailableVoices] = useState<VoiceOption[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(() => storage.getCardExpandStates().voicePicker);
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
   
@@ -220,8 +220,17 @@ const PronunciationAssessment: React.FC = () => {
       
       // 如果有选择语音，使用选择的语音
       if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        console.log(`使用选择的语音: ${selectedVoice.name}`);
+        // 確保使用的是當前可用的語音實例，而不是存儲的引用
+        const currentVoice = window.speechSynthesis.getVoices().find(
+          voice => voice.name === selectedVoice.name
+        );
+        
+        if (currentVoice) {
+          utterance.voice = currentVoice;
+          console.log(`使用選擇的語音: ${currentVoice.name}, ${currentVoice.lang}`);
+        } else {
+          console.warn(`無法找到選擇的語音: ${selectedVoice.name}，將使用默認語音`);
+        }
       } else {
         // 如果没有选择语音，尝试使用默认英文语音
         const englishVoices = availableVoices.filter(voice => 
@@ -253,7 +262,7 @@ const PronunciationAssessment: React.FC = () => {
       // 播放语音
       window.speechSynthesis.speak(utterance);
       
-      console.log(`使用浏览器内置API播放语音: "${referenceText}"`);
+      console.log(`使用浏览器内置API播放语音: "${referenceText.substring(0, 30)}..."`);
     } catch (err) {
       console.error('浏览器语音合成失败:', err);
       setError(`浏览器语音合成失败: ${err instanceof Error ? err.message : String(err)}`);
@@ -467,11 +476,22 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   const handleSelectVoice = (voice: SpeechSynthesisVoice) => {
+    console.log(`选择语音: ${voice.name}, ${voice.lang}`);
+    
+    // 立即更新当前语音
     setSelectedVoice(voice);
+    
+    // 保存语音设置到本地存储
     storage.saveVoiceSettings({
       voiceName: voice.name,
       voiceLang: voice.lang
     });
+    
+    // 预先测试一下选择的语音
+    const testUtterance = new SpeechSynthesisUtterance('Test');
+    testUtterance.voice = voice;
+    testUtterance.volume = 0; // 静音测试
+    window.speechSynthesis.speak(testUtterance);
   };
   
   // 确保在组件加载时预加载语音
@@ -480,7 +500,12 @@ const PronunciationAssessment: React.FC = () => {
     if ('speechSynthesis' in window) {
       // 获取当前可用的语音
       const loadVoices = () => {
-        const voices = speechSynthesis.getVoices();
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) {
+          console.log('語音列表為空，稍後將重試');
+          return;
+        }
+
         console.log(`加载了${voices.length}个语音选项`);
         setAvailableVoices(voices);
         
@@ -495,7 +520,14 @@ const PronunciationAssessment: React.FC = () => {
           
           // 如果之前有选择过语音，尝试找到相同的语音
           if (savedVoiceName) {
-            preferredVoice = voices.find(voice => voice.name === savedVoiceName && voice.lang === savedVoiceLang);
+            console.log(`尝试查找保存的语音: ${savedVoiceName}, ${savedVoiceLang}`);
+            preferredVoice = voices.find(voice => voice.name === savedVoiceName);
+            
+            if (preferredVoice) {
+              console.log(`找到保存的语音: ${preferredVoice.name}`);
+            } else {
+              console.log(`未找到保存的语音，将选择默认语音`);
+            }
           }
           
           // 如果没有找到相同的语音，则尝试找到一个合适的英文语音
@@ -511,8 +543,14 @@ const PronunciationAssessment: React.FC = () => {
           }
           
           if (preferredVoice) {
+            console.log(`设置语音: ${preferredVoice.name}, ${preferredVoice.lang}`);
             setSelectedVoice(preferredVoice);
-            console.log(`自动选择语音: ${preferredVoice.name}`);
+            
+            // 保存语音设置
+            storage.saveVoiceSettings({
+              voiceName: preferredVoice.name,
+              voiceLang: preferredVoice.lang
+            });
           }
         }
       };
@@ -521,14 +559,19 @@ const PronunciationAssessment: React.FC = () => {
       loadVoices();
       
       // 监听voices加载完成事件
-      speechSynthesis.onvoiceschanged = loadVoices;
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      
+      // 确保语音列表已加载 - 在某些浏览器中需要触发一下
+      if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.cancel();
+      }
       
       // 清理函数
       return () => {
-        speechSynthesis.onvoiceschanged = null;
+        window.speechSynthesis.onvoiceschanged = null;
       };
     }
-  }, [selectedVoice, voiceSettings]);
+  }, [voiceSettings]);
   
   // 处理录音状态变化
   useEffect(() => {
