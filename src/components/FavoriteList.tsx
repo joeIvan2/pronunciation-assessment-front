@@ -67,13 +67,6 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
             {tag.name}
           </button>
         ))}
-        
-        <button
-          onClick={onManageTags}
-          className="manage-tags-button"
-        >
-          <span className="icon">⚙️</span> 管理標籤
-        </button>
       </div>
       
       {/* 收藏列表 */}
