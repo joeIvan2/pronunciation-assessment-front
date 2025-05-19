@@ -1,5 +1,6 @@
 import React from 'react';
 import { VoiceOption } from '../types/speech';
+import '../styles/PronunciationAssessment.css';
 
 interface VoicePickerProps {
   availableVoices: VoiceOption[];
@@ -25,9 +26,9 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   onClose
 }) => {
   return (
-    <div style={{ marginTop: 16, padding: 16, background: "#2a2e39", borderRadius: 8, maxHeight: 500, overflowY: "auto" }}>
+    <div className="card-section">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <h3 style={{ color: "#4cafef", margin: 0 }}>選擇語音</h3>
+        <h3 className="section-header">選擇語音</h3>
         <button 
           onClick={onClose}
           style={{ background: "transparent", border: "none", color: "#999", cursor: "pointer", fontSize: "16px" }}
@@ -46,28 +47,29 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
           style={{ 
             width: "100%", 
             padding: "8px 12px", 
-            background: "#23272f", 
-            border: "1px solid #444", 
-            borderRadius: 4, 
-            color: "#fff" 
+            background: "rgba(20, 20, 24, 0.7)", 
+            border: "1px solid var(--ios-border)", 
+            borderRadius: 12, 
+            color: "var(--ios-text)" 
           }}
         />
       </div>
       
       {/* 语速选择 */}
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "block", color: "#bbb", marginBottom: 8 }}>語速選擇：</label>
-        <div style={{ display: "flex" }}>
+        <label style={{ display: "block", color: "var(--ios-text-secondary)", marginBottom: 8 }}>語速選擇：</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <button 
             onClick={() => onChangeSpeechRate(0.5)}
             style={{ 
               padding: "6px 12px", 
-              background: speechRate === 0.5 ? "#4caf50" : "#333", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4, 
-              marginRight: 8,
-              cursor: "pointer"
+              background: speechRate === 0.5 ? "var(--ios-success)" : "var(--ios-card)", 
+              color: "var(--ios-text)", 
+              border: speechRate === 0.5 ? "none" : "1px solid var(--ios-border)", 
+              borderRadius: 12, 
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 500
             }}
           >
             0.5x (慢)
@@ -76,12 +78,13 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             onClick={() => onChangeSpeechRate(0.8)}
             style={{ 
               padding: "6px 12px", 
-              background: speechRate === 0.8 ? "#8bc34a" : "#333", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4, 
-              marginRight: 8,
-              cursor: "pointer"
+              background: speechRate === 0.8 ? "var(--ios-success)" : "var(--ios-card)", 
+              color: "var(--ios-text)", 
+              border: speechRate === 0.8 ? "none" : "1px solid var(--ios-border)", 
+              borderRadius: 12, 
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 500
             }}
           >
             0.8x
@@ -90,12 +93,13 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             onClick={() => onChangeSpeechRate(1.0)}
             style={{ 
               padding: "6px 12px", 
-              background: speechRate === 1.0 ? "#2196f3" : "#333", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4, 
-              marginRight: 8,
-              cursor: "pointer"
+              background: speechRate === 1.0 ? "var(--ios-primary)" : "var(--ios-card)", 
+              color: "var(--ios-text)", 
+              border: speechRate === 1.0 ? "none" : "1px solid var(--ios-border)", 
+              borderRadius: 12, 
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 500
             }}
           >
             1.0x (正常)
@@ -104,12 +108,13 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             onClick={() => onChangeSpeechRate(1.5)}
             style={{ 
               padding: "6px 12px", 
-              background: speechRate === 1.5 ? "#ff9800" : "#333", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4, 
-              marginRight: 8,
-              cursor: "pointer"
+              background: speechRate === 1.5 ? "var(--ios-warning)" : "var(--ios-card)", 
+              color: "var(--ios-text)", 
+              border: speechRate === 1.5 ? "none" : "1px solid var(--ios-border)", 
+              borderRadius: 12, 
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 500
             }}
           >
             1.5x
@@ -118,11 +123,13 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             onClick={() => onChangeSpeechRate(2.0)}
             style={{ 
               padding: "6px 12px", 
-              background: speechRate === 2.0 ? "#f44336" : "#333", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 4,
-              cursor: "pointer"
+              background: speechRate === 2.0 ? "var(--ios-danger)" : "var(--ios-card)", 
+              color: "var(--ios-text)", 
+              border: speechRate === 2.0 ? "none" : "1px solid var(--ios-border)", 
+              borderRadius: 12,
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 500
             }}
           >
             2.0x (快)
@@ -132,10 +139,10 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
       
       {/* 语音列表 */}
       <div>
-        <h4 style={{ color: "#4cafef", margin: "0 0 8px 0" }}>可用語音 ({availableVoices.length})</h4>
+        <h4 style={{ color: "var(--ios-primary)", margin: "0 0 8px 0", fontSize: 15, fontWeight: 600 }}>可用語音 ({availableVoices.length})</h4>
         
         {availableVoices.length === 0 ? (
-          <p style={{ color: "#bbb" }}>未找到語音選項，請等待瀏覽器加載語音。</p>
+          <p style={{ color: "var(--ios-text-secondary)" }}>未找到語音選項，請等待瀏覽器加載語音。</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0 }}>
             {availableVoices
@@ -148,20 +155,20 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                   key={index} 
                   onClick={() => onSelectVoice(voice)}
                   style={{
-                    padding: "10px 12px",
-                    background: selectedVoice && selectedVoice.name === voice.name ? "#1e88e5" : "#23272f",
+                    padding: "12px",
+                    background: selectedVoice && selectedVoice.name === voice.name ? "var(--ios-primary)" : "var(--ios-card)",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: 4,
-                    borderRadius: 4,
-                    border: "1px solid #333",
+                    marginBottom: 8,
+                    borderRadius: 12,
+                    border: "1px solid var(--ios-border)",
                     cursor: "pointer"
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: "bold" }}>{voice.name}</div>
-                    <div style={{ fontSize: "0.8em", color: "#bbb", marginTop: 4 }}>
+                    <div style={{ fontWeight: "bold", color: "var(--ios-text)" }}>{voice.name}</div>
+                    <div style={{ fontSize: "0.8em", color: "var(--ios-text-secondary)", marginTop: 4 }}>
                       {voice.lang} | {voice.default ? "默認" : "可選"} | {voice.localService ? "本地" : "遠程"}
                     </div>
                   </div>
@@ -181,11 +188,13 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                     }}
                     style={{ 
                       padding: "6px 12px", 
-                      background: "#4caf50", 
-                      color: "#fff", 
+                      background: "var(--ios-success)", 
+                      color: "var(--ios-text)", 
                       border: "none", 
-                      borderRadius: 4,
-                      cursor: "pointer"
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: 500
                     }}
                   >
                     測試

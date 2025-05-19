@@ -708,17 +708,6 @@ const PronunciationAssessment: React.FC = () => {
           currentText={referenceText}
         />
         
-        {/* 標籤管理面板 */}
-        {showTagManager && (
-          <TagManager
-            tags={tags}
-            onAddTag={addTag}
-            onEditTag={editTag}
-            onDeleteTag={deleteTag}
-            onClose={() => setShowTagManager(false)}
-          />
-        )}
-        
         {/* 語音選擇面板 */}
         {showVoiceOptions && (
           <VoicePicker
@@ -731,6 +720,17 @@ const PronunciationAssessment: React.FC = () => {
             onChangeSearchTerm={handleVoiceSearchChange}
             onChangeSpeechRate={handleSpeechRateChange}
             onClose={() => setShowVoiceOptions(false)}
+          />
+        )}
+        
+        {/* 標籤管理面板 */}
+        {showTagManager && (
+          <TagManager
+            tags={tags}
+            onAddTag={addTag}
+            onEditTag={editTag}
+            onDeleteTag={deleteTag}
+            onClose={() => setShowTagManager(false)}
           />
         )}
         
