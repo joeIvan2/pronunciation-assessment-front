@@ -399,6 +399,12 @@ h4 {
   gap: 6px;
 }
 
+/* 特殊标题颜色 */
+.special-title {
+  color: var(--ios-primary); /* iOS蓝色作为标题颜色 */
+  font-weight: 700;
+}
+
 .section-header .icon {
   font-size: 15px;
   opacity: 0.9;

@@ -44,7 +44,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   
   return (
     <div className="card-section">
-      <h3 className="section-header">我的最愛</h3>
+      <h3 className="section-header special-title">我的最愛</h3>
       
       {/* 标签筛选区 */}
       <div className="tag-controls">

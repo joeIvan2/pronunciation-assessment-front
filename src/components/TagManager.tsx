@@ -25,7 +25,7 @@ const TagManager: React.FC<TagManagerProps> = ({
   return (
     <div className="card-section">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isExpanded ? 12 : 0 }}>
-        <h3 className="section-header">管理標籤</h3>
+        <h3 className="section-header special-title">管理標籤</h3>
         <button 
           onClick={onToggleExpand}
           style={{ 

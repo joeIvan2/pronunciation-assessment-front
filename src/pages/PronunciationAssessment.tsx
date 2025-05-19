@@ -583,7 +583,7 @@ const PronunciationAssessment: React.FC = () => {
       <div className="pa-main-content">
         {/* 输入区域 */}
         <div className="card-section">
-          <h3 className="section-header">輸入文本</h3>
+          <h3 className="section-header special-title">輸入文本</h3>
           <div className="input-container">
             <textarea
               ref={textareaRef}

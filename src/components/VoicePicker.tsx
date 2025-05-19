@@ -30,7 +30,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   return (
     <div className="card-section">
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: isExpanded ? 12 : 0 }}>
-        <h3 className="section-header">選擇語音</h3>
+        <h3 className="section-header special-title">選擇語音</h3>
         <button 
           onClick={onToggleExpand}
           style={{ 
