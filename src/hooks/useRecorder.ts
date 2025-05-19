@@ -95,8 +95,8 @@ export const useRecorder = (): RecorderResult => {
         }
       };
       
-      // 开始录制，每500毫秒保存一次数据块，提高数据收集频率
-      mediaRecorder.start(500);
+      // 更改为只在停止录音时传送数据，避免中间多次触发
+      mediaRecorder.start();
       console.log('开始录音...');
       
     } catch (err) {
@@ -111,7 +111,23 @@ export const useRecorder = (): RecorderResult => {
   
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      // 关闭录音器
       mediaRecorderRef.current.stop();
+    } else {
+      console.warn('嘗試停止未運行的錄音機');
+      
+      // 如果mediaRecorder不存在或未在錄製，仍然嘗試清理狀態
+      setState({
+        recording: false,
+        audioData: null,
+        error: null
+      });
+      
+      // 關閉媒體流
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
     }
   };
   
