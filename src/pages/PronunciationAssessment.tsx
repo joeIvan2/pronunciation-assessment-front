@@ -564,8 +564,8 @@ const PronunciationAssessment: React.FC = () => {
   // JSX 渲染部分
   return (
     <div className="pa-container">
-      <h2 className="pa-title">發音評分（瀏覽器內建語音版）</h2>
-      <p className="pa-subtitle">此版本始終使用瀏覽器內建 Web Speech API 進行語音合成，無需連接雲端服務</p>
+      <h2 className="pa-title">發音評分</h2>
+      <p className="pa-subtitle">測試中25年0519更新</p>
       
       {/* 错误提示 */}
       {error && (
@@ -589,15 +589,15 @@ const PronunciationAssessment: React.FC = () => {
               style={{ fontSize: `${fontSize}px` }}
               placeholder="輸入或粘貼要練習的文本..."
             />
-            <div className="font-size-controls">
-              <button onClick={decreaseFontSize} className="btn btn-size-control">
-                <span style={{ fontSize: "14px" }}>A-</span>
-              </button>
-              <span className="font-size-display">{fontSize}px</span>
-              <button onClick={increaseFontSize} className="btn btn-size-control">
-                <span style={{ fontSize: "14px" }}>A+</span>
-              </button>
-            </div>
+          </div>
+          <div className="font-size-controls">
+            <button onClick={decreaseFontSize} className="btn-size-control">
+              <span style={{ fontSize: "14px" }}>A-</span>
+            </button>
+            <span className="font-size-display">{fontSize}px</span>
+            <button onClick={increaseFontSize} className="btn-size-control">
+              <span style={{ fontSize: "14px" }}>A+</span>
+            </button>
           </div>
         </div>
         
