@@ -122,10 +122,12 @@ export const saveVoiceSettings = (
 // 获取标签
 export const getTags = (): Tag[] => {
   const defaultTags: Tag[] = [
-    { tagId: '1', name: '基礎句型', color: '#4caf50', createdAt: Date.now() },
-    { tagId: '2', name: '商務英語', color: '#2196f3', createdAt: Date.now() },
-    { tagId: '3', name: '日常對話', color: '#ff9800', createdAt: Date.now() },
-    { tagId: '4', name: '難詞發音', color: '#9c27b0', createdAt: Date.now() }
+    { tagId: "1", name: "IELTS8分", color: "#1e90ff", createdAt: 1747713791965 },
+    { tagId: "2", name: "小學3年級", color: "#ff6347", createdAt: 1747715000000 },
+    { tagId: "3", name: "國中2年級", color: "#3cb371", createdAt: 1747715000001 },
+    { tagId: "4", name: "高中3年級", color: "#ffa500", createdAt: 1747715000002 },
+    { tagId: "5", name: "IELTS7分", color: "#4682b4", createdAt: 1747716000000 },
+    { tagId: "6", name: "IELTS9分", color: "#006400", createdAt: 1747716000001 }
   ];
 
   return getItem<Tag[]>('tags', defaultTags);
@@ -148,71 +150,150 @@ export const saveNextTagId = (id: number): void => {
 
 // 获取收藏夹
 export const getFavorites = (): Favorite[] => {
+  // 默認值 - 使用預設的示例數據
+  const defaultFavorites: Favorite[] = [
+    {
+      "id": "13",
+      "text": "The philosophical implications of artificial intelligence challenge traditional concepts of consciousness.",
+      "tagIds": ["6"],
+      "createdAt": 1747716000600
+    },
+    {
+      "id": "12",
+      "text": "Advancements in nanotechnology enable unprecedented manipulation of matter at atomic scales.",
+      "tagIds": ["6"],
+      "createdAt": 1747716000500
+    },
+    {
+      "id": "11",
+      "text": "Socioeconomic disparities significantly impact access to quality education and healthcare.",
+      "tagIds": ["1"],
+      "createdAt": 1747716000400
+    },
+    {
+      "id": "10",
+      "text": "The confluence of quantum mechanics and relativity presents profound challenges in physics.",
+      "tagIds": ["1"],
+      "createdAt": 1747716000300
+    },
+    {
+      "id": "9",
+      "text": "Innovative renewable energy technologies are transforming global power generation.",
+      "tagIds": ["5"],
+      "createdAt": 1747716000200
+    },
+    {
+      "id": "8",
+      "text": "The intricate balance of ecosystems depends on biodiversity and environmental stability.",
+      "tagIds": ["5"],
+      "createdAt": 1747716000100
+    },
+    {
+      "id": "7",
+      "text": "Economic factors influence the supply and demand of goods in a marketplace.",
+      "tagIds": ["4"],
+      "createdAt": 1747715000600
+    },
+    {
+      "id": "6",
+      "text": "The theory of relativity changed how scientists understand time and space.",
+      "tagIds": ["4"],
+      "createdAt": 1747715000500
+    },
+    {
+      "id": "5",
+      "text": "Photosynthesis allows plants to convert sunlight into energy for growth.",
+      "tagIds": ["3"],
+      "createdAt": 1747715000400
+    },
+    {
+      "id": "4",
+      "text": "Water changes its state from liquid to solid when cooled below zero degrees Celsius.",
+      "tagIds": ["3"],
+      "createdAt": 1747715000300
+    },
+    {
+      "id": "3",
+      "text": "Birds can fly high in the sky and build nests in trees.",
+      "tagIds": ["2"],
+      "createdAt": 1747715000200
+    },
+    {
+      "id": "2",
+      "text": "The sun rises in the east and sets in the west every day.",
+      "tagIds": ["2"],
+      "createdAt": 1747715000100
+    }
+  ];
+
   const savedFavorites = localStorage.getItem('favorites');
   
+  // 如果没有已保存的数据，返回默认值
+  if (!savedFavorites) {
+    return defaultFavorites;
+  }
+  
   // 檢查是否是舊版數據結構(字符串數組)
-  if (savedFavorites) {
-    try {
-      const parsed = JSON.parse(savedFavorites);
-      if (Array.isArray(parsed)) {
-        // 舊版字符串陣列
-        if (typeof parsed[0] === 'string') {
-          // 將舊版字符串數組轉換為新結構
-          return parsed.map((text, index) => ({
-            id: (index + 1).toString(),
-            text: text,
-            tagIds: [],
-            createdAt: Date.now() - (parsed.length - index) * 1000 // 按順序創建時間
-          }));
-        }
-        
-        // 如果是對象陣列但缺少 tagIds (可能字段名為 tags)
-        const normalized = parsed.map((fav: any) => {
-          // 標準化 tagIds/tags 欄位
-          if (!fav.tagIds) {
-            if (Array.isArray(fav.tags)) {
-              // 將 tags 轉換為 tagIds
-              return {
-                ...fav,
-                tagIds: fav.tags,
-              };
-            } else {
-              // 兩個欄位都不存在或不是陣列，設置默認值
-              return {
-                ...fav,
-                tagIds: [],
-              };
-            }
-          }
-          
-          // 確保 tagIds 是陣列
-          if (!Array.isArray(fav.tagIds)) {
+  try {
+    const parsed = JSON.parse(savedFavorites);
+    if (Array.isArray(parsed)) {
+      // 舊版字符串陣列
+      if (typeof parsed[0] === 'string') {
+        // 將舊版字符串數組轉換為新結構
+        return parsed.map((text, index) => ({
+          id: (index + 1).toString(),
+          text: text,
+          tagIds: [],
+          createdAt: Date.now() - (parsed.length - index) * 1000 // 按順序創建時間
+        }));
+      }
+      
+      // 如果是對象陣列但缺少 tagIds (可能字段名為 tags)
+      const normalized = parsed.map((fav: any) => {
+        // 標準化 tagIds/tags 欄位
+        if (!fav.tagIds) {
+          if (Array.isArray(fav.tags)) {
+            // 將 tags 轉換為 tagIds
+            return {
+              ...fav,
+              tagIds: fav.tags,
+            };
+          } else {
+            // 兩個欄位都不存在或不是陣列，設置默認值
             return {
               ...fav,
               tagIds: [],
             };
           }
-          
-          return fav;
-        });
+        }
         
-        // 根據創建時間排序，最新的排在前面
-        const sortedFavorites = [...normalized].sort((a, b) => {
-          // 確保 createdAt 是數字類型，如果不是則使用默認值
-          const createdAtA = typeof a.createdAt === 'number' ? a.createdAt : 0;
-          const createdAtB = typeof b.createdAt === 'number' ? b.createdAt : 0;
-          return createdAtB - createdAtA; // 降序排列，最新的在前
-        });
+        // 確保 tagIds 是陣列
+        if (!Array.isArray(fav.tagIds)) {
+          return {
+            ...fav,
+            tagIds: [],
+          };
+        }
         
-        return sortedFavorites;
-      }
-    } catch (e) {
-      console.error('解析收藏夾數據出錯:', e);
+        return fav;
+      });
+      
+      // 根據創建時間排序，最新的排在前面
+      const sortedFavorites = [...normalized].sort((a, b) => {
+        // 確保 createdAt 是數字類型，如果不是則使用默認值
+        const createdAtA = typeof a.createdAt === 'number' ? a.createdAt : 0;
+        const createdAtB = typeof b.createdAt === 'number' ? b.createdAt : 0;
+        return createdAtB - createdAtA; // 降序排列，最新的在前
+      });
+      
+      return sortedFavorites;
     }
+  } catch (e) {
+    console.error('解析收藏夾數據出錯:', e);
   }
   
-  // 默認值
-  return [];
+  // 如果解析出错，返回默认值
+  return defaultFavorites;
 };
 
 // 保存收藏夹
