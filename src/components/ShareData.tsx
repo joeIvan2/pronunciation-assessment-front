@@ -225,12 +225,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
   
   return (
     <div>
-      <div className="section-header" onClick={handleExpandToggle} style={{cursor: 'pointer'}}>
-        <h3 className="special-title">數據分享</h3>
-        <span style={{marginLeft: 'auto', color: 'var(--ios-text-secondary)', fontSize: '14px'}}>
-          {isExpanded ? '收起 ▲' : '展開 ▼'}
-        </span>
-      </div>
+
       
       {isExpanded && (
         <div>
