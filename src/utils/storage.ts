@@ -150,76 +150,76 @@ export const saveNextTagId = (id: number): void => {
 
 // 获取收藏夹
 export const getFavorites = (): Favorite[] => {
-  // 默認值 - 使用預設的示例數據（使用負數ID避免與用戶添加的項目衝突）
+  // 默認值 - 使用預設的示例數據（使用從0開始的ID避免與用戶添加的項目衝突）
   const defaultFavorites: Favorite[] = [
     {
-      "id": "-1",
+      "id": "0",
       "text": "The philosophical implications of artificial intelligence challenge traditional concepts of consciousness.",
       "tagIds": ["6"],
       "createdAt": 1747716000600
     },
     {
-      "id": "-2",
+      "id": "1",
       "text": "Advancements in nanotechnology enable unprecedented manipulation of matter at atomic scales.",
       "tagIds": ["6"],
       "createdAt": 1747716000500
     },
     {
-      "id": "-3",
+      "id": "2",
       "text": "Socioeconomic disparities significantly impact access to quality education and healthcare.",
       "tagIds": ["1"],
       "createdAt": 1747716000400
     },
     {
-      "id": "-4",
+      "id": "3",
       "text": "The confluence of quantum mechanics and relativity presents profound challenges in physics.",
       "tagIds": ["1"],
       "createdAt": 1747716000300
     },
     {
-      "id": "-5",
+      "id": "4",
       "text": "Innovative renewable energy technologies are transforming global power generation.",
       "tagIds": ["5"],
       "createdAt": 1747716000200
     },
     {
-      "id": "-6",
+      "id": "5",
       "text": "The intricate balance of ecosystems depends on biodiversity and environmental stability.",
       "tagIds": ["5"],
       "createdAt": 1747716000100
     },
     {
-      "id": "-7",
+      "id": "6",
       "text": "Economic factors influence the supply and demand of goods in a marketplace.",
       "tagIds": ["4"],
       "createdAt": 1747715000600
     },
     {
-      "id": "-8",
+      "id": "7",
       "text": "The theory of relativity changed how scientists understand time and space.",
       "tagIds": ["4"],
       "createdAt": 1747715000500
     },
     {
-      "id": "-9",
+      "id": "8",
       "text": "Photosynthesis allows plants to convert sunlight into energy for growth.",
       "tagIds": ["3"],
       "createdAt": 1747715000400
     },
     {
-      "id": "-10",
+      "id": "9",
       "text": "Water changes its state from liquid to solid when cooled below zero degrees Celsius.",
       "tagIds": ["3"],
       "createdAt": 1747715000300
     },
     {
-      "id": "-11",
+      "id": "10",
       "text": "Birds can fly high in the sky and build nests in trees.",
       "tagIds": ["2"],
       "createdAt": 1747715000200
     },
     {
-      "id": "-12",
+      "id": "11",
       "text": "The sun rises in the east and sets in the west every day.",
       "tagIds": ["2"],
       "createdAt": 1747715000100
@@ -306,21 +306,21 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
   // 查找当前所有的ID（包括非数字ID和数字ID）
   const allIds = favorites.map(favorite => favorite.id);
   
-  // 查找当前最大的正整数ID
+  // 查找当前最大的数字ID（包括0和正整数）
   const maxNumericId = favorites.reduce((max, favorite) => {
     // 尝试将ID转换为整数
     const id = parseInt(favorite.id, 10);
-    // 只考虑正整数ID
-    if (!isNaN(id) && id > 0 && id > max) {
+    // 考虑包括0在内的所有非负整数ID
+    if (!isNaN(id) && id >= 0 && id > max) {
       return id;
     }
     return max;
-  }, 0);
+  }, -1); // 从-1开始，确保即使所有ID都是非数字，也会返回至少0
   
-  // 从本地存储获取下一个ID值
-  const storedNextId = getItem<number>('nextFavoriteId', Math.max(maxNumericId + 1, 1));
+  // 从本地存储获取下一个ID值，默认为最大ID+1或12（默认示例数量）
+  const storedNextId = getItem<number>('nextFavoriteId', Math.max(maxNumericId + 1, 12));
   
-  // 确保生成的ID不会与任何现有ID冲突（数字形式）
+  // 确保生成的ID不会与任何现有ID冲突
   let nextId = Math.max(maxNumericId + 1, storedNextId);
   
   // 检查ID是否已存在（作为字符串），如果存在则递增
@@ -336,14 +336,14 @@ export const saveNextFavoriteId = (id: number): void => {
   // 先获取当前所有收藏
   const currentFavorites = getFavorites();
   
-  // 查找当前最大的正整数ID
+  // 查找当前最大的数字ID（包括0和正整数）
   const maxNumericId = currentFavorites.reduce((max, favorite) => {
     const favoriteId = parseInt(favorite.id, 10);
-    if (!isNaN(favoriteId) && favoriteId > 0 && favoriteId > max) {
+    if (!isNaN(favoriteId) && favoriteId >= 0 && favoriteId > max) {
       return favoriteId;
     }
     return max;
-  }, 0);
+  }, -1); // 从-1开始，确保即使所有ID都是非数字，也会返回至少0
   
   // 确保保存的ID至少比当前最大ID大1
   const safeId = Math.max(id, maxNumericId + 1);
@@ -557,7 +557,18 @@ export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): v
   // 處理收藏項目 - 使用前綴確保ID不會衝突
   if (data.favorites && Array.isArray(data.favorites)) {
     const timestamp = Date.now();
+    // 先获取现有收藏，用于后续ID处理
+    const existingFavorites = getFavorites();
+    
     const processedFavorites = data.favorites.map((fav, index) => {
+      // 检查是否与现有收藏文本重复
+      const isDuplicate = existingFavorites.some(existing => existing.text === fav.text);
+      
+      // 如果是重复项，跳过ID处理 - 保留现有收藏
+      if (isDuplicate) {
+        return null; // 将在后面过滤掉null项
+      }
+      
       // 檢查ID是否是數字格式的字符串
       const isNumericId = /^\d+$/.test(String(fav.id));
       
@@ -570,9 +581,18 @@ export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): v
         ...fav,
         id: newId
       };
-    });
+    }).filter(item => item !== null); // 过滤掉null项（即重复项）
     
-    saveFavorites(processedFavorites);
+    // 如果有有效的处理结果，保存到收藏列表
+    if (processedFavorites.length > 0) {
+      // 将新处理的收藏项合并到现有收藏
+      const mergedFavorites = [...existingFavorites, ...processedFavorites];
+      saveFavorites(mergedFavorites);
+      
+      // 确保nextFavoriteId更新为最新值
+      const maxId = getNextFavoriteId(mergedFavorites);
+      saveNextFavoriteId(maxId);
+    }
   }
 };
 
