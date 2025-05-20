@@ -404,9 +404,12 @@ const PronunciationAssessment: React.FC = () => {
       return;
     }
     
+    // 每次添加新收藏时重新计算nextId，确保不会重复
+    const currentNextId = storage.getNextFavoriteId(favorites);
+    
     // 添加新收藏
     const newFavorite = {
-      id: nextFavoriteId.toString(),
+      id: currentNextId.toString(),
       text: text,
       tagIds: tagIds.length ? tagIds : selectedTags, // 使用當前選中的標籤或指定的標籤
       createdAt: Date.now()
@@ -416,7 +419,8 @@ const PronunciationAssessment: React.FC = () => {
     setFavorites(updatedFavorites);
     storage.saveFavorites(updatedFavorites);
     
-    const newNextId = nextFavoriteId + 1;
+    // 更新nextFavoriteId为下一个值
+    const newNextId = currentNextId + 1;
     setNextFavoriteId(newNextId);
     storage.saveNextFavoriteId(newNextId);
   };

@@ -333,7 +333,22 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
 
 // 保存下一个收藏ID
 export const saveNextFavoriteId = (id: number): void => {
-  setItem('nextFavoriteId', id);
+  // 先获取当前所有收藏
+  const currentFavorites = getFavorites();
+  
+  // 查找当前最大的正整数ID
+  const maxNumericId = currentFavorites.reduce((max, favorite) => {
+    const favoriteId = parseInt(favorite.id, 10);
+    if (!isNaN(favoriteId) && favoriteId > 0 && favoriteId > max) {
+      return favoriteId;
+    }
+    return max;
+  }, 0);
+  
+  // 确保保存的ID至少比当前最大ID大1
+  const safeId = Math.max(id, maxNumericId + 1);
+  
+  setItem('nextFavoriteId', safeId);
 };
 
 // 卡片展开状态相关函数
