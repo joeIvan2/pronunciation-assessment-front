@@ -278,14 +278,27 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
                           </td>
                           <td>
                             <div className="copy-container">
-                              <input type="text" value={formatShareLink(item.hash)} readOnly />
-                              <button onClick={() => copyToClipboard(formatShareLink(item.hash))}>複製</button>
+                              <input type="text" value={formatShareLink(item.hash)} readOnly onClick={() => copyToClipboard(formatShareLink(item.hash))} />
+                              <button onClick={() => {
+                                if (navigator.share) {
+                                  navigator.share({
+                                    title: '發音評估分享',
+                                    text: '查看我的發音評估數據',
+                                    url: formatShareLink(item.hash)
+                                  })
+                                  .catch(err => {
+                                    console.error('分享失敗:', err);
+                                    copyToClipboard(formatShareLink(item.hash));
+                                  });
+                                } else {
+                                  copyToClipboard(formatShareLink(item.hash));
+                                }
+                              }}>分享</button>
                             </div>
                           </td>
                           <td>
                             <div className="copy-container">
-                              <input type="password" value={item.editPassword} readOnly />
-                              <button onClick={() => copyToClipboard(item.editPassword)}>複製</button>
+                              <input type="text" value={item.editPassword} readOnly onClick={() => copyToClipboard(item.editPassword)} />
                             </div>
                           </td>
                           <td>

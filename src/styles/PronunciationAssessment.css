@@ -648,6 +648,16 @@ h4 {
   font-size: 14px;
   background: rgba(20, 20, 24, 0.6);
   color: var(--ios-text);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copy-container input:hover {
+  background: rgba(30, 30, 34, 0.8);
+}
+
+.copy-container input:active {
+  background: rgba(40, 40, 44, 0.9);
 }
 
 .copy-container button {
