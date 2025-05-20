@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Favorite, Tag } from '../types/speech';
 import '../styles/PronunciationAssessment.css';
 import * as storage from '../utils/storage';
@@ -74,6 +74,9 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   
   // 編輯中的數據項
   const [editingData, setEditingData] = useState<{id: string; field: string; value: any} | null>(null);
+  
+  // 文件上傳引用
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // 對標籤按創建日期排序，最新的放在最前面
   const sortedTags = [...tags].sort((a, b) => {
@@ -207,6 +210,113 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
         console.error('複製失敗:', err);
         alert('複製失敗，請手動選擇並複製');
       });
+  };
+  
+  // 準備CSV數據
+  const prepareCSVData = () => {
+    // 創建包含所有數據的對象
+    const exportData = {
+      favorites: normalizedFavorites,
+      tags: tags
+    };
+    
+    // 轉換為JSON字符串
+    return JSON.stringify(exportData, null, 2);
+  };
+  
+  // 匯出CSV文件
+  const exportToCSV = () => {
+    try {
+      // 準備JSON數據
+      const jsonData = prepareCSVData();
+      
+      // 創建Blob對象
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      
+      // 創建下載鏈接
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      a.href = url;
+      a.download = `pronunciation-data-${timestamp}.json`;
+      
+      // 觸發下載
+      document.body.appendChild(a);
+      a.click();
+      
+      // 清理
+      window.setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+      
+      alert('數據已成功匯出');
+    } catch (err) {
+      console.error('匯出失敗:', err);
+      alert(`匯出失敗: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  
+  // 觸發文件選擇器
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  // 處理文件上傳
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const jsonData = JSON.parse(event.target?.result as string);
+        
+        // 驗證數據格式
+        if (!jsonData.favorites || !Array.isArray(jsonData.favorites) ||
+            !jsonData.tags || !Array.isArray(jsonData.tags)) {
+          throw new Error('無效的數據格式，請使用正確匯出的JSON文件');
+        }
+        
+        // 確認導入
+        if (window.confirm(`確定要導入數據嗎？這將會覆蓋當前的${jsonData.favorites.length}個收藏和${jsonData.tags.length}個標籤。`)) {
+          // 處理標籤數據
+          const importedTags = jsonData.tags.map((tag: any) => ({
+            tagId: tag.tagId || String(tag.id) || String(Date.now()),
+            name: tag.name || '未命名標籤',
+            color: tag.color || '#' + Math.floor(Math.random()*16777215).toString(16),
+            createdAt: tag.createdAt || Date.now()
+          }));
+          
+          // 處理收藏數據
+          const importedFavorites = jsonData.favorites.map((fav: any) => ({
+            id: fav.id || String(Date.now()),
+            text: fav.text || '',
+            tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : (Array.isArray(fav.tags) ? fav.tags : []),
+            createdAt: fav.createdAt || Date.now()
+          }));
+          
+          // 更新數據
+          storage.saveTags(importedTags);
+          storage.saveFavorites(importedFavorites);
+          
+          // 重新加載頁面以應用更改
+          alert('數據已成功匯入，頁面將重新加載以應用更改');
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error('匯入失敗:', err);
+        alert(`匯入失敗: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    };
+    reader.readAsText(file);
+    
+    // 重置文件輸入
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
   
   return (
@@ -395,20 +505,70 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                   <span style={{ color: "var(--ios-text-secondary)", fontSize: "14px" }}>
                     顯示 {filteredFavorites.length} 條記錄
                   </span>
-                  <button
-                    onClick={copyTableToClipboard}
-                    style={{
-                      padding: "4px 8px",
-                      background: "var(--ios-primary)",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "4px",
-                      fontSize: "12px",
-                      cursor: "pointer"
-                    }}
-                  >
-                    複製表格
-                  </button>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      onClick={copyTableToClipboard}
+                      style={{
+                        padding: "4px 8px",
+                        background: "var(--ios-primary)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      複製表格
+                    </button>
+                    <button
+                      onClick={exportToCSV}
+                      style={{
+                        padding: "4px 8px",
+                        background: "var(--ios-success)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      匯出JSON
+                    </button>
+                    <button
+                      onClick={triggerFileInput}
+                      style={{
+                        padding: "4px 8px",
+                        background: "var(--ios-warning)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      匯入JSON
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".json"
+                      style={{ display: "none" }}
+                      onChange={handleFileUpload}
+                    />
+                  </div>
+                </div>
+                
+                {/* 匯出說明 */}
+                <div style={{
+                  padding: "8px",
+                  backgroundColor: "rgba(40, 40, 50, 0.7)",
+                  borderRadius: "4px",
+                  marginBottom: "8px",
+                  fontSize: "12px",
+                  color: "var(--ios-text-secondary)"
+                }}>
+                  <p>匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移</p>
+                  <p>匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據</p>
                 </div>
                 
                 <div style={{ 
@@ -436,116 +596,47 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                     </thead>
                     <tbody>
                       {filteredFavorites.map(fav => (
-                        <>
-                          <tr key={`row-${fav.id}`} style={{ 
-                            borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
-                          }}>
-                            <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
-                              {fav.id}
-                            </td>
-                            <td style={{ padding: "8px" }}>
-                              {editingData && editingData.id === fav.id && editingData.field === 'text' ? (
-                                <input
-                                  type="text"
-                                  value={editingData.value}
-                                  onChange={handleEditChange}
-                                  onBlur={handleEditComplete}
-                                  autoFocus
-                                  style={{
-                                    width: "100%",
-                                    background: "rgba(60, 60, 70, 0.8)",
-                                    border: "1px solid var(--ios-primary)",
-                                    color: "#fff",
-                                    padding: "4px"
-                                  }}
-                                />
-                              ) : (
-                                <span 
-                                  onDoubleClick={() => handleEditStart(fav.id, 'text', fav.text)}
-                                  style={{ cursor: "pointer" }}
-                                >
-                                  {fav.text}
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
-                              {fav.tagIds.join(', ')}
-                            </td>
-                            <td style={{ padding: "8px" }}>
-                              {fav.tagIds.map(tagId => getTagName(tagId)).join(', ')}
-                            </td>
-                            <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
-                              {formatTimestamp(fav.createdAt)}
-                            </td>
-                          </tr>
-                          
-                          {/* 空行 */}
-                          <tr key={`empty-${fav.id}`} style={{ height: "8px" }}>
-                            <td colSpan={5} style={{ padding: 0 }}></td>
-                          </tr>
-                          
-                          {/* 標籤詳情行 */}
-                          <tr key={`tags-${fav.id}`} style={{ 
-                            background: "rgba(40, 40, 45, 0.4)",
-                            borderBottom: "1px solid var(--ios-border)"
-                          }}>
-                            <td colSpan={5} style={{ padding: "8px" }}>
-                              <div style={{ 
-                                display: "flex", 
-                                flexDirection: "column",
-                                fontSize: "13px"
-                              }}>
-                                <span style={{ 
-                                  fontSize: "12px", 
-                                  color: "var(--ios-text-secondary)",
-                                  marginBottom: "4px"
-                                }}>
-                                  標籤詳情:
-                                </span>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                                  {fav.tagIds.map(tagId => {
-                                    const tag = tags.find(t => t.tagId === tagId);
-                                    if (!tag) return null;
-                                    
-                                    return (
-                                      <div key={tagId} style={{ 
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        background: "rgba(50, 50, 55, 0.7)",
-                                        padding: "4px 8px",
-                                        borderRadius: "4px",
-                                        border: `1px solid ${tag.color}`
-                                      }}>
-                                        <span style={{ 
-                                          width: "12px", 
-                                          height: "12px", 
-                                          borderRadius: "3px",
-                                          background: tag.color,
-                                          display: "inline-block",
-                                          marginRight: "6px"
-                                        }}></span>
-                                        <span style={{ color: "#fff" }}>{tag.name}</span>
-                                        <span style={{ 
-                                          color: "var(--ios-text-secondary)",
-                                          fontSize: "11px",
-                                          marginLeft: "6px" 
-                                        }}>
-                                          (ID: {tag.tagId})
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                  
-                                  {fav.tagIds.length === 0 && (
-                                    <span style={{ color: "var(--ios-text-secondary)" }}>
-                                      無標籤
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        </>
+                        <tr key={fav.id} style={{ 
+                          borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
+                        }}>
+                          <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                            {fav.id}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            {editingData && editingData.id === fav.id && editingData.field === 'text' ? (
+                              <input
+                                type="text"
+                                value={editingData.value}
+                                onChange={handleEditChange}
+                                onBlur={handleEditComplete}
+                                autoFocus
+                                style={{
+                                  width: "100%",
+                                  background: "rgba(60, 60, 70, 0.8)",
+                                  border: "1px solid var(--ios-primary)",
+                                  color: "#fff",
+                                  padding: "4px"
+                                }}
+                              />
+                            ) : (
+                              <span 
+                                onDoubleClick={() => handleEditStart(fav.id, 'text', fav.text)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                {fav.text}
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
+                            {fav.tagIds.join(', ')}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            {fav.tagIds.map(tagId => getTagName(tagId)).join(', ')}
+                          </td>
+                          <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                            {formatTimestamp(fav.createdAt)}
+                          </td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
