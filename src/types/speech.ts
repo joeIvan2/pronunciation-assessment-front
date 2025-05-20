@@ -61,7 +61,10 @@ export interface SpeechAssessmentResult {
 
 // 标签类型
 export interface Tag {
-  id: string;
+  /**
+   * 標籤唯一識別碼
+   */
+  tagId: string;
   name: string;
   color: string;
   createdAt: number;

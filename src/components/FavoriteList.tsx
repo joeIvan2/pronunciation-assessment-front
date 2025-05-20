@@ -30,16 +30,59 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onManageTags,
   currentText
 }) => {
+  // 數據規範化 - 確保每個收藏項目都有正確的數據結構
+  const normalizedFavorites: Favorite[] = favorites.map((fav: any) => {
+    // 檢查是否存在 tagIds
+    if (!fav.tagIds) {
+      // 如果有 tags 字段且是數組，將其用作 tagIds
+      if (Array.isArray(fav.tags)) {
+        return {
+          ...fav,
+          tagIds: fav.tags
+        };
+      }
+      // 兩個字段都不存在或格式不正確，使用空數組
+      return {
+        ...fav,
+        tagIds: []
+      };
+    }
+    
+    // 確保 tagIds 是數組
+    if (!Array.isArray(fav.tagIds)) {
+      return {
+        ...fav,
+        tagIds: []
+      };
+    }
+    
+    // 已經符合要求，直接返回
+    return fav;
+  });
+  
   // 添加列表展開/收起狀態
   const [isExpanded, setIsExpanded] = useState<boolean>(() => storage.getCardExpandStates().favoriteList);
+  
+  // 追踪當前正在編輯標籤的收藏項目
+  const [editingTagsFavoriteId, setEditingTagsFavoriteId] = useState<string | null>(null);
+  
+  // 控制標籤選擇模態框的顯示
+  const [showTagSelector, setShowTagSelector] = useState<boolean>(false);
+  
+  // 對標籤按創建日期排序，最新的放在最前面
+  const sortedTags = [...tags].sort((a, b) => {
+    const createdAtA = typeof a.createdAt === 'number' ? a.createdAt : 0;
+    const createdAtB = typeof b.createdAt === 'number' ? b.createdAt : 0;
+    return createdAtB - createdAtA; // 降序排列，最新的在前
+  });
   
   // 獲取帶標籤篩選的收藏列表
   const getFilteredFavorites = () => {
     if (selectedTags.length === 0) {
-      return favorites;
+      return normalizedFavorites;
     }
     
-    return favorites.filter(fav => 
+    return normalizedFavorites.filter(fav => 
       selectedTags.some(tagId => fav.tagIds.includes(tagId))
     );
   };
@@ -51,6 +94,31 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     const newState = !isExpanded;
     setIsExpanded(newState);
     storage.saveCardExpandState('favoriteList', newState);
+  };
+  
+  // 開啟標籤選擇器
+  const openTagSelector = (favoriteId: string) => {
+    setEditingTagsFavoriteId(favoriteId);
+    setShowTagSelector(true);
+  };
+  
+  // 關閉標籤選擇器
+  const closeTagSelector = () => {
+    setShowTagSelector(false);
+    setEditingTagsFavoriteId(null);
+  };
+  
+  // 獲取當前正在編輯的收藏項目
+  const getCurrentFavorite = () => {
+    if (!editingTagsFavoriteId) return null;
+    return normalizedFavorites.find(fav => fav.id === editingTagsFavoriteId);
+  };
+  
+  // 處理標籤點擊
+  const handleTagClick = (tagId: string) => {
+    if (editingTagsFavoriteId) {
+      onToggleTag(editingTagsFavoriteId, tagId);
+    }
   };
   
   return (
@@ -76,13 +144,13 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
               全部
             </button>
             
-            {tags.map(tag => (
+            {sortedTags.map(tag => (
               <button
-                key={tag.id}
-                onClick={() => onToggleTagSelection(tag.id)}
-                className={`tag-button ${selectedTags.includes(tag.id) ? 'active' : ''}`}
+                key={tag.tagId}
+                onClick={() => onToggleTagSelection(tag.tagId)}
+                className={`tag-button ${selectedTags.includes(tag.tagId) ? 'active' : ''}`}
                 style={{
-                  background: selectedTags.includes(tag.id) ? tag.color : '',
+                  background: selectedTags.includes(tag.tagId) ? tag.color : '',
                 }}
               >
                 {tag.name}
@@ -91,7 +159,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
           </div>
           
           {/* 收藏列表 */}
-          {favorites.length > 0 ? (
+          {normalizedFavorites.length > 0 ? (
             <ul style={{ listStyle: "none", padding: 0 }}>
               {filteredFavorites.map((fav) => (
                 <li 
@@ -124,12 +192,12 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                   
                   {/* 標籤展示 */}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {tags
-                      .filter(tag => fav.tagIds.includes(tag.id))
+                    {sortedTags
+                      .filter(tag => fav.tagIds.includes(tag.tagId))
                       .map(tag => (
                         <span
-                          key={tag.id}
-                          onClick={() => onToggleTag(fav.id, tag.id)}
+                          key={tag.tagId}
+                          onClick={() => onToggleTag(fav.id, tag.tagId)}
                           style={{
                             padding: "2px 6px",
                             background: tag.color,
@@ -144,13 +212,13 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                       ))}
                     
                     {/* 添加標籤按鈕 */}
-                    {tags
-                      .filter(tag => !fav.tagIds.includes(tag.id))
+                    {sortedTags
+                      .filter(tag => !fav.tagIds.includes(tag.tagId))
                       .slice(0, 3) // 只顯示前3個未添加的標籤
                       .map(tag => (
                         <span
-                          key={tag.id}
-                          onClick={() => onToggleTag(fav.id, tag.id)}
+                          key={tag.tagId}
+                          onClick={() => onToggleTag(fav.id, tag.tagId)}
                           style={{
                             padding: "2px 6px",
                             background: "#444",
@@ -165,7 +233,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                       ))}
                     
                     {/* 更多標籤選項 */}
-                    {tags.filter(tag => !fav.tagIds.includes(tag.id)).length > 3 && (
+                    {sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length > 3 && (
                       <span
                         style={{
                           padding: "2px 6px",
@@ -175,12 +243,9 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                           fontSize: 12,
                           cursor: "pointer"
                         }}
-                        onClick={() => {
-                          // 在這裡可以實現一個彈出選擇更多標籤的功能
-                          alert("此功能將在未來版本實現！");
-                        }}
+                        onClick={() => openTagSelector(fav.id)}
                       >
-                        +{tags.filter(tag => !fav.tagIds.includes(tag.id)).length - 3} 更多...
+                        +{sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length - 3} 更多...
                       </span>
                     )}
                   </div>
@@ -201,6 +266,97 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
             </div>
           )}
         </>
+      )}
+      
+      {/* 標籤選擇模態框 */}
+      {showTagSelector && (
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000
+          }}
+          onClick={closeTagSelector}
+        >
+          <div 
+            style={{
+              backgroundColor: "var(--ios-card)",
+              borderRadius: "12px",
+              padding: "16px",
+              width: "90%",
+              maxWidth: "400px",
+              maxHeight: "80vh",
+              overflow: "auto"
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ 
+              margin: "0 0 16px 0", 
+              color: "var(--ios-text)",
+              fontSize: "18px",
+              borderBottom: "1px solid var(--ios-border)",
+              paddingBottom: "8px"
+            }}>
+              選擇標籤
+            </h3>
+            
+            <div style={{ 
+              display: "flex", 
+              flexWrap: "wrap", 
+              gap: "8px",
+              marginBottom: "16px"
+            }}>
+              {sortedTags
+                .filter(tag => {
+                  const currentFav = getCurrentFavorite();
+                  return currentFav && !currentFav.tagIds.includes(tag.tagId);
+                })
+                .map(tag => (
+                  <button
+                    key={tag.tagId}
+                    onClick={() => handleTagClick(tag.tagId)}
+                    style={{
+                      padding: "6px 12px",
+                      background: tag.color,
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "14px"
+                    }}
+                  >
+                    + {tag.name}
+                  </button>
+                ))}
+            </div>
+            
+            <div style={{
+              display: "flex",
+              justifyContent: "flex-end"
+            }}>
+              <button
+                onClick={closeTagSelector}
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--ios-primary)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer"
+                }}
+              >
+                完成
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

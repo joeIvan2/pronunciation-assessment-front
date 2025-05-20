@@ -10,6 +10,7 @@ import TagManager from "../components/TagManager";
 import VoicePicker from "../components/VoicePicker";
 import FavoriteList from "../components/FavoriteList";
 import HistoryRecord from "../components/HistoryRecord";
+import AIDataProcessor from "../components/AIDataProcessor";
 
 // 鉤子導入
 import { useRecorder } from "../hooks/useRecorder";
@@ -323,8 +324,9 @@ const PronunciationAssessment: React.FC = () => {
   
   // 標籤相關函數
   const addTag = (name: string, color = '#' + Math.floor(Math.random()*16777215).toString(16)) => {
-    const newTag = {
-      id: nextTagId.toString(),
+    const idStr = nextTagId.toString();
+    const newTag: Tag = {
+      tagId: idStr,
       name: name,
       color: color,
       createdAt: Date.now()
@@ -338,12 +340,12 @@ const PronunciationAssessment: React.FC = () => {
     setNextTagId(newNextId);
     storage.saveNextTagId(newNextId);
     
-    return newTag.id; // 返回新創建的標籤ID
+    return newTag.tagId; // 返回新創建的標籤ID
   };
   
-  const editTag = (id: string, newName: string, newColor?: string) => {
+  const editTag = (tagId: string, newName: string, newColor?: string) => {
     const updatedTags = tags.map(tag => 
-      tag.id === id 
+      tag.tagId === tagId 
         ? { ...tag, name: newName || tag.name, color: newColor || tag.color } 
         : tag
     );
@@ -352,16 +354,16 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveTags(updatedTags);
   };
   
-  const deleteTag = (id: string) => {
+  const deleteTag = (tagId: string) => {
     // 刪除標籤
-    const updatedTags = tags.filter(tag => tag.id !== id);
+    const updatedTags = tags.filter(tag => tag.tagId !== tagId);
     setTags(updatedTags);
     storage.saveTags(updatedTags);
     
     // 從所有收藏中移除該標籤
     const updatedFavorites = favorites.map(favorite => ({
       ...favorite,
-      tagIds: favorite.tagIds.filter(tagId => tagId !== id)
+      tagIds: favorite.tagIds.filter(tid => tid !== tagId)
     }));
     
     setFavorites(updatedFavorites);
@@ -890,6 +892,12 @@ const PronunciationAssessment: React.FC = () => {
               >
                 選擇語音
               </button>
+              <button 
+                className={`tab-button ${activeTab === 'ai' ? 'active' : ''}`}
+                onClick={() => handleTabChange('ai')}
+              >
+                AI助手
+              </button>
             </div>
             
             <div className="tab-content">
@@ -947,6 +955,18 @@ const PronunciationAssessment: React.FC = () => {
                   onChangeSpeechRate={handleSpeechRateChange}
                   isExpanded={true} // 標籤頁模式下始終展開
                   onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
+                />
+              )}
+              
+              {/* AI助手標籤頁 */}
+              {activeTab === 'ai' && (
+                <AIDataProcessor
+                  favorites={favorites}
+                  tags={tags}
+                  historyRecords={historyRecords}
+                  onUpdateFavorites={setFavorites}
+                  onUpdateTags={setTags}
+                  onUpdateHistoryRecords={setHistoryRecords}
                 />
               )}
             </div>

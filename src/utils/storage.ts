@@ -121,12 +121,14 @@ export const saveVoiceSettings = (
 
 // 获取标签
 export const getTags = (): Tag[] => {
-  return getItem<Tag[]>('tags', [
-    { id: '1', name: '基礎句型', color: '#4caf50', createdAt: Date.now() },
-    { id: '2', name: '商務英語', color: '#2196f3', createdAt: Date.now() },
-    { id: '3', name: '日常對話', color: '#ff9800', createdAt: Date.now() },
-    { id: '4', name: '難詞發音', color: '#9c27b0', createdAt: Date.now() }
-  ]);
+  const defaultTags: Tag[] = [
+    { tagId: '1', name: '基礎句型', color: '#4caf50', createdAt: Date.now() },
+    { tagId: '2', name: '商務英語', color: '#2196f3', createdAt: Date.now() },
+    { tagId: '3', name: '日常對話', color: '#ff9800', createdAt: Date.now() },
+    { tagId: '4', name: '難詞發音', color: '#9c27b0', createdAt: Date.now() }
+  ];
+
+  return getItem<Tag[]>('tags', defaultTags);
 };
 
 // 保存标签
@@ -148,30 +150,68 @@ export const saveNextTagId = (id: number): void => {
 export const getFavorites = (): Favorite[] => {
   const savedFavorites = localStorage.getItem('favorites');
   
-  // 检查是否是旧版数据结构(字符串数组)
+  // 檢查是否是舊版數據結構(字符串數組)
   if (savedFavorites) {
     try {
       const parsed = JSON.parse(savedFavorites);
       if (Array.isArray(parsed)) {
-        // 旧版数据
+        // 舊版字符串陣列
         if (typeof parsed[0] === 'string') {
-          // 将旧版字符串数组转换为新结构
+          // 將舊版字符串數組轉換為新結構
           return parsed.map((text, index) => ({
             id: (index + 1).toString(),
             text: text,
             tagIds: [],
-            createdAt: Date.now() - (parsed.length - index) * 1000 // 按顺序创建时间
+            createdAt: Date.now() - (parsed.length - index) * 1000 // 按順序創建時間
           }));
         }
-        // 已经是新版数据结构
-        return parsed;
+        
+        // 如果是對象陣列但缺少 tagIds (可能字段名為 tags)
+        const normalized = parsed.map((fav: any) => {
+          // 標準化 tagIds/tags 欄位
+          if (!fav.tagIds) {
+            if (Array.isArray(fav.tags)) {
+              // 將 tags 轉換為 tagIds
+              return {
+                ...fav,
+                tagIds: fav.tags,
+              };
+            } else {
+              // 兩個欄位都不存在或不是陣列，設置默認值
+              return {
+                ...fav,
+                tagIds: [],
+              };
+            }
+          }
+          
+          // 確保 tagIds 是陣列
+          if (!Array.isArray(fav.tagIds)) {
+            return {
+              ...fav,
+              tagIds: [],
+            };
+          }
+          
+          return fav;
+        });
+        
+        // 根據創建時間排序，最新的排在前面
+        const sortedFavorites = [...normalized].sort((a, b) => {
+          // 確保 createdAt 是數字類型，如果不是則使用默認值
+          const createdAtA = typeof a.createdAt === 'number' ? a.createdAt : 0;
+          const createdAtB = typeof b.createdAt === 'number' ? b.createdAt : 0;
+          return createdAtB - createdAtA; // 降序排列，最新的在前
+        });
+        
+        return sortedFavorites;
       }
     } catch (e) {
-      console.error('解析收藏夹数据出错:', e);
+      console.error('解析收藏夾數據出錯:', e);
     }
   }
   
-  // 默认值
+  // 默認值
   return [];
 };
 
@@ -265,14 +305,31 @@ export const clearHistoryRecords = (): void => {
 };
 
 // 标签页相关类型和函数
-export type TabName = 'history' | 'favorites' | 'tags' | 'voices';
+export type TabName = 'history' | 'favorites' | 'tags' | 'voices' | 'ai';
 
 // 获取当前激活的标签页
 export const getActiveTab = (): TabName => {
-  return getItem<TabName>('activeTab', 'history'); // 默认显示历史记录
+  return getItem<TabName>('activeTab', 'history');
 };
 
 // 保存当前激活的标签页
 export const saveActiveTab = (tab: TabName): void => {
   setItem('activeTab', tab);
+};
+
+// 获取 AI 助手提示文字
+export const getAIPrompt = (): string => {
+  const savedPrompt = getItem<string | null>('aiPrompt', '');
+  // 確保返回的是字符串類型
+  return typeof savedPrompt === 'string' ? savedPrompt : '';
+};
+
+// 保存 AI 助手提示文字
+export const saveAIPrompt = (prompt: string): void => {
+  // 只保存字符串類型的提示
+  if (typeof prompt === 'string') {
+    setItem('aiPrompt', prompt);
+  } else {
+    setItem('aiPrompt', '');
+  }
 }; 

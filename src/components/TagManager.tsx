@@ -5,8 +5,8 @@ import '../styles/PronunciationAssessment.css';
 interface TagManagerProps {
   tags: Tag[];
   onAddTag: (name: string, color?: string) => string;
-  onEditTag: (id: string, newName: string, newColor?: string) => void;
-  onDeleteTag: (id: string) => void;
+  onEditTag: (tagId: string, newName: string, newColor?: string) => void;
+  onDeleteTag: (tagId: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
 }
@@ -130,7 +130,7 @@ const TagManager: React.FC<TagManagerProps> = ({
             <ul style={{ listStyle: "none", padding: 0 }}>
               {tags.map(tag => (
                 <li 
-                  key={tag.id} 
+                  key={tag.tagId} 
                   style={{
                     padding: 12,
                     background: "var(--ios-card)",
@@ -151,12 +151,12 @@ const TagManager: React.FC<TagManagerProps> = ({
                       marginRight: 8
                     }}></span>
                     <span style={{ color: "var(--ios-text)" }}>{tag.name}</span>
-                    <span style={{ color: "var(--ios-text-secondary)", marginLeft: 8, fontSize: 12 }}>ID: {tag.id}</span>
+                    <span style={{ color: "var(--ios-text-secondary)", marginLeft: 8, fontSize: 12 }}>ID: {tag.tagId}</span>
                   </div>
                   <div>
                     <button
                       onClick={() => {
-                        setEditingTagId(tag.id);
+                        setEditingTagId(tag.tagId);
                         setNewTagName(tag.name);
                       }}
                       style={{ 
@@ -176,7 +176,7 @@ const TagManager: React.FC<TagManagerProps> = ({
                     <button
                       onClick={() => {
                         if (window.confirm(`確定要刪除標籤 "${tag.name}" 嗎？`)) {
-                          onDeleteTag(tag.id);
+                          onDeleteTag(tag.tagId);
                         }
                       }}
                       style={{ 
