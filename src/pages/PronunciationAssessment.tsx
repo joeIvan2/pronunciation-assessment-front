@@ -324,7 +324,17 @@ const PronunciationAssessment: React.FC = () => {
   
   // 標籤相關函數
   const addTag = (name: string, color = '#' + Math.floor(Math.random()*16777215).toString(16)) => {
-    const idStr = nextTagId.toString();
+    // 檢查ID是否存在，如果存在則遞增直到找到未使用的ID
+    let currentNextId = nextTagId;
+    let idStr = currentNextId.toString();
+    
+    // 檢查tagId是否已存在
+    while (tags.some(tag => tag.tagId === idStr)) {
+      currentNextId++;
+      idStr = currentNextId.toString();
+      console.log(`標籤ID "${(currentNextId-1)}" 已存在，嘗試使用新ID "${idStr}"`);
+    }
+    
     const newTag: Tag = {
       tagId: idStr,
       name: name,
@@ -336,7 +346,8 @@ const PronunciationAssessment: React.FC = () => {
     setTags(updatedTags);
     storage.saveTags(updatedTags);
     
-    const newNextId = nextTagId + 1;
+    // 保存遞增後的ID
+    const newNextId = currentNextId + 1;
     setNextTagId(newNextId);
     storage.saveNextTagId(newNextId);
     
