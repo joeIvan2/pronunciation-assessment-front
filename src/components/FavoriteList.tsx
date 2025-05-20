@@ -69,6 +69,12 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   // 控制標籤選擇模態框的顯示
   const [showTagSelector, setShowTagSelector] = useState<boolean>(false);
   
+  // 控制數據表格展開/收起狀態
+  const [isDataTableExpanded, setIsDataTableExpanded] = useState<boolean>(false);
+  
+  // 編輯中的數據項
+  const [editingData, setEditingData] = useState<{id: string; field: string; value: any} | null>(null);
+  
   // 對標籤按創建日期排序，最新的放在最前面
   const sortedTags = [...tags].sort((a, b) => {
     const createdAtA = typeof a.createdAt === 'number' ? a.createdAt : 0;
@@ -96,6 +102,11 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     storage.saveCardExpandState('favoriteList', newState);
   };
   
+  // 切換數據表格展開/收起狀態
+  const toggleDataTableExpanded = () => {
+    setIsDataTableExpanded(!isDataTableExpanded);
+  };
+  
   // 開啟標籤選擇器
   const openTagSelector = (favoriteId: string) => {
     setEditingTagsFavoriteId(favoriteId);
@@ -119,6 +130,83 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     if (editingTagsFavoriteId) {
       onToggleTag(editingTagsFavoriteId, tagId);
     }
+  };
+  
+  // 格式化時間戳為可讀字符串
+  const formatTimestamp = (timestamp: number) => {
+    try {
+      return new Date(timestamp).toLocaleString();
+    } catch (e) {
+      return "無效日期";
+    }
+  };
+  
+  // 獲取標籤名稱
+  const getTagName = (tagId: string) => {
+    const tag = tags.find(t => t.tagId === tagId);
+    return tag ? tag.name : tagId;
+  };
+  
+  // 處理單元格編輯開始
+  const handleEditStart = (id: string, field: string, value: any) => {
+    setEditingData({ id, field, value });
+  };
+  
+  // 處理單元格編輯變更
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingData) return;
+    
+    setEditingData({
+      ...editingData,
+      value: e.target.value
+    });
+  };
+  
+  // 處理單元格編輯完成
+  const handleEditComplete = () => {
+    if (!editingData) return;
+    
+    // 找到要編輯的收藏項
+    const updatedFavorites = normalizedFavorites.map(fav => {
+      if (fav.id === editingData.id) {
+        // 根據不同欄位進行更新
+        if (editingData.field === 'text') {
+          return { ...fav, text: editingData.value };
+        }
+        // 其他欄位可以根據需要添加
+      }
+      return fav;
+    });
+    
+    // 更新收藏夾
+    storage.saveFavorites(updatedFavorites);
+    
+    // 清除編輯狀態
+    setEditingData(null);
+  };
+  
+  // 複製表格數據到剪貼板
+  const copyTableToClipboard = () => {
+    const headers = ['ID', '文本內容', '標籤IDs', '創建時間'];
+    const rows = filteredFavorites.map(fav => [
+      fav.id,
+      fav.text,
+      fav.tagIds.join(','),
+      formatTimestamp(fav.createdAt)
+    ]);
+    
+    // 組合成表格格式
+    const tableData = [headers, ...rows].map(row => row.join('\t')).join('\n');
+    
+    // 複製到剪貼板
+    navigator.clipboard.writeText(tableData)
+      .then(() => {
+        alert('表格數據已複製到剪貼板');
+      })
+      .catch(err => {
+        console.error('複製失敗:', err);
+        alert('複製失敗，請手動選擇並複製');
+      });
   };
   
   return (
@@ -265,6 +353,137 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
               還沒有收藏的句子，請使用文本輸入框右下方的星號按鈕(★)添加
             </div>
           )}
+          
+          {/* 數據表格區域 */}
+          <div style={{ marginTop: "20px" }}>
+            <h4 
+              onClick={toggleDataTableExpanded} 
+              style={{ 
+                cursor: "pointer", 
+                display: "flex", 
+                alignItems: "center",
+                fontSize: "16px",
+                color: "var(--ios-primary)",
+                marginBottom: "8px",
+                userSelect: "none"
+              }}
+            >
+              <span style={{ 
+                display: "inline-block", 
+                width: "18px", 
+                height: "18px", 
+                textAlign: "center", 
+                lineHeight: "16px", 
+                marginRight: "6px",
+                borderRadius: "50%",
+                background: "var(--ios-primary)",
+                color: "#fff"
+              }}>
+                {isDataTableExpanded ? "-" : "+"}
+              </span>
+              匯出數據表
+            </h4>
+            
+            {isDataTableExpanded && (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ 
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "8px"
+                }}>
+                  <span style={{ color: "var(--ios-text-secondary)", fontSize: "14px" }}>
+                    顯示 {filteredFavorites.length} 條記錄
+                  </span>
+                  <button
+                    onClick={copyTableToClipboard}
+                    style={{
+                      padding: "4px 8px",
+                      background: "var(--ios-primary)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    複製表格
+                  </button>
+                </div>
+                
+                <div style={{ 
+                  overflowX: "auto", 
+                  background: "rgba(30, 30, 34, 0.7)",
+                  borderRadius: "8px",
+                  border: "1px solid var(--ios-border)"
+                }}>
+                  <table style={{ 
+                    width: "100%", 
+                    borderCollapse: "collapse",
+                    fontSize: "14px"
+                  }}>
+                    <thead>
+                      <tr style={{ 
+                        borderBottom: "1px solid var(--ios-border)",
+                        textAlign: "left"
+                      }}>
+                        <th style={{ padding: "8px", whiteSpace: "nowrap" }}>ID</th>
+                        <th style={{ padding: "8px", whiteSpace: "nowrap" }}>文本內容</th>
+                        <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤IDs</th>
+                        <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤名稱</th>
+                        <th style={{ padding: "8px", whiteSpace: "nowrap" }}>創建時間</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredFavorites.map(fav => (
+                        <tr key={fav.id} style={{ 
+                          borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
+                        }}>
+                          <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                            {fav.id}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            {editingData && editingData.id === fav.id && editingData.field === 'text' ? (
+                              <input
+                                type="text"
+                                value={editingData.value}
+                                onChange={handleEditChange}
+                                onBlur={handleEditComplete}
+                                autoFocus
+                                style={{
+                                  width: "100%",
+                                  background: "rgba(60, 60, 70, 0.8)",
+                                  border: "1px solid var(--ios-primary)",
+                                  color: "#fff",
+                                  padding: "4px"
+                                }}
+                              />
+                            ) : (
+                              <span 
+                                onDoubleClick={() => handleEditStart(fav.id, 'text', fav.text)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                {fav.text}
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
+                            {fav.tagIds.join(', ')}
+                          </td>
+                          <td style={{ padding: "8px" }}>
+                            {fav.tagIds.map(tagId => getTagName(tagId)).join(', ')}
+                          </td>
+                          <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                            {formatTimestamp(fav.createdAt)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         </>
       )}
       
