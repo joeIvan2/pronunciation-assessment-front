@@ -22,6 +22,8 @@ export const useRecorder = (): RecorderResult => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const recorderTimerRef = useRef<number | null>(null);
+  const MAX_RECORDING_TIME = 30000; // 最大录音时长30秒
   
   const resetRecording = () => {
     setState({
@@ -95,9 +97,19 @@ export const useRecorder = (): RecorderResult => {
         }
       };
       
-      // 更改为只在停止录音时传送数据，避免中间多次触发
-      mediaRecorder.start();
+      // 每秒触发一次数据事件，避免录音被中断时丢失数据
+      mediaRecorder.start(1000); // 每1000毫秒(1秒)触发一次ondataavailable事件
       console.log('开始录音...');
+      
+      // 设置最大录音时长
+      if (recorderTimerRef.current) {
+        window.clearTimeout(recorderTimerRef.current);
+      }
+      
+      recorderTimerRef.current = window.setTimeout(() => {
+        console.log(`录音达到最大时长 ${MAX_RECORDING_TIME/1000} 秒，自动停止`);
+        stopRecording();
+      }, MAX_RECORDING_TIME);
       
     } catch (err) {
       console.error('启动录音失败:', err);
@@ -110,6 +122,12 @@ export const useRecorder = (): RecorderResult => {
   };
   
   const stopRecording = () => {
+    // 清除录音计时器
+    if (recorderTimerRef.current) {
+      window.clearTimeout(recorderTimerRef.current);
+      recorderTimerRef.current = null;
+    }
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       // 关闭录音器
       mediaRecorderRef.current.stop();

@@ -63,6 +63,10 @@ const PronunciationAssessment: React.FC = () => {
   // 標籤頁狀態
   const [activeTab, setActiveTab] = useState<storage.TabName>(() => storage.getActiveTab());
   
+  // AI助手相关状态
+  const [aiResponse, setAiResponse] = useState<string | null>(() => storage.getAIResponse());
+  const [fadeEffect, setFadeEffect] = useState<boolean>(false);
+  
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -424,8 +428,14 @@ const PronunciationAssessment: React.FC = () => {
     const favorite = favorites.find(fav => fav.id === id);
     if (favorite) {
       setReferenceText(favorite.text);
-      setSelectedTags(favorite.tagIds); // 更新當前選中的標籤
+      // 不再更新选中的标签
+      // setSelectedTags(favorite.tagIds);
       storage.saveReferenceText(favorite.text);
+      
+      // 聚焦到textarea
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
     }
   };
   
@@ -668,14 +678,21 @@ const PronunciationAssessment: React.FC = () => {
     if (result) {
       // 提取單詞評分數據
       let words = [];
+      let recognizedText = '';
       try {
         const nbestArray = result.NBest || result.nBest || result.nbest;
         if (Array.isArray(nbestArray) && nbestArray.length > 0) {
           const nbest = nbestArray[0];
           words = nbest.Words || (nbest as any).words || [];
+          // 优先获取识别文本
+          recognizedText = nbest.Display || nbest.display || result.DisplayText || result.text || '';
+        } else {
+          // 後端扁平化結果
+          recognizedText = result.DisplayText || result.text || '';
         }
       } catch (err) {
         console.error('提取單詞評分數據失敗:', err);
+        recognizedText = result.DisplayText || result.text || '';
       }
 
       // 生成一個唯一ID，使用時間戳加隨機數
@@ -686,7 +703,7 @@ const PronunciationAssessment: React.FC = () => {
       const last5Seconds = Date.now() - 5000; // 5秒內
       
       const hasSimilarRecord = existingRecords.some(record => 
-        record.text === referenceText && 
+        (record.recognizedText === recognizedText || record.text === referenceText) && 
         record.timestamp > last5Seconds
       );
       
@@ -698,7 +715,7 @@ const PronunciationAssessment: React.FC = () => {
           scoreFluency: result.fluencyScore || 0,
           scoreCompleteness: result.completenessScore || 0,
           scorePronunciation: result.pronunciationScore || 0,
-          recognizedText: result.DisplayText || result.text || '',
+          recognizedText: recognizedText,
           words: words // 保存單詞評分數據
         });
         setHistoryRecords(storage.getHistoryRecords());
@@ -713,6 +730,25 @@ const PronunciationAssessment: React.FC = () => {
     setActiveTab(tab);
     storage.saveActiveTab(tab);
   };
+
+  // 處理AI回應
+  const handleAIResponseReceived = () => {
+    // 设置渐变效果
+    setFadeEffect(true);
+    
+    // 切换到"我的最爱"标签
+    handleTabChange('favorites');
+    
+    // 500毫秒后取消渐变效果
+    setTimeout(() => {
+      setFadeEffect(false);
+    }, 500);
+  };
+
+  // 当 aiResponse 变化时保存到本地存储
+  useEffect(() => {
+    storage.saveAIResponse(aiResponse);
+  }, [aiResponse]);
 
   // JSX 渲染部分
   return (
@@ -825,7 +861,9 @@ const PronunciationAssessment: React.FC = () => {
               英文朗讀
             </button>
             
-
+            {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}
+            
+            {isLoading && <div className="loading-indicator">處理中...</div>}
           </div>
         </div>
         
@@ -978,11 +1016,40 @@ const PronunciationAssessment: React.FC = () => {
                   onUpdateFavorites={setFavorites}
                   onUpdateTags={setTags}
                   onUpdateHistoryRecords={setHistoryRecords}
+                  aiResponse={aiResponse}
+                  setAiResponse={setAiResponse}
+                  onAIResponseReceived={handleAIResponseReceived}
                 />
               )}
             </div>
           </div>
         </div>
+        
+        {/* 渐变动画效果 */}
+        {fadeEffect && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            zIndex: 1000,
+            animation: 'fadeInOut 0.5s ease-in-out',
+            pointerEvents: 'none'
+          }} />
+        )}
+        
+        {/* 添加动画样式 */}
+        <style>
+          {`
+            @keyframes fadeInOut {
+              0% { opacity: 0; }
+              50% { opacity: 0.5; }
+              100% { opacity: 0; }
+            }
+          `}
+        </style>
         
         {/* Azure 設定面板 */}
         {showAzureSettings && (

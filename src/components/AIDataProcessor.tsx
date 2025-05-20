@@ -12,6 +12,9 @@ interface AIDataProcessorProps {
   onUpdateFavorites: (newFavorites: Favorite[]) => void;
   onUpdateTags: (newTags: Tag[]) => void;
   onUpdateHistoryRecords: (newHistoryRecords: storage.HistoryItem[]) => void;
+  aiResponse: string | null;
+  setAiResponse: (response: string | null) => void;
+  onAIResponseReceived: () => void;
 }
 
 const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
@@ -20,12 +23,13 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   historyRecords,
   onUpdateFavorites,
   onUpdateTags,
-  onUpdateHistoryRecords
+  onUpdateHistoryRecords,
+  aiResponse,
+  setAiResponse,
+  onAIResponseReceived
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
-  // 確保 prompt 一定是字符串類型
   const [prompt, setPrompt] = useState<string>(() => {
     const savedPrompt = storage.getAIPrompt();
     return typeof savedPrompt === 'string' ? savedPrompt : '';
@@ -36,9 +40,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   // 定義範例提示句
   const examplePrompts = [
     "請幫我為收藏的句子分類或者創建新的標籤",
-    "分析我的發音歷史記錄，找出我最需要改進的發音問題",
+    "分析我的發音歷史記錄，幫我用這些字做一個短文",
     "生成3個跟圖片內容句子並添加到我的收藏中",
-    "幫我產生1個IELTS等級8分的人應該要會的300字短文，同時幫我創立一個標籤叫做IELTS"
+    "幫我產生1個IELTS等級8分的人會讀到的新科技短文(不要只有一句話)，同時幫我創立一個標籤叫做IELTS8分"
   ];
   
   // 處理範例提示點擊
@@ -168,8 +172,13 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       // 準備發送給AI的數據
       const formData = new FormData();
       
+      // 只使用最新的3條發音記錄
+      const latestHistoryRecords = [...historyRecords].sort((a, b) => 
+        (b.timestamp || 0) - (a.timestamp || 0)
+      ).slice(0, 3);
+      
       // 過濾 historyRecords，將 words 只保留單字層級（去除 Phonemes）
-      const filteredHistoryRecords = historyRecords.map(item => {
+      const filteredHistoryRecords = latestHistoryRecords.map(item => {
         if (!item.words || !Array.isArray(item.words)) return item;
         return {
           ...item,
@@ -205,6 +214,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
 
       const data = await response.json();
       setAiResponse(JSON.stringify(data, null, 2));
+      
+      // 通知父组件收到了AI响应
+      onAIResponseReceived();
 
       // 驗證收到的數據結構
       let isValid = true;
@@ -348,6 +360,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         color: "var(--ios-text-secondary)"
       }}>
         將你的收藏、標籤和歷史紀錄發送給AI，獲取智能建議和整理。還可以上傳相關圖片供AI分析。
+        <p>注意：如果想依照發音準確度產生句子，資料來源僅為最新三條發音紀錄。</p>
       </div>
       
       {/* 範例提示區域 */}

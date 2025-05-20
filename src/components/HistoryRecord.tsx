@@ -112,7 +112,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                           lineHeight: '1.3'
                         }}
                       >
-                        {record.text}
+                        {record.recognizedText || record.text}
                       </div>
                       <button
                         onClick={() => onDeleteRecord(record.id)}
@@ -165,20 +165,6 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
                         發音: {record.scorePronunciation}
                       </div>
                     </div>
-                    
-                    {record.recognizedText && (
-                      <div style={{
-                        fontSize: '13px',
-                        background: 'rgba(20, 20, 24, 0.4)',
-                        padding: '6px 10px',
-                        borderRadius: '8px',
-                        color: 'var(--ios-text-secondary)',
-                        fontStyle: 'italic',
-                        marginBottom: '8px'
-                      }}>
-                        "{record.recognizedText}"
-                      </div>
-                    )}
                     
                     {/* 單詞評分按鈕和詳情 */}
                     {record.words && record.words.length > 0 && (

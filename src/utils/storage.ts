@@ -319,17 +319,27 @@ export const saveActiveTab = (tab: TabName): void => {
 
 // 获取 AI 助手提示文字
 export const getAIPrompt = (): string => {
-  const savedPrompt = getItem<string | null>('aiPrompt', '');
-  // 確保返回的是字符串類型
-  return typeof savedPrompt === 'string' ? savedPrompt : '';
+  // 首选获取新的键，如果不存在则检查旧的键
+  const saved = localStorage.getItem('aiPrompt');
+  if (saved !== null) {
+    return saved;
+  }
+  
+  // 旧版本的键名
+  return getItem<string>('AIPrompt', '');
 };
 
 // 保存 AI 助手提示文字
 export const saveAIPrompt = (prompt: string): void => {
-  // 只保存字符串類型的提示
-  if (typeof prompt === 'string') {
-    setItem('aiPrompt', prompt);
-  } else {
-    setItem('aiPrompt', '');
-  }
+  setItem('aiPrompt', prompt);
+};
+
+// 获取AI响应
+export const getAIResponse = (): string | null => {
+  return getItem<string | null>('aiResponse', null);
+};
+
+// 保存AI响应
+export const saveAIResponse = (response: string | null): void => {
+  setItem('aiResponse', response);
 }; 
