@@ -749,31 +749,28 @@ h4 {
   color: var(--ios-text);
 }
 
-.delete-button {
-  padding: 4px 8px;
-  background-color: var(--ios-danger);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.delete-button:hover {
-  background-color: #c82333;
-}
-
-/* 更新按鈕樣式 - 與刪除按鈕保持一致 */
+/* 刪除按鈕和更新按鈕統一樣式 */
+.delete-button,
 .update-button {
-  padding: 4px 8px;
-  background-color: var(--ios-primary);
-  color: white;
+  background: var(--ios-primary);
+  color: var(--ios-text);
   border: none;
-  border-radius: 4px;
+  border-radius: 12px;
+  padding: 4px 8px;
+  margin-right: 4px;
   cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: filter 0.15s ease;
 }
 
+.delete-button {
+  background: var(--ios-danger);
+}
+
+.delete-button:hover,
 .update-button:hover {
-  background-color: #0066cc;
+  filter: brightness(110%);
 }
 
 /* 分享歷史記錄動畫效果 */

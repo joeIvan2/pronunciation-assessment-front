@@ -349,7 +349,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
 
   return (
     <div className="card-section">
-      <h3 className="section-header special-title">AI 助手</h3>
+      
       
       <div style={{ 
         background: "var(--ios-card)", 

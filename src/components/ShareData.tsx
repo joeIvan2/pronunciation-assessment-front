@@ -310,7 +310,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
                             </button>
                             <button 
                               className="update-button"
-                              style={{ marginLeft: '4px' }}
                               onClick={() => {
                                 setUpdateHash(item.hash);
                                 setUpdatePassword(item.editPassword);
@@ -321,7 +320,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
                                 }
                               }}
                             >
-                              更新
+                              編輯
                             </button>
                           </td>
                         </tr>
