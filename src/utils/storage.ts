@@ -150,76 +150,76 @@ export const saveNextTagId = (id: number): void => {
 
 // 获取收藏夹
 export const getFavorites = (): Favorite[] => {
-  // 默認值 - 使用預設的示例數據
+  // 默認值 - 使用預設的示例數據（使用負數ID避免與用戶添加的項目衝突）
   const defaultFavorites: Favorite[] = [
     {
-      "id": "13",
+      "id": "-1",
       "text": "The philosophical implications of artificial intelligence challenge traditional concepts of consciousness.",
       "tagIds": ["6"],
       "createdAt": 1747716000600
     },
     {
-      "id": "12",
+      "id": "-2",
       "text": "Advancements in nanotechnology enable unprecedented manipulation of matter at atomic scales.",
       "tagIds": ["6"],
       "createdAt": 1747716000500
     },
     {
-      "id": "11",
+      "id": "-3",
       "text": "Socioeconomic disparities significantly impact access to quality education and healthcare.",
       "tagIds": ["1"],
       "createdAt": 1747716000400
     },
     {
-      "id": "10",
+      "id": "-4",
       "text": "The confluence of quantum mechanics and relativity presents profound challenges in physics.",
       "tagIds": ["1"],
       "createdAt": 1747716000300
     },
     {
-      "id": "9",
+      "id": "-5",
       "text": "Innovative renewable energy technologies are transforming global power generation.",
       "tagIds": ["5"],
       "createdAt": 1747716000200
     },
     {
-      "id": "8",
+      "id": "-6",
       "text": "The intricate balance of ecosystems depends on biodiversity and environmental stability.",
       "tagIds": ["5"],
       "createdAt": 1747716000100
     },
     {
-      "id": "7",
+      "id": "-7",
       "text": "Economic factors influence the supply and demand of goods in a marketplace.",
       "tagIds": ["4"],
       "createdAt": 1747715000600
     },
     {
-      "id": "6",
+      "id": "-8",
       "text": "The theory of relativity changed how scientists understand time and space.",
       "tagIds": ["4"],
       "createdAt": 1747715000500
     },
     {
-      "id": "5",
+      "id": "-9",
       "text": "Photosynthesis allows plants to convert sunlight into energy for growth.",
       "tagIds": ["3"],
       "createdAt": 1747715000400
     },
     {
-      "id": "4",
+      "id": "-10",
       "text": "Water changes its state from liquid to solid when cooled below zero degrees Celsius.",
       "tagIds": ["3"],
       "createdAt": 1747715000300
     },
     {
-      "id": "3",
+      "id": "-11",
       "text": "Birds can fly high in the sky and build nests in trees.",
       "tagIds": ["2"],
       "createdAt": 1747715000200
     },
     {
-      "id": "2",
+      "id": "-12",
       "text": "The sun rises in the east and sets in the west every day.",
       "tagIds": ["2"],
       "createdAt": 1747715000100
@@ -303,7 +303,32 @@ export const saveFavorites = (favorites: Favorite[]): void => {
 
 // 获取下一个收藏ID
 export const getNextFavoriteId = (favorites: Favorite[]): number => {
-  return getItem<number>('nextFavoriteId', favorites.length > 0 ? favorites.length + 1 : 1);
+  // 查找当前所有的ID（包括非数字ID和数字ID）
+  const allIds = favorites.map(favorite => favorite.id);
+  
+  // 查找当前最大的正整数ID
+  const maxNumericId = favorites.reduce((max, favorite) => {
+    // 尝试将ID转换为整数
+    const id = parseInt(favorite.id, 10);
+    // 只考虑正整数ID
+    if (!isNaN(id) && id > 0 && id > max) {
+      return id;
+    }
+    return max;
+  }, 0);
+  
+  // 从本地存储获取下一个ID值
+  const storedNextId = getItem<number>('nextFavoriteId', Math.max(maxNumericId + 1, 1));
+  
+  // 确保生成的ID不会与任何现有ID冲突（数字形式）
+  let nextId = Math.max(maxNumericId + 1, storedNextId);
+  
+  // 检查ID是否已存在（作为字符串），如果存在则递增
+  while (allIds.includes(nextId.toString())) {
+    nextId++;
+  }
+  
+  return nextId;
 };
 
 // 保存下一个收藏ID
@@ -317,6 +342,7 @@ type CardExpandState = {
   tagManager: boolean;
   voicePicker: boolean;
   historyRecord: boolean;
+  shareData: boolean;
 };
 
 // 获取卡片展开状态
@@ -325,7 +351,8 @@ export const getCardExpandStates = (): CardExpandState => {
     favoriteList: true,
     tagManager: false,
     voicePicker: false,
-    historyRecord: true
+    historyRecord: true,
+    shareData: true
   });
 };
 
@@ -386,7 +413,7 @@ export const clearHistoryRecords = (): void => {
 };
 
 // 标签页相关类型和函数
-export type TabName = 'history' | 'favorites' | 'tags' | 'voices' | 'ai';
+export type TabName = 'history' | 'favorites' | 'tags' | 'voices' | 'ai' | 'share';
 
 // 获取当前激活的标签页
 export const getActiveTab = (): TabName => {
@@ -423,4 +450,183 @@ export const getAIResponse = (): string | null => {
 // 保存AI响应
 export const saveAIResponse = (response: string | null): void => {
   setItem('aiResponse', response);
+};
+
+// 分享數據相關功能
+export interface ShareResponse {
+  success: boolean;
+  hash?: string;
+  editPassword?: string;
+  url?: string;
+  error?: string;
+}
+
+export interface LoadResponse {
+  success: boolean;
+  data?: {
+    favorites: Favorite[];
+    tags: Tag[];
+  };
+  error?: string;
+}
+
+// 分享信息類型
+export interface ShareInfo {
+  hash: string;
+  editPassword: string;
+  url: string;
+  timestamp: number;
+}
+
+// API基礎URL
+const API_BASE_URL = 'https://pronunciation-ai-server.onrender.com';
+
+// 分享當前的標籤和收藏數據
+export const shareTagsAndFavorites = async (): Promise<ShareResponse> => {
+  try {
+    const tags = getTags();
+    const favorites = getFavorites();
+    
+    const response = await fetch(`${API_BASE_URL}/api/store`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        favorites,
+        tags
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || '分享數據失敗');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('分享數據出錯:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知錯誤'
+    };
+  }
+};
+
+// 從哈希值加載數據
+export const loadFromHash = async (hash: string): Promise<LoadResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/load/${hash}`);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || '加載數據失敗');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('加載數據出錯:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知錯誤'
+    };
+  }
+};
+
+// 應用從服務器加載的數據
+export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): void => {
+  // 處理標籤 - 保持原有ID
+  if (data.tags && Array.isArray(data.tags)) {
+    saveTags(data.tags);
+  }
+  
+  // 處理收藏項目 - 使用前綴確保ID不會衝突
+  if (data.favorites && Array.isArray(data.favorites)) {
+    const timestamp = Date.now();
+    const processedFavorites = data.favorites.map((fav, index) => {
+      // 檢查ID是否是數字格式的字符串
+      const isNumericId = /^\d+$/.test(String(fav.id));
+      
+      // 如果是數字ID，將其替換為帶前綴的ID以避免衝突
+      const newId = isNumericId 
+        ? `api-${timestamp}-${index}` // 使用前綴和索引
+        : (fav.id || `api-${timestamp}-${index}`);
+        
+      return {
+        ...fav,
+        id: newId
+      };
+    });
+    
+    saveFavorites(processedFavorites);
+  }
+};
+
+// 更新已分享的數據
+export const updateSharedData = async (
+  hash: string, 
+  password: string
+): Promise<ShareResponse> => {
+  try {
+    const tags = getTags();
+    const favorites = getFavorites();
+    
+    const response = await fetch(`${API_BASE_URL}/api/update/${hash}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: {
+          favorites,
+          tags
+        },
+        password
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || '更新數據失敗');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('更新數據出錯:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知錯誤'
+    };
+  }
+};
+
+// 獲取已保存的分享信息
+export const getSavedShareInfo = (): ShareInfo[] => {
+  return getItem<ShareInfo[]>('savedShareInfo', []);
+};
+
+// 保存分享信息
+export const saveShareInfo = (info: Omit<ShareInfo, 'timestamp'>): void => {
+  const shareInfos = getSavedShareInfo();
+  const newInfo: ShareInfo = {
+    ...info,
+    timestamp: Date.now()
+  };
+  
+  // 檢查是否已存在相同hash的信息，如果有則更新
+  const index = shareInfos.findIndex(item => item.hash === info.hash);
+  if (index !== -1) {
+    shareInfos[index] = newInfo;
+  } else {
+    shareInfos.unshift(newInfo); // 添加到列表開頭
+  }
+  
+  // 只保留最近的5個分享
+  const updatedInfos = shareInfos.slice(0, 5);
+  setItem('savedShareInfo', updatedInfos);
+};
+
+// 刪除已保存的分享信息
+export const deleteShareInfo = (hash: string): void => {
+  const shareInfos = getSavedShareInfo();
+  const updatedInfos = shareInfos.filter(info => info.hash !== hash);
+  setItem('savedShareInfo', updatedInfos);
 }; 

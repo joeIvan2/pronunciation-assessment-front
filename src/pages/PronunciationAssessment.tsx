@@ -11,6 +11,7 @@ import VoicePicker from "../components/VoicePicker";
 import FavoriteList from "../components/FavoriteList";
 import HistoryRecord from "../components/HistoryRecord";
 import AIDataProcessor from "../components/AIDataProcessor";
+import ShareData from "../components/ShareData";
 
 // 鉤子導入
 import { useRecorder } from "../hooks/useRecorder";
@@ -22,6 +23,8 @@ import * as storage from "../utils/storage";
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag, VoiceOption } from "../types/speech";
+
+// 我們在storage.ts中已經更新了TabName類型，所以這裡不需要再定義
 
 const PronunciationAssessment: React.FC = () => {
   // 狀態定義
@@ -750,6 +753,55 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveAIResponse(aiResponse);
   }, [aiResponse]);
 
+  // 檢查URL參數並自動加載分享數據
+  useEffect(() => {
+    // 檢查URL中是否有hash參數
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = urlParams.get('hash');
+    
+    if (hash) {
+      // 顯示正在加載的提示
+      setIsLoading(true);
+      setError(null);
+      
+      // 嘗試加載分享數據
+      const loadSharedData = async () => {
+        try {
+          // 加載數據
+          const result = await storage.loadFromHash(hash);
+          
+          if (result.success && result.data) {
+            // 應用加載的數據
+            storage.applyLoadedData(result.data);
+            
+            // 更新本地狀態
+            setTags(result.data.tags);
+            setFavorites(result.data.favorites);
+            
+            // 切換到favorites標籤
+            setActiveTab('favorites');
+            
+            // 顯示成功消息
+            alert('分享數據已成功導入！');
+            
+            // 從URL中移除hash參數
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+          } else {
+            setError(`無法加載分享數據: ${result.error || '未知錯誤'}`);
+          }
+        } catch (err) {
+          console.error('加載分享數據出錯:', err);
+          setError(`加載分享數據失敗: ${err instanceof Error ? err.message : String(err)}`);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      loadSharedData();
+    }
+  }, []); // 只在組件首次載入時執行
+
   // JSX 渲染部分
   return (
     <div className="pa-container">
@@ -947,6 +999,12 @@ const PronunciationAssessment: React.FC = () => {
               >
                 AI助手
               </button>
+              <button 
+                className={`tab-button ${activeTab === 'share' ? 'active' : ''}`}
+                onClick={() => handleTabChange('share')}
+              >
+                數據分享
+              </button>
             </div>
             
             <div className="tab-content">
@@ -1019,6 +1077,14 @@ const PronunciationAssessment: React.FC = () => {
                   aiResponse={aiResponse}
                   setAiResponse={setAiResponse}
                   onAIResponseReceived={handleAIResponseReceived}
+                />
+              )}
+              
+              {/* 數據分享標籤頁 */}
+              {activeTab === 'share' && (
+                <ShareData 
+                  tags={tags} 
+                  favorites={favorites} 
                 />
               )}
             </div>

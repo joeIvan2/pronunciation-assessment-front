@@ -290,13 +290,24 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
             createdAt: tag.createdAt || Date.now()
           }));
           
-          // 處理收藏數據
-          const importedFavorites = jsonData.favorites.map((fav: any) => ({
-            id: fav.id || String(Date.now()),
-            text: fav.text || '',
-            tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : (Array.isArray(fav.tags) ? fav.tags : []),
-            createdAt: fav.createdAt || Date.now()
-          }));
+          // 處理收藏數據 - 使用前綴確保ID不會衝突
+          const timestamp = Date.now();
+          const importedFavorites = jsonData.favorites.map((fav: any, index: number) => {
+            // 檢查ID是否是數字格式的字符串
+            const isNumericId = /^\d+$/.test(String(fav.id));
+            
+            // 如果是數字ID，將其轉為負數或使用時間戳前綴，避免與用戶添加的ID衝突
+            const newId = isNumericId 
+              ? `imp-${timestamp}-${index}` // 使用前綴和索引
+              : (fav.id || `imp-${timestamp}-${index}`);
+              
+            return {
+              id: newId,
+              text: fav.text || '',
+              tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : (Array.isArray(fav.tags) ? fav.tags : []),
+              createdAt: fav.createdAt || Date.now()
+            };
+          });
           
           // 更新數據
           storage.saveTags(importedTags);
