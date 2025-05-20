@@ -436,47 +436,116 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                     </thead>
                     <tbody>
                       {filteredFavorites.map(fav => (
-                        <tr key={fav.id} style={{ 
-                          borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
-                        }}>
-                          <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
-                            {fav.id}
-                          </td>
-                          <td style={{ padding: "8px" }}>
-                            {editingData && editingData.id === fav.id && editingData.field === 'text' ? (
-                              <input
-                                type="text"
-                                value={editingData.value}
-                                onChange={handleEditChange}
-                                onBlur={handleEditComplete}
-                                autoFocus
-                                style={{
-                                  width: "100%",
-                                  background: "rgba(60, 60, 70, 0.8)",
-                                  border: "1px solid var(--ios-primary)",
-                                  color: "#fff",
-                                  padding: "4px"
-                                }}
-                              />
-                            ) : (
-                              <span 
-                                onDoubleClick={() => handleEditStart(fav.id, 'text', fav.text)}
-                                style={{ cursor: "pointer" }}
-                              >
-                                {fav.text}
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
-                            {fav.tagIds.join(', ')}
-                          </td>
-                          <td style={{ padding: "8px" }}>
-                            {fav.tagIds.map(tagId => getTagName(tagId)).join(', ')}
-                          </td>
-                          <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
-                            {formatTimestamp(fav.createdAt)}
-                          </td>
-                        </tr>
+                        <>
+                          <tr key={`row-${fav.id}`} style={{ 
+                            borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
+                          }}>
+                            <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                              {fav.id}
+                            </td>
+                            <td style={{ padding: "8px" }}>
+                              {editingData && editingData.id === fav.id && editingData.field === 'text' ? (
+                                <input
+                                  type="text"
+                                  value={editingData.value}
+                                  onChange={handleEditChange}
+                                  onBlur={handleEditComplete}
+                                  autoFocus
+                                  style={{
+                                    width: "100%",
+                                    background: "rgba(60, 60, 70, 0.8)",
+                                    border: "1px solid var(--ios-primary)",
+                                    color: "#fff",
+                                    padding: "4px"
+                                  }}
+                                />
+                              ) : (
+                                <span 
+                                  onDoubleClick={() => handleEditStart(fav.id, 'text', fav.text)}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  {fav.text}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
+                              {fav.tagIds.join(', ')}
+                            </td>
+                            <td style={{ padding: "8px" }}>
+                              {fav.tagIds.map(tagId => getTagName(tagId)).join(', ')}
+                            </td>
+                            <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                              {formatTimestamp(fav.createdAt)}
+                            </td>
+                          </tr>
+                          
+                          {/* 空行 */}
+                          <tr key={`empty-${fav.id}`} style={{ height: "8px" }}>
+                            <td colSpan={5} style={{ padding: 0 }}></td>
+                          </tr>
+                          
+                          {/* 標籤詳情行 */}
+                          <tr key={`tags-${fav.id}`} style={{ 
+                            background: "rgba(40, 40, 45, 0.4)",
+                            borderBottom: "1px solid var(--ios-border)"
+                          }}>
+                            <td colSpan={5} style={{ padding: "8px" }}>
+                              <div style={{ 
+                                display: "flex", 
+                                flexDirection: "column",
+                                fontSize: "13px"
+                              }}>
+                                <span style={{ 
+                                  fontSize: "12px", 
+                                  color: "var(--ios-text-secondary)",
+                                  marginBottom: "4px"
+                                }}>
+                                  標籤詳情:
+                                </span>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                  {fav.tagIds.map(tagId => {
+                                    const tag = tags.find(t => t.tagId === tagId);
+                                    if (!tag) return null;
+                                    
+                                    return (
+                                      <div key={tagId} style={{ 
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        background: "rgba(50, 50, 55, 0.7)",
+                                        padding: "4px 8px",
+                                        borderRadius: "4px",
+                                        border: `1px solid ${tag.color}`
+                                      }}>
+                                        <span style={{ 
+                                          width: "12px", 
+                                          height: "12px", 
+                                          borderRadius: "3px",
+                                          background: tag.color,
+                                          display: "inline-block",
+                                          marginRight: "6px"
+                                        }}></span>
+                                        <span style={{ color: "#fff" }}>{tag.name}</span>
+                                        <span style={{ 
+                                          color: "var(--ios-text-secondary)",
+                                          fontSize: "11px",
+                                          marginLeft: "6px" 
+                                        }}>
+                                          (ID: {tag.tagId})
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                  
+                                  {fav.tagIds.length === 0 && (
+                                    <span style={{ color: "var(--ios-text-secondary)" }}>
+                                      無標籤
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        </>
                       ))}
                     </tbody>
                   </table>
