@@ -415,7 +415,8 @@ const PronunciationAssessment: React.FC = () => {
       createdAt: Date.now()
     };
     
-    const updatedFavorites = [...favorites].slice(-19).concat(newFavorite);
+    // 修改这里，将新项放在最前面，而不是最后
+    const updatedFavorites = [newFavorite, ...favorites].slice(0, 20);
     setFavorites(updatedFavorites);
     storage.saveFavorites(updatedFavorites);
     
