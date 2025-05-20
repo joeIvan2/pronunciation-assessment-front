@@ -752,6 +752,32 @@ h4 {
   background-color: #c82333;
 }
 
+/* 更新按鈕樣式 - 與刪除按鈕保持一致 */
+.update-button {
+  padding: 4px 8px;
+  background-color: var(--ios-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.update-button:hover {
+  background-color: #0066cc;
+}
+
+/* 分享歷史記錄動畫效果 */
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.history-highlight {
+  animation: fadeInOut 1.5s ease-in-out;
+  background-color: rgba(255, 255, 0, 0.1);
+}
+
 /* 添加分享卡片按鈕樣式 */
 .primary-button, 
 .secondary-button {

@@ -28,6 +28,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
   // 分享歷史記錄
   const [shareHistory, setShareHistory] = useState<storage.ShareInfo[]>([]);
   
+  // 分享歷史動畫效果
+  const [showHistoryAnimation, setShowHistoryAnimation] = useState<boolean>(false);
+  
   // 初始加載分享歷史記錄和展開狀態
   useEffect(() => {
     setShareHistory(storage.getSavedShareInfo());
@@ -64,15 +67,8 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
       const result = await storage.shareTagsAndFavorites();
       
       if (result.success && result.hash && result.editPassword && result.url) {
-        // 創建直接導入鏈接
+        // 創建直接導入鏈接但不再顯示
         const directLink = formatShareLink(result.hash);
-        
-        setShareResult({
-          success: true,
-          url: result.url,
-          editPassword: result.editPassword,
-          directLink: directLink // 添加直接導入鏈接
-        });
         
         // 保存分享信息到本地
         storage.saveShareInfo({
@@ -83,6 +79,20 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
         
         // 刷新分享歷史
         setShareHistory(storage.getSavedShareInfo());
+        
+        // 觸發歷史記錄動畫效果
+        setShowHistoryAnimation(true);
+        setTimeout(() => {
+          setShowHistoryAnimation(false);
+        }, 1500);
+        
+        // 只設置結果狀態，但不顯示success-message
+        setShareResult({
+          success: true,
+          url: result.url,
+          editPassword: result.editPassword,
+          directLink: directLink
+        });
       } else {
         setShareResult({
           success: false,
@@ -146,10 +156,18 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
   
   // 更新數據
   const updateData = async () => {
-    if (!updateHash.trim() || !updatePassword.trim()) {
+    if (!updateHash.trim()) {
       setUpdateResult({
         success: false,
-        message: '請輸入哈希值和編輯密碼'
+        message: '請輸入哈希值'
+      });
+      return;
+    }
+    
+    if (!updatePassword.trim()) {
+      setUpdateResult({
+        success: false,
+        message: '請輸入編輯密碼'
       });
       return;
     }
@@ -158,6 +176,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
       setIsUpdating(true);
       setUpdateResult(null);
       
+      // 記錄原始輸入用於診斷
+      console.log('更新數據請求:', { hashInput: updateHash.trim() });
+      
       const result = await storage.updateSharedData(updateHash.trim(), updatePassword.trim());
       
       if (result.success) {
@@ -165,6 +186,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
           success: true,
           message: '數據更新成功！'
         });
+        // 清空輸入欄位
+        setUpdateHash('');
+        setUpdatePassword('');
       } else {
         setUpdateResult({
           success: false,
@@ -221,52 +245,95 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
               {isSharing ? '處理中...' : '生成分享鏈接'}
             </button>
             
-            {shareResult && shareResult.success && (
-              <div className="success-message">
-                <h4>分享成功！</h4>
-                <div className="share-info">
-                  <div>
-                    <label>直接導入鏈接 (分享給他人):</label>
-                    <div className="copy-container">
-                      <input type="text" value={shareResult.directLink} readOnly />
-                      <button onClick={() => copyToClipboard(shareResult.directLink!)}>複製</button>
-                    </div>
-                    <small style={{ color: 'var(--ios-text-secondary)', marginTop: '4px', display: 'block' }}>
-                      分享此鏈接給他人，點擊後將自動導入數據
-                    </small>
-                  </div>
-                  <div>
-                    <label>編輯密碼 (請妥善保存):</label>
-                    <div className="copy-container">
-                      <input type="text" value={shareResult.editPassword} readOnly />
-                      <button onClick={() => copyToClipboard(shareResult.editPassword!)}>複製</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
+            {/* 刪除success-message區塊，只保留錯誤提示 */}
             {shareResult && !shareResult.success && (
               <div className="error-message">
                 分享失敗: {shareResult.error}
               </div>
             )}
+            
+            {shareHistory.length > 0 && (
+              <div className={`share-history-section ${showHistoryAnimation ? 'history-highlight' : ''}`} style={{marginTop: '20px'}}>
+                <h4>分享歷史記錄</h4>
+                <div className="share-history">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>分享時間</th>
+                        <th style={{display: 'none'}}>哈希值</th>
+                        <th>分享網址</th>
+                        <th>用於編輯的密碼(請妥善保存)</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shareHistory.map((item) => (
+                        <tr key={item.hash}>
+                          <td>{new Date(item.timestamp).toLocaleString()}</td>
+                          <td style={{display: 'none'}}>
+                            <div className="copy-container">
+                              <input type="text" value={item.hash} readOnly />
+                              <button onClick={() => copyToClipboard(item.hash)}>複製</button>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="copy-container">
+                              <input type="text" value={formatShareLink(item.hash)} readOnly />
+                              <button onClick={() => copyToClipboard(formatShareLink(item.hash))}>複製</button>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="copy-container">
+                              <input type="password" value={item.editPassword} readOnly />
+                              <button onClick={() => copyToClipboard(item.editPassword)}>複製</button>
+                            </div>
+                          </td>
+                          <td>
+                            <button 
+                              className="delete-button"
+                              onClick={() => deleteShareHistoryItem(item.hash)}
+                            >
+                              刪除
+                            </button>
+                            <button 
+                              className="update-button"
+                              style={{ marginLeft: '4px' }}
+                              onClick={() => {
+                                setUpdateHash(item.hash);
+                                setUpdatePassword(item.editPassword);
+                                // 滾動到更新表單
+                                const updateForm = document.querySelector('.card-section:nth-child(2)');
+                                if (updateForm) {
+                                  updateForm.scrollIntoView({ behavior: 'smooth' });
+                                }
+                              }}
+                            >
+                              更新
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="card-section">
-            <h4>讀取與更新共享數據</h4>
-            <p>讀取數據：在網址後添加參數可直接讀取，例如：<code>http://網站網址/?hash=您的哈希值</code></p>
-            <p>更新數據：輸入哈希值和編輯密碼以更新已分享的內容。</p>
+            <h4>修改並更新你的網址</h4>
+            
+            
             <div className="input-group">
               <input 
                 type="text" 
-                placeholder="哈希值" 
+                placeholder="例如：https://pronunciation-assessment-front.vercel.app/?hash=ooxx" 
                 value={updateHash}
                 onChange={(e) => setUpdateHash(e.target.value)}
               />
               <input 
                 type="password" 
-                placeholder="編輯密碼" 
+                placeholder="您保留的編輯密碼" 
                 value={updatePassword}
                 onChange={(e) => setUpdatePassword(e.target.value)}
               />
@@ -278,6 +345,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
                 {isUpdating ? '更新中...' : '更新數據'}
               </button>
             </div>
+            <div style={{marginTop: '4px', fontSize: '12px', color: 'var(--ios-text-secondary)'}}>
+              注意：請輸入哈希值而非完整URL。如需從歷史記錄中更新，請點擊"複製"按鈕獲取編輯密碼。
+            </div>
             
             {updateResult && (
               <div className={`message ${updateResult.success ? 'success-message' : 'error-message'}`}>
@@ -285,51 +355,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
               </div>
             )}
           </div>
-          
-          {shareHistory.length > 0 && (
-            <div className="card-section">
-              <h4>分享歷史記錄</h4>
-              <div className="share-history">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>分享時間</th>
-                      <th>直接導入鏈接</th>
-                      <th>編輯密碼</th>
-                      <th>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shareHistory.map((item) => (
-                      <tr key={item.hash}>
-                        <td>{new Date(item.timestamp).toLocaleString()}</td>
-                        <td>
-                          <div className="copy-container">
-                            <input type="text" value={formatShareLink(item.hash)} readOnly />
-                            <button onClick={() => copyToClipboard(formatShareLink(item.hash))}>複製</button>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="copy-container">
-                            <input type="text" value={item.editPassword} readOnly />
-                            <button onClick={() => copyToClipboard(item.editPassword)}>複製</button>
-                          </div>
-                        </td>
-                        <td>
-                          <button 
-                            className="delete-button"
-                            onClick={() => deleteShareHistoryItem(item.hash)}
-                          >
-                            刪除
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

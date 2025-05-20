@@ -602,10 +602,43 @@ export const updateSharedData = async (
   password: string
 ): Promise<ShareResponse> => {
   try {
+    // 檢查輸入是否為完整URL，如果是則提取哈希值
+    let cleanHash = hash.trim();
+    
+    // 如果是URL格式，嘗試提取hash參數
+    if (cleanHash.includes('://') || cleanHash.startsWith('www.')) {
+      try {
+        const url = new URL(cleanHash.startsWith('www.') ? `https://${cleanHash}` : cleanHash);
+        const hashParam = url.searchParams.get('hash');
+        if (hashParam) {
+          cleanHash = hashParam;
+        } else {
+          // 如果URL中沒有hash參數，嘗試使用最後一個路徑段
+          const pathSegments = url.pathname.split('/').filter(Boolean);
+          if (pathSegments.length > 0) {
+            cleanHash = pathSegments[pathSegments.length - 1];
+          }
+        }
+      } catch (e) {
+        console.error('URL解析錯誤，將使用原始輸入', e);
+        // 繼續使用原始輸入
+      }
+    }
+    
+    // 確保哈希值不為空
+    if (!cleanHash) {
+      return {
+        success: false,
+        error: '無效的哈希值'
+      };
+    }
+    
     const tags = getTags();
     const favorites = getFavorites();
     
-    const response = await fetch(`${API_BASE_URL}/api/update/${hash}`, {
+    console.log(`準備更新數據，使用哈希值: ${cleanHash}`);
+    
+    const response = await fetch(`${API_BASE_URL}/api/update/${cleanHash}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
