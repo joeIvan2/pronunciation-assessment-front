@@ -505,15 +505,22 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
             {(() => {
               try {
                 const parsedResponse = JSON.parse(aiResponse);
+                // 安全渲染函數，處理可能的對象
+                const renderContent = (content: any): string => {
+                  if (content === null || content === undefined) {
+                    return "無回應訊息";
+                  }
+                  if (typeof content === 'string') {
+                    return content;
+                  }
+                  return JSON.stringify(content, null, 2);
+                };
+                
                 return (
                   <>
-                                  <div style={{ marginBottom: "8px" }}>
-                {typeof parsedResponse.message === 'string' 
-                  ? parsedResponse.message 
-                  : parsedResponse.message 
-                    ? JSON.stringify(parsedResponse.message, null, 2) 
-                    : "無回應訊息"}
-              </div>
+                    <div style={{ marginBottom: "8px" }}>
+                      {renderContent(parsedResponse.message)}
+                    </div>
                     {parsedResponse.processedAt && (
                       <div style={{ 
                         fontSize: "12px", 
