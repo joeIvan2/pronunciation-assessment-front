@@ -440,15 +440,27 @@ export const clearHistoryRecords = (): void => {
 
 // 标签页相关类型和函数
 export type TabName = 'history' | 'favorites' | 'tags' | 'voices' | 'ai' | 'share' | 'input';
+export type TopTabName = 'input' | 'ai';
+export type BottomTabName = 'history' | 'favorites' | 'tags' | 'voices' | 'share';
 
-// 获取当前激活的标签页
-export const getActiveTab = (): TabName => {
-  return getItem<TabName>('activeTab', 'favorites');
+// 获取顶部标签页
+export const getTopActiveTab = (): TopTabName => {
+  return getItem<TopTabName>('topActiveTab', 'input');
 };
 
-// 保存当前激活的标签页
-export const saveActiveTab = (tab: TabName): void => {
-  setItem('activeTab', tab);
+// 保存顶部标签页
+export const saveTopActiveTab = (tab: TopTabName): void => {
+  setItem('topActiveTab', tab);
+};
+
+// 获取底部标签页
+export const getBottomActiveTab = (): BottomTabName => {
+  return getItem<BottomTabName>('bottomActiveTab', 'favorites');
+};
+
+// 保存底部标签页
+export const saveBottomActiveTab = (tab: BottomTabName): void => {
+  setItem('bottomActiveTab', tab);
 };
 
 // 获取 AI 助手提示文字
@@ -470,12 +482,37 @@ export const saveAIPrompt = (prompt: string): void => {
 
 // 获取AI响应
 export const getAIResponse = (): string | null => {
-  return getItem<string | null>('aiResponse', null);
+  try {
+    const item = localStorage.getItem('aiResponse');
+    if (item === null) {
+      return null;
+    }
+    
+    // 确保返回的是字符串类型
+    return item;
+  } catch (e) {
+    console.error('获取AI响应出错:', e);
+    return null;
+  }
 };
 
 // 保存AI响应
 export const saveAIResponse = (response: string | null): void => {
-  setItem('aiResponse', response);
+  try {
+    if (response === null) {
+      localStorage.removeItem('aiResponse');
+      return;
+    }
+    
+    // 如果response是对象，将其转换为字符串
+    if (typeof response === 'object') {
+      localStorage.setItem('aiResponse', JSON.stringify(response));
+    } else {
+      localStorage.setItem('aiResponse', response);
+    }
+  } catch (e) {
+    console.error('保存AI响应出错:', e);
+  }
 };
 
 // 分享數據相關功能

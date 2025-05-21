@@ -65,35 +65,18 @@ const PronunciationAssessment: React.FC = () => {
   const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(() => storage.getCardExpandStates().historyRecord);
   
   // 標籤頁狀態
-  const [activeTab, setActiveTab] = useState<storage.TabName>(() => storage.getActiveTab());
-  // 新增頂部和底部標籤頁的獨立狀態
-  const [topActiveTab, setTopActiveTab] = useState<'input' | 'ai'>('input');
-  const [bottomActiveTab, setBottomActiveTab] = useState<Exclude<storage.TabName, 'input' | 'ai'>>('favorites');
-  
-  // 在無痕模式下確保標籤頁能正確預設
-  useEffect(() => {
-    // 在組件掛載時檢查標籤頁狀態
-    const inputTabs = ['input', 'ai'];
-    const bottomTabs = ['favorites', 'history', 'tags', 'voices', 'share'];
-    
-    if (inputTabs.includes(activeTab as any)) {
-      setTopActiveTab(activeTab as 'input' | 'ai');
-    } else if (bottomTabs.includes(activeTab as any)) {
-      setBottomActiveTab(activeTab as any);
-    } else {
-      // 如果不是有效標籤頁，設置默認值
-      setTopActiveTab('input');
-      setBottomActiveTab('favorites');
-      try {
-        storage.saveActiveTab('input');
-      } catch (err) {
-        console.log('無法保存標籤頁狀態，可能處於無痕模式');
-      }
-    }
-  }, [activeTab]);
+  const [topActiveTab, setTopActiveTab] = useState<storage.TopTabName>(() => storage.getTopActiveTab());
+  const [bottomActiveTab, setBottomActiveTab] = useState<storage.BottomTabName>(() => storage.getBottomActiveTab());
   
   // AI助手相关状态
-  const [aiResponse, setAiResponse] = useState<string | null>(() => storage.getAIResponse());
+  const [aiResponse, setAiResponse] = useState<string | null>(() => {
+    try {
+      return storage.getAIResponse();
+    } catch (e) {
+      console.error('加載AI響應失敗，重置為空:', e);
+      return null;
+    }
+  });
   const [fadeEffect, setFadeEffect] = useState<boolean>(false);
   
   // Refs
@@ -757,24 +740,24 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [result, referenceText]);
 
-  // 確保底部標籤頁區域預設顯示"我的最愛"
+  // 處理標籤頁切換
   const handleTabChange = (tab: storage.TabName) => {
     // 處理頂部輸入區域的切換
     if (tab === 'input' || tab === 'ai') {
-      setTopActiveTab(tab);
+      setTopActiveTab(tab as storage.TopTabName);
       try {
-        storage.saveActiveTab(tab);
+        storage.saveTopActiveTab(tab as storage.TopTabName);
       } catch (e) {
-        console.log('保存標籤頁狀態失敗，可能處於無痕模式');
+        console.log('保存頂部標籤頁狀態失敗，可能處於無痕模式');
       }
     } 
     // 處理底部標籤頁區域的切換
     else {
-      setBottomActiveTab(tab as Exclude<storage.TabName, 'input' | 'ai'>);
+      setBottomActiveTab(tab as storage.BottomTabName);
       try {
-        storage.saveActiveTab(tab);
+        storage.saveBottomActiveTab(tab as storage.BottomTabName);
       } catch (e) {
-        console.log('保存標籤頁狀態失敗，可能處於無痕模式');
+        console.log('保存底部標籤頁狀態失敗，可能處於無痕模式');
       }
     }
   };
@@ -792,7 +775,11 @@ const PronunciationAssessment: React.FC = () => {
 
   // 当 aiResponse 变化时保存到本地存储
   useEffect(() => {
-    storage.saveAIResponse(aiResponse);
+    try {
+      storage.saveAIResponse(aiResponse);
+    } catch (e) {
+      console.error('保存AI響應失敗:', e);
+    }
   }, [aiResponse]);
 
   // 檢查URL參數並自動加載分享數據
@@ -821,7 +808,7 @@ const PronunciationAssessment: React.FC = () => {
             setFavorites(result.data.favorites);
             
             // 切換到favorites標籤
-            setActiveTab('favorites');
+            setBottomActiveTab('favorites');
             
             // 顯示成功消息
             alert('分享數據已成功導入！');
@@ -900,26 +887,26 @@ const PronunciationAssessment: React.FC = () => {
           {topActiveTab === 'input' && (
             <>
               <h3 
-                onClick={() => {
-                  textareaRef.current?.focus();
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-              </h3>
+            onClick={() => {
+              textareaRef.current?.focus();
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+          </h3>
               
               <div className="integrated-input-container">
                 {/* 文本输入区 */}
                 <ResizableTextarea
-                  ref={textareaRef}
-                  value={referenceText}
-                  onChange={handleReferenceTextChange}
-                  onPaste={handlePaste}
-                  className="textarea-input"
+              ref={textareaRef}
+              value={referenceText}
+              onChange={handleReferenceTextChange}
+              onPaste={handlePaste}
+              className="textarea-input"
                   fontSize={fontSize}
-                  placeholder="輸入或粘貼要練習的文本..."
+              placeholder="輸入或粘貼要練習的文本..."
                   storageKey="mainTextareaHeight"
                   defaultHeight={140}
-                />
+            />
                 
                 {/* 工具栏控制按钮 */}
                 <div className="textarea-toolbar">
@@ -943,52 +930,52 @@ const PronunciationAssessment: React.FC = () => {
                   </button>
                   
                   {/* 收藏按钮 */}
-                  <button
-                    onClick={() => addToFavorites(referenceText)}
-                    disabled={!referenceText}
+            <button
+              onClick={() => addToFavorites(referenceText)}
+              disabled={!referenceText}
                     className="control-button"
-                    title="添加到收藏"
+              title="添加到收藏"
                     style={{ color: !referenceText ? 'var(--ios-gray)' : 'var(--ios-warning)' }}
                   >
                     <i className="fas fa-star"></i>
-                  </button>
-                </div>
-                
+              </button>
+        </div>
+        
                 {/* 操作按钮区 */}
                 <div className="textarea-action-bar">
-                  <button
-                    onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
-                    disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
-                    className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"}`}
+            <button
+              onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
+              disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
+              className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"}`}
                     style={{ flex: 1 }}
-                  >
+            >
                     <i className="fas fa-microphone" style={{ marginRight: '5px' }}></i>
-                    {isAssessing || recorder.recording
-                      ? "停止錄音"
-                      : isLoading
-                      ? "處理中..."
+              {isAssessing || recorder.recording
+                ? "停止錄音"
+                : isLoading
+                ? "處理中..."
                       : "評分"}
-                  </button>
-                  
-                  <button
-                    onClick={speakText}
-                    disabled={isLoading || !referenceText}
-                    className="btn btn-success"
+            </button>
+            
+            <button
+              onClick={speakText}
+              disabled={isLoading || !referenceText}
+              className="btn btn-success"
                     style={{ 
                       opacity: isLoading || !referenceText ? 0.55 : 1, 
                       cursor: isLoading || !referenceText ? "not-allowed" : "pointer",
                       flex: 1
                     }}
-                  >
+            >
                     <i className="fas fa-volume-up" style={{ marginRight: '5px' }}></i>
                     朗讀
-                  </button>
+            </button>
                 </div>
-                
-                {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}
-                
-                {isLoading && <div className="loading-indicator">處理中...</div>}
-              </div>
+            
+            {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}
+            
+            {isLoading && <div className="loading-indicator">處理中...</div>}
+          </div>
             </>
           )}
           

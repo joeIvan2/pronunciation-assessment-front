@@ -215,18 +215,25 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
 
       const data = await response.json();
       
-      // 確保只序列化真正需要序列化的數據
-      // 檢查數據類型，避免將整個對象序列化後再反序列化 
-      if (typeof data === 'object' && data !== null) {
-        // 如果是對象，單獨序列化
-        setAiResponse(JSON.stringify(data, null, 2));
-      } else {
-        // 其他類型直接設置
-        setAiResponse(String(data));
+      try {
+        // 確保只序列化真正需要序列化的數據
+        // 檢查數據類型，避免將整個對象序列化後再反序列化 
+        if (typeof data === 'object' && data !== null) {
+          // 如果是對象，以字符串形式保存
+          setAiResponse(JSON.stringify(data, null, 2));
+        } else {
+          // 其他類型直接設置
+          setAiResponse(String(data));
+        }
+        
+        // 通知父组件收到了AI响应
+        onAIResponseReceived();
+      } catch (serializeError) {
+        console.error('序列化AI響應失敗:', serializeError);
+        setError(`序列化AI響應失敗: ${serializeError instanceof Error ? serializeError.message : String(serializeError)}`);
+        // 仍然嘗試通知父組件
+        onAIResponseReceived();
       }
-      
-      // 通知父组件收到了AI响应
-      onAIResponseReceived();
 
       // 驗證收到的數據結構
       let isValid = true;
@@ -512,38 +519,43 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
             color: "var(--ios-text)"
           }}>
             {(() => {
+              // 安全渲染函數，處理可能的對象
+              const renderContent = (content: any): string => {
+                if (content === null || content === undefined) {
+                  return "無回應訊息";
+                }
+                if (typeof content === 'string') {
+                  return content;
+                }
+                return JSON.stringify(content, null, 2);
+              };
+              
               try {
-                const parsedResponse = JSON.parse(aiResponse);
-                // 安全渲染函數，處理可能的對象
-                const renderContent = (content: any): string => {
-                  if (content === null || content === undefined) {
-                    return "無回應訊息";
-                  }
-                  if (typeof content === 'string') {
-                    return content;
-                  }
-                  return JSON.stringify(content, null, 2);
-                };
+                // 先檢查aiResponse是否已經是對象
+                const response = typeof aiResponse === 'string' 
+                  ? JSON.parse(aiResponse) 
+                  : aiResponse;
                 
                 return (
                   <>
                     <div style={{ marginBottom: "8px" }}>
-                      {renderContent(parsedResponse.message)}
+                      {renderContent(response.message)}
                     </div>
-                    {parsedResponse.processedAt && (
+                    {response.processedAt && (
                       <div style={{ 
                         fontSize: "12px", 
                         color: "var(--ios-text-secondary)",
                         textAlign: "right" 
                       }}>
-                        {new Date(parsedResponse.processedAt).toLocaleString()}
+                        {new Date(response.processedAt).toLocaleString()}
                       </div>
                     )}
                   </>
                 );
               } catch (e) {
-                // 如果解析失敗，顯示原始回應
-                return aiResponse;
+                // 如果解析失敗或處理過程中出錯，顯示安全處理後的原始回應
+                console.error("處理AI回應時出錯:", e);
+                return renderContent(aiResponse);
               }
             })()}
           </div>
