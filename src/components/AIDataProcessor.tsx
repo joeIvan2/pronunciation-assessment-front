@@ -214,7 +214,16 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       }
 
       const data = await response.json();
-      setAiResponse(JSON.stringify(data, null, 2));
+      
+      // 確保只序列化真正需要序列化的數據
+      // 檢查數據類型，避免將整個對象序列化後再反序列化 
+      if (typeof data === 'object' && data !== null) {
+        // 如果是對象，單獨序列化
+        setAiResponse(JSON.stringify(data, null, 2));
+      } else {
+        // 其他類型直接設置
+        setAiResponse(String(data));
+      }
       
       // 通知父组件收到了AI响应
       onAIResponseReceived();
