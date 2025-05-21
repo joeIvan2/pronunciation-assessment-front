@@ -1,16 +1,18 @@
-import { isPlatform } from '@ionic/react';
+// 使用原生方法檢測平台而不依賴 Ionic
 
 // 檢測當前平台
 export const getPlatform = () => {
-  if (isPlatform('ios')) {
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  
+  if (/iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream) {
     return 'ios';
-  } else if (isPlatform('android')) {
+  } else if (/android/i.test(userAgent)) {
     return 'android';
-  } else if (isPlatform('desktop')) {
+  } else if (window.innerWidth > 768 && !isMobile()) {
     return 'desktop';
-  } else if (isPlatform('tablet')) {
+  } else if (window.innerWidth >= 600 && window.innerWidth <= 1024) {
     return 'tablet';
-  } else if (isPlatform('mobile')) {
+  } else if (isMobile()) {
     return 'mobile';
   }
   return 'unknown';
@@ -18,27 +20,30 @@ export const getPlatform = () => {
 
 // 檢查是否是移動設備
 export const isMobile = () => {
-  return isPlatform('mobile') || isPlatform('android') || isPlatform('ios');
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
 };
 
 // 檢查是否是平板
 export const isTablet = () => {
-  return isPlatform('tablet');
+  return window.innerWidth >= 600 && window.innerWidth <= 1024 && isTouchSupported();
 };
 
 // 檢查是否是 iOS 設備
 export const isIOS = () => {
-  return isPlatform('ios');
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  return /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
 };
 
 // 檢查是否是 Android 設備
 export const isAndroid = () => {
-  return isPlatform('android');
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  return /android/i.test(userAgent);
 };
 
 // 檢查是否是桌面設備
 export const isDesktop = () => {
-  return isPlatform('desktop');
+  return window.innerWidth > 768 && !isMobile();
 };
 
 // 根據平台返回適當的類名
