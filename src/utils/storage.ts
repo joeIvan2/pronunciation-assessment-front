@@ -47,6 +47,17 @@ export const saveFontSize = (size: number) => {
   localStorage.setItem('fontSize', size.toString());
 };
 
+// 获取textarea高度
+export const getTextareaHeight = (): number => {
+  const saved = localStorage.getItem('textareaHeight');
+  return saved ? parseInt(saved, 10) : 140; // 默认高度为140px
+};
+
+// 保存textarea高度
+export const saveTextareaHeight = (height: number) => {
+  localStorage.setItem('textareaHeight', height.toString());
+};
+
 // 获取严格模式设置
 export const getStrictMode = (): boolean => {
   return getItem<boolean>('strictMode', true);
@@ -428,11 +439,11 @@ export const clearHistoryRecords = (): void => {
 };
 
 // 标签页相关类型和函数
-export type TabName = 'history' | 'favorites' | 'tags' | 'voices' | 'ai' | 'share';
+export type TabName = 'history' | 'favorites' | 'tags' | 'voices' | 'ai' | 'share' | 'input';
 
 // 获取当前激活的标签页
 export const getActiveTab = (): TabName => {
-  return getItem<TabName>('activeTab', 'history');
+  return getItem<TabName>('activeTab', 'favorites');
 };
 
 // 保存当前激活的标签页

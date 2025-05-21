@@ -61,17 +61,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   });
   
   // 添加列表展開/收起狀態
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
-  
-  // 在组件挂载时设置展开状态
-  useEffect(() => {
-    // 先从localStorage获取状态
-    const savedState = storage.getCardExpandStates().favoriteList;
-    // 只有当明确设置为false时才收起，其他情况默认展开
-    if (savedState === false) {
-      setIsExpanded(false);
-    }
-  }, []);
+  const [isExpanded, setIsExpanded] = useState<boolean>(() => storage.getCardExpandStates().favoriteList);
   
   // 追踪當前正在編輯標籤的收藏項目
   const [editingTagsFavoriteId, setEditingTagsFavoriteId] = useState<string | null>(null);

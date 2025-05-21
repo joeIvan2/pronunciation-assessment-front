@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { HistoryItem } from '../utils/storage';
 import '../styles/PronunciationAssessment.css';
 import WordsDisplay from './WordsDisplay';
-import * as storage from '../utils/storage';
 
 interface HistoryRecordProps {
   historyRecords: HistoryItem[];
@@ -23,18 +22,6 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
 }) => {
   // 添加詞語評分的顯示狀態
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
-  
-  // 在组件挂载时检查isExpanded状态
-  useEffect(() => {
-    // 默认为true，只在明确设置为false时才保持收起状态
-    if (!isExpanded) {
-      const savedState = storage.getCardExpandStates().historyRecord;
-      // 只在明确为false时保持收起
-      if (savedState !== false) {
-        onToggleExpand();
-      }
-    }
-  }, []);
   
   // 切換顯示單詞評分詳情
   const toggleWordsDisplay = (recordId: string) => {

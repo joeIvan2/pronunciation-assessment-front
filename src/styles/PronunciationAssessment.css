@@ -82,6 +82,15 @@
   min-width: 88px;
 }
 
+/* 在button-controls中的按钮样式 */
+.button-controls .btn {
+  flex: 1;
+  min-width: 140px;
+  max-width: calc(50% - 5px);
+  padding: 12px 10px;
+  justify-content: center;
+}
+
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -110,7 +119,7 @@
 /* Textarea */
 .textarea-input {
   width: 100%;
-  min-height: 140px;
+  min-height: 120px;
   padding: 14px;
   background: rgba(20, 20, 24, 0.7);
   color: var(--ios-text);
@@ -118,10 +127,11 @@
   border-radius: 14px;
   font-size: 16px;
   line-height: 1.6;
-  resize: vertical;
+  resize: vertical !important; /* 确保可以垂直调整大小 */
   transition: border-color 0.2s ease;
   box-sizing: border-box;
   margin: 0;
+  padding-top: 50px; /* 为顶部工具栏留出空间 */
 }
 
 .textarea-input:focus {
@@ -285,9 +295,11 @@
 .button-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   margin-top: 12px;
-  justify-content: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 5px;
 }
 
 /* Error message */
@@ -816,4 +828,139 @@ h4 {
 .secondary-button:hover:not(:disabled) {
   filter: brightness(110%);
   transform: translateY(-1px);
+}
+
+/* 整合的文本输入区及控制区 */
+.integrated-input-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--ios-shadow);
+}
+
+.textarea-toolbar {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  background: rgba(20, 20, 24, 0.8);
+  border-radius: 10px;
+  padding: 4px 8px;
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--ios-border);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.2s ease;
+}
+
+.textarea-toolbar:hover {
+  opacity: 1;
+}
+
+.textarea-toolbar .control-button {
+  background: transparent;
+  border: none;
+  color: var(--ios-text);
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.textarea-toolbar .control-button:hover {
+  background: rgba(60, 60, 70, 0.6);
+  transform: scale(1.1);
+}
+
+.textarea-toolbar .control-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.textarea-toolbar .control-button.primary {
+  color: var(--ios-primary);
+}
+
+.textarea-toolbar .control-button.success {
+  color: var(--ios-success);
+}
+
+.textarea-action-bar {
+  display: flex;
+  margin-top: 10px;
+  gap: 10px;
+}
+
+.textarea-action-bar .btn {
+  padding: 10px 15px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+/* 录音指示器样式 */
+.recording-indicator, .loading-indicator {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 59, 48, 0.15);
+  color: var(--ios-danger);
+  border-radius: 10px;
+  font-size: 14px;
+  text-align: center;
+  animation: pulse 1.5s infinite;
+}
+
+.loading-indicator {
+  background: rgba(10, 132, 255, 0.15);
+  color: var(--ios-primary);
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.textarea-toolbar .font-size-display {
+  font-size: 13px;
+  color: var(--ios-text);
+  min-width: 20px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 输入区域选项卡导航 */
+.input-tabs {
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--ios-border);
+  padding-bottom: 8px;
+  display: flex;
+  justify-content: flex-start;
+  overflow-x: auto;
+  gap: 10px;
+}
+
+.input-tabs .tab-button {
+  flex: 0 0 auto;
+  min-width: 90px;
+  font-size: 15px;
+  padding: 8px 15px;
+}
+
+.input-tabs .tab-button.active {
+  background-color: rgba(10, 132, 255, 0.15);
+  color: var(--ios-primary);
+  position: relative;
 } 

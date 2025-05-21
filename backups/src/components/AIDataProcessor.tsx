@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as storage from '../utils/storage';
 import { Tag, Favorite, Word } from '../types/speech';
-import ResizableTextarea from './ResizableTextarea';
 
 // 後端API URL，從環境變量獲取或使用默認值
 const API_URL = process.env.REACT_APP_AI_PROXY_URL || 'https://pronunciation-ai-server.onrender.com';
@@ -173,10 +172,10 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       // 準備發送給AI的數據
       const formData = new FormData();
       
-      // 只使用最新的10條發音記錄
+      // 只使用最新的3條發音記錄
       const latestHistoryRecords = [...historyRecords].sort((a, b) => 
         (b.timestamp || 0) - (a.timestamp || 0)
-      ).slice(0, 10);
+      ).slice(0, 3);
       
       // 過濾 historyRecords，將 words 只保留單字層級（去除 Phonemes）
       const filteredHistoryRecords = latestHistoryRecords.map(item => {
@@ -349,108 +348,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   };
 
   return (
-    <div>
-      {/* 將textarea移到最前面 */}
-      <div className="input-container">
-        <ResizableTextarea
-          value={prompt || ''}
-          onChange={handlePromptChange}
-          onPaste={(e) => {}}
-          className="textarea-input"
-          placeholder="請輸入指導AI的提示，例如: '幫我整理我的最愛，將相似的內容分組，並創建新的標籤'"
-          storageKey="aiPromptTextareaHeight"
-          defaultHeight={100}
-          onBlur={handlePromptBlur}
-        />
-        
-        {/* 工具栏控制按钮 */}
-        <div className="textarea-toolbar">
-          {/* 图片上传按钮 */}
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            style={{ display: "none" }}
-            id="image-upload"
-          />
-          
-          <label htmlFor="image-upload" className="control-button" title="添加圖片">
-            <i className="fas fa-image"></i>
-          </label>
-        </div>
-      </div>
+    <div className="card-section">
       
-      {/* 圖片預覽區域 */}
-      {previewUrls.length > 0 && (
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
-          marginTop: "8px",
-          marginBottom: "16px"
-        }}>
-          {previewUrls.map((url, index) => (
-            <div key={index} style={{
-              position: "relative",
-              width: "100px",
-              height: "100px"
-            }}>
-              <img
-                src={url}
-                alt={`上傳圖片 ${index + 1}`}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  borderRadius: "8px"
-                }}
-              />
-              <button
-                onClick={() => removeImage(index)}
-                style={{
-                  position: "absolute",
-                  top: "4px",
-                  right: "4px",
-                  background: "rgba(0, 0, 0, 0.5)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "24px",
-                  height: "24px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "14px"
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
       
-      {/* 將發送按鈕移到第二位 */}
-      <div className="button-controls" style={{ marginBottom: "16px" }}>
-        <button
-          onClick={processDataWithAI}
-          disabled={isLoading || !prompt.trim()}
-          className="btn btn-primary"
-          style={{ opacity: isLoading || !prompt.trim() ? 0.55 : 1, cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer" }}
-        >
-          {isLoading ? "處理中..." : "發送給AI助手"}
-        </button>
-      </div>
-      
-      {error && (
-        <div className="error-message" style={{ marginBottom: "16px" }}>
-          <p>{error}</p>
-        </div>
-      )}
-      
-      {/* 解釋文本區域移到後面 */}
       <div style={{ 
         background: "var(--ios-card)", 
         padding: "12px", 
@@ -460,10 +360,10 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         color: "var(--ios-text-secondary)"
       }}>
         將你的收藏、標籤和歷史紀錄發送給AI，獲取智能建議和整理。還可以上傳相關圖片供AI分析。
-        <p>注意：如果想依照發音準確度產生句子，資料來源僅為最新十次發音紀錄。</p>
+        <p>注意：如果想依照發音準確度產生句子，資料來源僅為最新三條發音紀錄。</p>
       </div>
       
-      {/* 範例提示區域放到最後 */}
+      {/* 範例提示區域 */}
       <div style={{ marginBottom: "16px" }}>
         <p style={{ 
           marginBottom: "8px", 
@@ -488,6 +388,113 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           ))}
         </div>
       </div>
+      
+      <div className="input-container">
+        <textarea
+          value={prompt || ''}
+          onChange={handlePromptChange}
+          onBlur={handlePromptBlur}
+          className="textarea-input"
+          placeholder="請輸入指導AI的提示，例如: '幫我整理我的最愛，將相似的內容分組，並創建新的標籤'"
+          style={{ height: "100px", marginBottom: "16px" }}
+        />
+      </div>
+      
+      {/* 圖片上傳區域 */}
+      <div style={{ marginBottom: "16px" }}>
+        <p style={{ marginBottom: "8px", color: "var(--ios-text-secondary)" }}>
+          添加圖片（可選）:
+        </p>
+        
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageUpload}
+          style={{ display: "none" }}
+          id="image-upload"
+        />
+        
+        <label htmlFor="image-upload" style={{
+          display: "inline-block",
+          padding: "8px 16px",
+          background: "var(--ios-card)",
+          color: "var(--ios-primary)",
+          border: "1px solid var(--ios-primary)",
+          borderRadius: "12px",
+          cursor: "pointer",
+          marginBottom: "8px"
+        }}>
+          選擇圖片
+        </label>
+        
+        {/* 圖片預覽區域 */}
+        {previewUrls.length > 0 && (
+          <div style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
+            marginTop: "8px"
+          }}>
+            {previewUrls.map((url, index) => (
+              <div key={index} style={{
+                position: "relative",
+                width: "100px",
+                height: "100px"
+              }}>
+                <img
+                  src={url}
+                  alt={`上傳圖片 ${index + 1}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "8px"
+                  }}
+                />
+                <button
+                  onClick={() => removeImage(index)}
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "4px",
+                    background: "rgba(0, 0, 0, 0.5)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "24px",
+                    height: "24px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "14px"
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      <div className="button-controls">
+        <button
+          onClick={processDataWithAI}
+          disabled={isLoading || !prompt.trim()}
+          className="btn btn-primary"
+          style={{ opacity: isLoading || !prompt.trim() ? 0.55 : 1, cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer" }}
+        >
+          {isLoading ? "處理中..." : "發送給AI助手"}
+        </button>
+      </div>
+      
+      {error && (
+        <div className="error-message" style={{ marginTop: "16px" }}>
+          <p>{error}</p>
+        </div>
+      )}
       
       {aiResponse && (
         <div style={{ marginTop: "16px" }}>

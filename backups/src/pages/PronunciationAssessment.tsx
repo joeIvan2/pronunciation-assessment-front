@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import "../styles/PronunciationAssessment.css";
+import React, { useState, useRef, useEffect } from "react";
 
 // 組件導入
 import ScoreBar from "../components/ScoreBar";
@@ -12,7 +11,6 @@ import FavoriteList from "../components/FavoriteList";
 import HistoryRecord from "../components/HistoryRecord";
 import AIDataProcessor from "../components/AIDataProcessor";
 import ShareData from "../components/ShareData";
-import ResizableTextarea from "../components/ResizableTextarea";
 
 // 鉤子導入
 import { useRecorder } from "../hooks/useRecorder";
@@ -66,31 +64,6 @@ const PronunciationAssessment: React.FC = () => {
   
   // 標籤頁狀態
   const [activeTab, setActiveTab] = useState<storage.TabName>(() => storage.getActiveTab());
-  // 新增頂部和底部標籤頁的獨立狀態
-  const [topActiveTab, setTopActiveTab] = useState<'input' | 'ai'>('input');
-  const [bottomActiveTab, setBottomActiveTab] = useState<Exclude<storage.TabName, 'input' | 'ai'>>('favorites');
-  
-  // 在無痕模式下確保標籤頁能正確預設
-  useEffect(() => {
-    // 在組件掛載時檢查標籤頁狀態
-    const inputTabs = ['input', 'ai'];
-    const bottomTabs = ['favorites', 'history', 'tags', 'voices', 'share'];
-    
-    if (inputTabs.includes(activeTab as any)) {
-      setTopActiveTab(activeTab as 'input' | 'ai');
-    } else if (bottomTabs.includes(activeTab as any)) {
-      setBottomActiveTab(activeTab as any);
-    } else {
-      // 如果不是有效標籤頁，設置默認值
-      setTopActiveTab('input');
-      setBottomActiveTab('favorites');
-      try {
-        storage.saveActiveTab('input');
-      } catch (err) {
-        console.log('無法保存標籤頁狀態，可能處於無痕模式');
-      }
-    }
-  }, [activeTab]);
   
   // AI助手相关状态
   const [aiResponse, setAiResponse] = useState<string | null>(() => storage.getAIResponse());
@@ -98,12 +71,14 @@ const PronunciationAssessment: React.FC = () => {
   
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const processingRef = useRef(false);
   
   // 使用自定義鉤子
   const recorder = useRecorder();
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
+
+  // 在 state 定義區域下方新增 processingRef
+  const processingRef = useRef(false);
 
   // 統一的開始評估入口
   const startAssessment = async () => {
@@ -757,32 +732,19 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [result, referenceText]);
 
-  // 確保底部標籤頁區域預設顯示"我的最愛"
+  // 切換標籤頁
   const handleTabChange = (tab: storage.TabName) => {
-    // 處理頂部輸入區域的切換
-    if (tab === 'input' || tab === 'ai') {
-      setTopActiveTab(tab);
-      try {
-        storage.saveActiveTab(tab);
-      } catch (e) {
-        console.log('保存標籤頁狀態失敗，可能處於無痕模式');
-      }
-    } 
-    // 處理底部標籤頁區域的切換
-    else {
-      setBottomActiveTab(tab as Exclude<storage.TabName, 'input' | 'ai'>);
-      try {
-        storage.saveActiveTab(tab);
-      } catch (e) {
-        console.log('保存標籤頁狀態失敗，可能處於無痕模式');
-      }
-    }
+    setActiveTab(tab);
+    storage.saveActiveTab(tab);
   };
 
   // 處理AI回應
   const handleAIResponseReceived = () => {
     // 设置渐变效果
     setFadeEffect(true);
+    
+    // 切换到"我的最爱"标签
+    handleTabChange('favorites');
     
     // 500毫秒后取消渐变效果
     setTimeout(() => {
@@ -878,134 +840,87 @@ const PronunciationAssessment: React.FC = () => {
       
       {/* 主要功能區域 */}
       <div className="pa-main-content">
-        {/* 整合输入区域和控制按钮 */}
+        {/* 輸入區域 */}
         <div className="card-section">
-          {/* 添加选项卡导航 */}
-          <div className="tabs-nav input-tabs">
-            <button 
-              className={`tab-button ${topActiveTab === 'input' ? 'active' : ''}`}
-              onClick={() => handleTabChange('input')}
-            >
-              發音評分
-            </button>
-            <button 
-              className={`tab-button ${topActiveTab === 'ai' ? 'active' : ''}`}
-              onClick={() => handleTabChange('ai')}
-            >
-              AI助手
-            </button>
-          </div>
-          
-          {/* 發音評分 TAB */}
-          {topActiveTab === 'input' && (
-            <>
-              <h3 
-                onClick={() => {
-                  textareaRef.current?.focus();
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-              </h3>
-              
-              <div className="integrated-input-container">
-                {/* 文本输入区 */}
-                <ResizableTextarea
-                  ref={textareaRef}
-                  value={referenceText}
-                  onChange={handleReferenceTextChange}
-                  onPaste={handlePaste}
-                  className="textarea-input"
-                  fontSize={fontSize}
-                  placeholder="輸入或粘貼要練習的文本..."
-                  storageKey="mainTextareaHeight"
-                  defaultHeight={140}
-                />
-                
-                {/* 工具栏控制按钮 */}
-                <div className="textarea-toolbar">
-                  {/* 字体调整按钮 */}
-                  <button 
-                    onClick={decreaseFontSize} 
-                    className="control-button"
-                    title="減小字體"
-                  >
-                    <i className="fas fa-minus"></i>
-                  </button>
-                  
-                  <span className="font-size-display">{fontSize}</span>
-                  
-                  <button 
-                    onClick={increaseFontSize} 
-                    className="control-button"
-                    title="增大字體"
-                  >
-                    <i className="fas fa-plus"></i>
-                  </button>
-                  
-                  {/* 收藏按钮 */}
-                  <button
-                    onClick={() => addToFavorites(referenceText)}
-                    disabled={!referenceText}
-                    className="control-button"
-                    title="添加到收藏"
-                    style={{ color: !referenceText ? 'var(--ios-gray)' : 'var(--ios-warning)' }}
-                  >
-                    <i className="fas fa-star"></i>
-                  </button>
-                </div>
-                
-                {/* 操作按钮区 */}
-                <div className="textarea-action-bar">
-                  <button
-                    onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
-                    disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
-                    className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"}`}
-                    style={{ flex: 1 }}
-                  >
-                    <i className="fas fa-microphone" style={{ marginRight: '5px' }}></i>
-                    {isAssessing || recorder.recording
-                      ? "停止錄音"
-                      : isLoading
-                      ? "處理中..."
-                      : "評分"}
-                  </button>
-                  
-                  <button
-                    onClick={speakText}
-                    disabled={isLoading || !referenceText}
-                    className="btn btn-success"
-                    style={{ 
-                      opacity: isLoading || !referenceText ? 0.55 : 1, 
-                      cursor: isLoading || !referenceText ? "not-allowed" : "pointer",
-                      flex: 1
-                    }}
-                  >
-                    <i className="fas fa-volume-up" style={{ marginRight: '5px' }}></i>
-                    朗讀
-                  </button>
-                </div>
-                
-                {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}
-                
-                {isLoading && <div className="loading-indicator">處理中...</div>}
-              </div>
-            </>
-          )}
-          
-          {/* AI助手 TAB */}
-          {topActiveTab === 'ai' && (
-            <AIDataProcessor
-              favorites={favorites}
-              tags={tags}
-              historyRecords={historyRecords}
-              onUpdateFavorites={setFavorites}
-              onUpdateTags={setTags}
-              onUpdateHistoryRecords={setHistoryRecords}
-              aiResponse={aiResponse}
-              setAiResponse={setAiResponse}
-              onAIResponseReceived={handleAIResponseReceived}
+          <h3 
+            className="section-header special-title"
+            onClick={() => {
+              // 輸入文本區域始終保持展開狀態
+              textareaRef.current?.focus();
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            輸入文本
+          </h3>
+          <div className="input-container">
+            <textarea
+              ref={textareaRef}
+              value={referenceText}
+              onChange={handleReferenceTextChange}
+              onPaste={handlePaste}
+              className="textarea-input"
+              style={{ fontSize: `${fontSize}px` }}
+              placeholder="輸入或粘貼要練習的文本..."
             />
-          )}
+          </div>
+          <div className="text-controls">
+            <button
+              onClick={() => addToFavorites(referenceText)}
+              disabled={!referenceText}
+              className="btn-favorite"
+              title="添加到收藏"
+            >
+              <span>★</span>
+            </button>
+            <div className="font-size-controls">
+              <button onClick={decreaseFontSize} className="btn-size-control">
+                <span style={{ fontSize: "14px" }}>A-</span>
+              </button>
+              <span className="font-size-display">{fontSize}px</span>
+              <button onClick={increaseFontSize} className="btn-size-control">
+                <span style={{ fontSize: "14px" }}>A+</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* 控制按鈕區域 */}
+        <div className="card-section">
+          <h3 
+            className="section-header special-title"
+            onClick={() => {
+              // 錄音評分區域始終保持展開狀態
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            錄音評分
+          </h3>
+          <div className="button-controls">
+            <button
+              onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
+              disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
+              className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"}`}
+            >
+              {isAssessing || recorder.recording
+                ? "停止錄音"
+                : isLoading
+                ? "處理中..."
+                : "開始錄音評分"}
+            </button>
+            
+            <button
+              onClick={speakText}
+              disabled={isLoading || !referenceText}
+              className="btn btn-success"
+              style={{ opacity: isLoading || !referenceText ? 0.55 : 1, cursor: isLoading || !referenceText ? "not-allowed" : "pointer" }}
+            >
+              英文朗讀
+            </button>
+            
+            {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}
+            
+            {isLoading && <div className="loading-indicator">處理中...</div>}
+          </div>
         </div>
         
         {/* 結果顯示區域 */}
@@ -1059,31 +974,37 @@ const PronunciationAssessment: React.FC = () => {
           <div className="tabs-container">
             <div className="tabs-nav">
               <button 
-                className={`tab-button ${bottomActiveTab === 'favorites' ? 'active' : ''}`}
-                onClick={() => handleTabChange('favorites')}
-              >
-                我的最愛
-              </button>
-              <button 
-                className={`tab-button ${bottomActiveTab === 'history' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
                 onClick={() => handleTabChange('history')}
               >
                 發音歷史
               </button>
               <button 
-                className={`tab-button ${bottomActiveTab === 'tags' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'favorites' ? 'active' : ''}`}
+                onClick={() => handleTabChange('favorites')}
+              >
+                我的最愛
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'tags' ? 'active' : ''}`}
                 onClick={() => handleTabChange('tags')}
               >
                 管理標籤
               </button>
               <button 
-                className={`tab-button ${bottomActiveTab === 'voices' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'voices' ? 'active' : ''}`}
                 onClick={() => handleTabChange('voices')}
               >
                 選擇語音
               </button>
               <button 
-                className={`tab-button ${bottomActiveTab === 'share' ? 'active' : ''}`}
+                className={`tab-button ${activeTab === 'ai' ? 'active' : ''}`}
+                onClick={() => handleTabChange('ai')}
+              >
+                AI助手
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'share' ? 'active' : ''}`}
                 onClick={() => handleTabChange('share')}
               >
                 數據分享
@@ -1091,8 +1012,20 @@ const PronunciationAssessment: React.FC = () => {
             </div>
             
             <div className="tab-content">
+              {/* 歷史記錄標籤頁 */}
+              {activeTab === 'history' && (
+                <HistoryRecord
+                  historyRecords={historyRecords}
+                  onDeleteRecord={handleDeleteHistoryRecord}
+                  onClearRecords={handleClearHistoryRecords}
+                  onLoadText={handleLoadHistoryText}
+                  isExpanded={true} // 標籤頁模式下始終展開
+                  onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
+                />
+              )}
+              
               {/* 收藏列表標籤頁 */}
-              {bottomActiveTab === 'favorites' && (
+              {activeTab === 'favorites' && (
                 <FavoriteList
                   favorites={favorites}
                   tags={tags}
@@ -1108,20 +1041,8 @@ const PronunciationAssessment: React.FC = () => {
                 />
               )}
               
-              {/* 歷史記錄標籤頁 */}
-              {bottomActiveTab === 'history' && (
-                <HistoryRecord
-                  historyRecords={historyRecords}
-                  onDeleteRecord={handleDeleteHistoryRecord}
-                  onClearRecords={handleClearHistoryRecords}
-                  onLoadText={handleLoadHistoryText}
-                  isExpanded={true} // 標籤頁模式下始終展開
-                  onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
-                />
-              )}
-              
               {/* 標籤管理標籤頁 */}
-              {bottomActiveTab === 'tags' && (
+              {activeTab === 'tags' && (
                 <TagManager
                   tags={tags}
                   onAddTag={addTag}
@@ -1133,7 +1054,7 @@ const PronunciationAssessment: React.FC = () => {
               )}
               
               {/* 語音選擇標籤頁 */}
-              {bottomActiveTab === 'voices' && (
+              {activeTab === 'voices' && (
                 <VoicePicker
                   availableVoices={availableVoices}
                   selectedVoice={selectedVoice}
@@ -1148,8 +1069,23 @@ const PronunciationAssessment: React.FC = () => {
                 />
               )}
               
+              {/* AI助手標籤頁 */}
+              {activeTab === 'ai' && (
+                <AIDataProcessor
+                  favorites={favorites}
+                  tags={tags}
+                  historyRecords={historyRecords}
+                  onUpdateFavorites={setFavorites}
+                  onUpdateTags={setTags}
+                  onUpdateHistoryRecords={setHistoryRecords}
+                  aiResponse={aiResponse}
+                  setAiResponse={setAiResponse}
+                  onAIResponseReceived={handleAIResponseReceived}
+                />
+              )}
+              
               {/* 數據分享標籤頁 */}
-              {bottomActiveTab === 'share' && (
+              {activeTab === 'share' && (
                 <ShareData 
                   tags={tags} 
                   favorites={favorites} 
