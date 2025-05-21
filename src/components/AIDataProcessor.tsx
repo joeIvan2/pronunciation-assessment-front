@@ -362,75 +362,75 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           defaultHeight={100}
           onBlur={handlePromptBlur}
         />
-        
+      
         {/* 工具栏控制按钮 */}
         <div className="textarea-toolbar">
           {/* 图片上传按钮 */}
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            style={{ display: "none" }}
-            id="image-upload"
-          />
-          
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageUpload}
+          style={{ display: "none" }}
+          id="image-upload"
+        />
+        
           <label htmlFor="image-upload" className="control-button" title="添加圖片">
             <i className="fas fa-image"></i>
-          </label>
+        </label>
         </div>
       </div>
-      
-      {/* 圖片預覽區域 */}
-      {previewUrls.length > 0 && (
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
+        
+        {/* 圖片預覽區域 */}
+        {previewUrls.length > 0 && (
+          <div style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
           marginTop: "8px",
           marginBottom: "16px"
-        }}>
-          {previewUrls.map((url, index) => (
-            <div key={index} style={{
-              position: "relative",
-              width: "100px",
-              height: "100px"
-            }}>
-              <img
-                src={url}
-                alt={`上傳圖片 ${index + 1}`}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  borderRadius: "8px"
-                }}
-              />
-              <button
-                onClick={() => removeImage(index)}
-                style={{
-                  position: "absolute",
-                  top: "4px",
-                  right: "4px",
-                  background: "rgba(0, 0, 0, 0.5)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "50%",
-                  width: "24px",
-                  height: "24px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "14px"
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+          }}>
+            {previewUrls.map((url, index) => (
+              <div key={index} style={{
+                position: "relative",
+                width: "100px",
+                height: "100px"
+              }}>
+                <img
+                  src={url}
+                  alt={`上傳圖片 ${index + 1}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "8px"
+                  }}
+                />
+                <button
+                  onClick={() => removeImage(index)}
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "4px",
+                    background: "rgba(0, 0, 0, 0.5)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "24px",
+                    height: "24px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "14px"
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       
       {/* 將發送按鈕移到第二位 */}
       <div className="button-controls" style={{ marginBottom: "16px" }}>
@@ -507,9 +507,13 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
                 const parsedResponse = JSON.parse(aiResponse);
                 return (
                   <>
-                    <div style={{ marginBottom: "8px" }}>
-                      {parsedResponse.message || "無回應訊息"}
-                    </div>
+                                  <div style={{ marginBottom: "8px" }}>
+                {typeof parsedResponse.message === 'string' 
+                  ? parsedResponse.message 
+                  : parsedResponse.message 
+                    ? JSON.stringify(parsedResponse.message, null, 2) 
+                    : "無回應訊息"}
+              </div>
                     {parsedResponse.processedAt && (
                       <div style={{ 
                         fontSize: "12px", 
