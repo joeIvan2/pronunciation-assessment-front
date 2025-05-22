@@ -168,11 +168,18 @@ const PronunciationAssessment: React.FC = () => {
     for (let i = 0; i < textsToAdd.length; i++) {
       const currentText = textsToAdd[i];
       
+      // 確保currentText是字符串並且不為空
+      if (typeof currentText !== 'string' || !currentText) {
+        console.warn('跳過非字符串或空值:', currentText);
+        continue;
+      }
+      
       // 跳過空字符串
-      if (!currentText.trim()) continue;
+      const trimmedText = currentText.trim();
+      if (!trimmedText) continue;
       
       // 檢查是否已存在相同文本
-      const existingFavorite = favorites.find(fav => fav.text === currentText);
+      const existingFavorite = favorites.find(fav => fav.text === trimmedText);
       if (existingFavorite) {
         // 如果存在且不是批次添加，更新標籤並提示
         if (!Array.isArray(text)) {
@@ -196,7 +203,7 @@ const PronunciationAssessment: React.FC = () => {
       
       const newFavorite = {
         id: newId,
-        text: currentText,
+        text: trimmedText,
         tagIds: tagIds.length ? tagIds : selectedTags, // 使用當前選中的標籤或指定的標籤
         createdAt: Date.now() + i // 添加索引偏移確保順序正確
       };
@@ -244,6 +251,9 @@ const PronunciationAssessment: React.FC = () => {
       // 不再更新选中的标签
       // setSelectedTags(favorite.tagIds);
       storage.saveReferenceText(favorite.text);
+      
+      // 切換到發音評分標籤頁
+      handleTabChange('input');
       
       // 聚焦到textarea
       if (textareaRef.current) {
@@ -314,6 +324,55 @@ const PronunciationAssessment: React.FC = () => {
       const newSize = fontSize - 1;
       setFontSize(newSize);
       storage.saveFontSize(newSize);
+    }
+  };
+  
+  // 前一條和下一條句子功能
+  const goToPreviousSentence = () => {
+    // 尋找當前顯示文本在收藏夾中的位置
+    const currentIndex = favorites.findIndex(fav => fav.text === referenceText);
+    
+    if (favorites.length === 0) {
+      return; // 沒有收藏項目
+    }
+    
+    let newIndex;
+    if (currentIndex === -1) {
+      // 如果當前文本不在收藏夾中，加載最後一個
+      newIndex = favorites.length - 1;
+    } else {
+      // 循環到上一個
+      newIndex = (currentIndex - 1 + favorites.length) % favorites.length;
+    }
+    
+    // 加載選中的句子
+    if (favorites[newIndex]) {
+      setReferenceText(favorites[newIndex].text);
+      storage.saveReferenceText(favorites[newIndex].text);
+    }
+  };
+  
+  const goToNextSentence = () => {
+    // 尋找當前顯示文本在收藏夾中的位置
+    const currentIndex = favorites.findIndex(fav => fav.text === referenceText);
+    
+    if (favorites.length === 0) {
+      return; // 沒有收藏項目
+    }
+    
+    let newIndex;
+    if (currentIndex === -1) {
+      // 如果當前文本不在收藏夾中，加載第一個
+      newIndex = 0;
+    } else {
+      // 循環到下一個
+      newIndex = (currentIndex + 1) % favorites.length;
+    }
+    
+    // 加載選中的句子
+    if (favorites[newIndex]) {
+      setReferenceText(favorites[newIndex].text);
+      storage.saveReferenceText(favorites[newIndex].text);
     }
   };
   
@@ -882,7 +941,7 @@ const PronunciationAssessment: React.FC = () => {
             onClick={() => {
               textareaRef.current?.focus();
             }}
-            style={{ cursor: 'pointer' }}
+            className="clickable-header"
           >
           </h3>
               
@@ -925,43 +984,55 @@ const PronunciationAssessment: React.FC = () => {
             <button
               onClick={() => addToFavorites(referenceText)}
               disabled={!referenceText}
-                    className="control-button"
               title="添加到收藏"
-                    style={{ color: !referenceText ? 'var(--ios-gray)' : 'var(--ios-warning)' }}
-                  >
-                    <i className="fas fa-star"></i>
-              </button>
+              className={!referenceText ? "control-button favorite-button-disabled" : "control-button favorite-button-dynamic"}
+            >
+              <i className="fas fa-star"></i>
+            </button>
         </div>
         
                 {/* 操作按钮区 */}
                 <div className="textarea-action-bar">
-            <button
-              onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
-              disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
-              className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"}`}
-                    style={{ flex: 1 }}
-            >
-                    <i className="fas fa-microphone" style={{ marginRight: '5px' }}></i>
-              {isAssessing || recorder.recording
-                ? "停止錄音"
-                : isLoading
-                ? "處理中..."
+                  {/* 評分按鈕 */}
+                  <button
+                    onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
+                    disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
+                    className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"} btn-flex-1-5`}
+                  >
+                    <i className="fas fa-microphone mic-icon-margin"></i>
+                    {isAssessing || recorder.recording
+                      ? "停止錄音"
+                      : isLoading
+                      ? "處理中..."
                       : "評分"}
-            </button>
-            
-            <button
-              onClick={speakText}
-              disabled={isLoading || !referenceText}
-              className="btn btn-success"
-                    style={{ 
-                      opacity: isLoading || !referenceText ? 0.55 : 1, 
-                      cursor: isLoading || !referenceText ? "not-allowed" : "pointer",
-                      flex: 1
-                    }}
-            >
-                    <i className="fas fa-volume-up" style={{ marginRight: '5px' }}></i>
-                    朗讀
-            </button>
+                  </button>
+                  
+                  {/* 發音按鈕 */}
+                  <button
+                    onClick={speakText}
+                    disabled={isLoading || !referenceText}
+                    className={`btn btn-success btn-flex-0-5 ${(isLoading || !referenceText) ? 'btn-disabled' : ''}`}
+                  >
+                    <i className="fas fa-volume-up"></i>
+                  </button>
+                  
+                  {/* 前一句按鈕 */}
+                  <button
+                    onClick={goToPreviousSentence}
+                    disabled={favorites.length === 0}
+                    className={`btn btn-nav btn-flex-0-5 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                  >
+                    <i className="fas fa-chevron-left"></i>
+                  </button>
+                  
+                  {/* 下一句按鈕 */}
+                  <button
+                    onClick={goToNextSentence}
+                    disabled={favorites.length === 0}
+                    className={`btn btn-nav btn-flex-0-5 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                  >
+                    <i className="fas fa-chevron-right"></i>
+                  </button>
                 </div>
             
             {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}

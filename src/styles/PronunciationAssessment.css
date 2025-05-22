@@ -897,15 +897,31 @@ h4 {
 .textarea-action-bar {
   display: flex;
   margin-top: 10px;
-  gap: 10px;
+  gap: 5px;
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
 .textarea-action-bar .btn {
-  padding: 10px 15px;
+  padding: 8px 4px;
   border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
-  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* 確保在小屏幕上按鈕縮小但不換行 */
+@media (max-width: 576px) {
+  .textarea-action-bar {
+    gap: 3px;
+  }
+  
+  .textarea-action-bar .btn {
+    padding: 8px 2px;
+    font-size: 13px;
+  }
 }
 
 /* 录音指示器样式 */
@@ -1024,4 +1040,56 @@ h4 {
     background: rgba(44, 44, 48, 0.5);
     box-shadow: none;
   }
+}
+
+/* 按鈕比例設置 */
+.btn-flex-1-5 {
+  flex: 1.5;
+}
+
+.btn-flex-0-5 {
+  flex: 0.5;
+}
+
+/* 麥克風圖標右邊距 */
+.mic-icon-margin {
+  margin-right: 5px;
+}
+
+/* 指定標題點擊樣式 */
+.clickable-header {
+  cursor: pointer;
+}
+
+/* 收藏按鈕顏色 */
+.favorite-button-dynamic {
+  color: var(--ios-warning);
+}
+
+.favorite-button-disabled {
+  color: var(--ios-gray);
+}
+
+/* 按鈕禁用狀態 */
+.btn-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 替代原有行內設置的 textarea-action-bar 樣式 */
+.textarea-action-bar {
+  display: flex;
+  margin-top: 10px;
+  gap: 5px;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+/* 導航按鈕（左右箭頭）樣式 */
+.btn-nav {
+  background-color: rgba(150, 150, 150, 0.3);
+}
+
+.btn-nav:hover:not(:disabled) {
+  background-color: rgba(150, 150, 150, 0.5);
 } 
