@@ -15,6 +15,7 @@ interface FavoriteListProps {
   onAddFavorite: (text: string, tagIds?: string[]) => void;
   onManageTags: () => void;
   currentText: string;
+  lastAddedFavoriteId?: string | null;
 }
 
 const FavoriteList: React.FC<FavoriteListProps> = ({
@@ -28,7 +29,8 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onClearTagSelection,
   onAddFavorite,
   onManageTags,
-  currentText
+  currentText,
+  lastAddedFavoriteId
 }) => {
   // 數據規範化 - 確保每個收藏項目都有正確的數據結構
   const normalizedFavorites: Favorite[] = favorites.map((fav: any) => {
@@ -340,6 +342,32 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     }
   };
   
+  // 用於跟踪已經滾動過的項目ID
+  const [scrolledItemId, setScrolledItemId] = useState<string | null>(null);
+  
+  // 處理自動滾動到新添加的收藏項目
+  useEffect(() => {
+    if (lastAddedFavoriteId && lastAddedFavoriteId !== scrolledItemId) {
+      const itemElement = document.getElementById(`favorite-item-${lastAddedFavoriteId}`);
+      if (itemElement) {
+        // 使用setTimeout確保在DOM更新後滾動
+        setTimeout(() => {
+          itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 添加高亮效果
+          itemElement.style.animation = 'highlightFavorite 2s';
+          setScrolledItemId(lastAddedFavoriteId);
+          
+          // 動畫結束後移除動畫屬性
+          setTimeout(() => {
+            if (itemElement) {
+              itemElement.style.animation = '';
+            }
+          }, 2000);
+        }, 100);
+      }
+    }
+  }, [lastAddedFavoriteId, scrolledItemId]);
+  
   return (
     <div>
       {!isExpanded && (
@@ -383,6 +411,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
               {filteredFavorites.map((fav) => (
                 <li 
                   key={fav.id} 
+                  id={`favorite-item-${fav.id}`}
                   style={{
                     background: "rgba(44, 44, 48, 0.5)", 
                     padding: "12px", 

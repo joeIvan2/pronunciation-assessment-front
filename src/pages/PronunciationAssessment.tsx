@@ -88,65 +88,11 @@ const PronunciationAssessment: React.FC = () => {
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
 
-  // 統一的開始評估入口
-  const startAssessment = async () => {
-    try {
-      setError(null);
-      setResult(null);
-      setIsAssessing(true);
-      
-      if (useBackend) {
-        // 使用後端API
-        await recorder.startRecording();
-      } else {
-        // 直接使用Azure
-        // 檢查API key和region是否已設置
-        if (!azureSettings.key || !azureSettings.region) {
-          setError('請先設置Azure API key和區域');
-          setIsAssessing(false);
-          return;
-        }
-        
-        setIsLoading(true);
-        
-        const result = await azureSpeech.assessWithAzure(
-          referenceText, 
-          strictMode,
-          azureSettings
-        );
-        
-        if (result) {
-          setResult(result);
-        }
-      }
-    } catch (err) {
-      console.error('啟動評估失敗:', err);
-      setError(`啟動評估失敗: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      if (!useBackend) {
-        setIsAssessing(false);
-        setIsLoading(false);
-      }
-    }
-  };
-  
-  // 停止評估
-  const stopAssessment = () => {
-    if (recorder.recording) {
-      recorder.stopRecording();
-      
-      // 如果有錄音數據並且使用後端API，則發送到後端
-      if (recorder.audioData && useBackend) {
-        processPronunciationAssessment();
-      }
-    }
-    
-    azureSpeech.cancelAzureSpeech();
-    setIsAssessing(false);
-  };
-  
+  // 用於跟踪最新添加的收藏項目ID
+  const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
+
   // 處理錄音評估
-  const processPronunciationAssessment = async () => {
+  const processPronunciationAssessment = useCallback(async () => {
     if (!recorder.audioData || processingRef.current) return;
     processingRef.current = true;
     
@@ -180,257 +126,109 @@ const PronunciationAssessment: React.FC = () => {
       processingRef.current = false;
       recorder.resetRecording();
     }
-  };
+  }, [recorder, backendSpeech, referenceText, strictMode, useBackend, setIsLoading, setResult, setError, setUseBackend]);
   
-  // 統一的文本轉語音入口
-  const speakText = async () => {
-    try {
-      if (!referenceText) {
-        alert("請先輸入要發音的文字！");
-        return;
-      }
-      
-      setIsLoading(true);
-      
-      // 始終使用瀏覽器內置的Web Speech API
-      if ('speechSynthesis' in window) {
-        speakTextWithBrowserAPI();
-      } else {
-        // 如果不支持Web Speech API，嘗試使用後端或Azure
-        if (useBackend) {
-          await backendSpeech.speakWithBackend(referenceText);
-        } else {
-          await azureSpeech.speakWithAzure(referenceText, azureSettings);
-        }
-      }
-    } catch (err) {
-      console.error('文本轉語音失敗:', err);
-      setError(`文本轉語音失敗: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // 使用瀏覽器內置的Web Speech API進行本地文本轉語音
-  const speakTextWithBrowserAPI = () => {
-    try {
-      // 檢查是否支援語音合成
-      if (!('speechSynthesis' in window)) {
-        throw new Error('您的瀏覽器不支援語音合成API');
-      }
-
-      const synth = window.speechSynthesis;
-      
-      // 優先使用選定的語音，其次尋找任何英文語音
-      let voice = null;
-      if (selectedVoice) {
-        // 使用選定的語音
-        voice = synth.getVoices().find(v => v.name === selectedVoice.name);
-      }
-      
-      // 如果沒有找到選定的語音，尋找任何英文語音
-      if (!voice) {
-        voice = synth.getVoices().find(v => 
-          v.lang.toLowerCase().includes('en') || 
-          v.name.toLowerCase().includes('english')
-        );
-      }
-
-      if (!voice) {
-        setError('裝置未提供英文語音，請選擇一個可用的語音');
-        setIsLoading(false);
-        return;
-      }
-
-      const speak = (txt: string) => {
-        const u = new SpeechSynthesisUtterance(txt);
-        u.voice = voice;
-        u.lang = voice.lang; // 使用語音自帶的語言設置
-        u.rate = voiceSettings.rate;
-        
-        // 添加事件監聽
-        u.onend = () => {
-          console.log('語音片段播放結束');
-        };
-        
-        u.onerror = (err) => {
-          console.error('語音合成錯誤:', err);
-          setError(`瀏覽器語音合成出錯: ${err.error || '未知錯誤'}`);
-          setIsLoading(false);
-        };
-        
-        synth.speak(u);
-      };
-
-      // iOS: 長文本分段，其他一次唸
-      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const chunks = isiOS && referenceText.length > 150
-        ? referenceText.match(/[^.!?…。\n]+[.!?…。\n]?/g) || []
-        : [referenceText];
-
-      synth.cancel();
-      chunks.forEach(c => speak(c.trim()));
-      
-      console.log(`使用語音 ${voice.name} (${voice.lang}) 播放: "${referenceText.substring(0, 30)}..."${isiOS ? '（iOS分段模式）' : ''}`);
-      
-      // 設置延時檢查所有片段是否播放完畢
-      const checkAllChunksCompleted = () => {
-        if (synth.speaking) {
-          // 如果還在播放，繼續等待
-          setTimeout(checkAllChunksCompleted, 300);
-        } else {
-          // 所有片段播放完畢
-          setIsLoading(false);
-          console.log('所有語音片段播放完畢');
-        }
-      };
-      
-      // 開始檢查
-      setTimeout(checkAllChunksCompleted, 300);
-      
-    } catch (err) {
-      console.error('瀏覽器語音合成失敗:', err);
-      setError(`瀏覽器語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
-      setIsLoading(false);
-    }
-  };
-  
-  // 處理粘貼事件，支持文本和圖片
-  const handlePaste = async (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  // 使用瀏覽器Web Speech API朗讀文本
+  const speakTextWithBrowserAPI = useCallback(() => {
+    if (!window.speechSynthesis) return;
     
-    try {
-      // 檢查是否有圖片
-      if (e.clipboardData.files.length > 0) {
-        const file = e.clipboardData.files[0];
-        
-        if (file.type.startsWith('image/')) {
-          // 動態導入Tesseract.js
-          try {
-            const Tesseract = await import('tesseract.js');
-            // 處理圖片OCR
-            setIsLoading(true);
-            setError(null);
-            const result = await Tesseract.default.recognize(file, 'eng+chi_sim');
-            const text = result.data.text.trim();
-            setReferenceText(text);
-          } catch (ocrError) {
-            console.error("OCR庫加載失敗:", ocrError);
-            setError(`OCR庫加載失敗: ${ocrError instanceof Error ? ocrError.message : String(ocrError)}`);
-          }
-          setIsLoading(false);
-          return;
-        }
-      }
-      
-      // 處理純文本
-      let text = e.clipboardData.getData('text').trim();
-      setReferenceText(text);
-    } catch (error) {
-      console.error("粘貼處理出錯:", error);
-      setError(`粘貼內容處理失敗: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // 標籤相關函數
-  const addTag = (name: string, color = '#' + Math.floor(Math.random()*16777215).toString(16)) => {
-    // 檢查ID是否存在，如果存在則遞增直到找到未使用的ID
-    let currentNextId = nextTagId;
-    let idStr = currentNextId.toString();
+    // 取消之前的語音
+    window.speechSynthesis.cancel();
     
-    // 檢查tagId是否已存在
-    while (tags.some(tag => tag.tagId === idStr)) {
-      currentNextId++;
-      idStr = currentNextId.toString();
-      console.log(`標籤ID "${(currentNextId-1)}" 已存在，嘗試使用新ID "${idStr}"`);
+    // 創建語音合成utterance
+    const utterance = new SpeechSynthesisUtterance(referenceText);
+    
+    // 設置語音
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
     }
     
-    const newTag: Tag = {
-      tagId: idStr,
-      name: name,
-      color: color,
-      createdAt: Date.now()
-    };
+    // 設置語速
+    utterance.rate = voiceSettings.rate;
     
-    const updatedTags = [...tags, newTag];
-    setTags(updatedTags);
-    storage.saveTags(updatedTags);
-    
-    // 保存遞增後的ID
-    const newNextId = currentNextId + 1;
-    setNextTagId(newNextId);
-    storage.saveNextTagId(newNextId);
-    
-    return newTag.tagId; // 返回新創建的標籤ID
-  };
-  
-  const editTag = (tagId: string, newName: string, newColor?: string) => {
-    const updatedTags = tags.map(tag => 
-      tag.tagId === tagId 
-        ? { ...tag, name: newName || tag.name, color: newColor || tag.color } 
-        : tag
-    );
-    
-    setTags(updatedTags);
-    storage.saveTags(updatedTags);
-  };
-  
-  const deleteTag = (tagId: string) => {
-    // 刪除標籤
-    const updatedTags = tags.filter(tag => tag.tagId !== tagId);
-    setTags(updatedTags);
-    storage.saveTags(updatedTags);
-    
-    // 從所有收藏中移除該標籤
-    const updatedFavorites = favorites.map(favorite => ({
-      ...favorite,
-      tagIds: favorite.tagIds.filter(tid => tid !== tagId)
-    }));
-    
-    setFavorites(updatedFavorites);
-    storage.saveFavorites(updatedFavorites);
-  };
-  
+    // 播放語音
+    window.speechSynthesis.speak(utterance);
+  }, [referenceText, selectedVoice, voiceSettings.rate]);
+
   // 收藏夾相關函數
-  const addToFavorites = (text: string, tagIds: string[] = []) => {
-    if (!text) {
+  const addToFavorites = (text: string | string[], tagIds: string[] = []) => {
+    // 處理空輸入
+    if (!text || (Array.isArray(text) && text.length === 0)) {
       alert("請先輸入句子再加入我的最愛！");
       return;
     }
     
-    // 檢查是否已存在相同文本
-    const existingFavorite = favorites.find(fav => fav.text === text);
-    if (existingFavorite) {
-      // 如果存在，只更新標籤
-      updateFavoriteTags(existingFavorite.id, tagIds.length ? tagIds : selectedTags);
-      alert("此句子已在我的最愛！已更新標籤。");
-      return;
+    // 確保 text 為數組形式以統一處理
+    const textsToAdd = Array.isArray(text) ? text : [text];
+    const newFavorites: Favorite[] = [];
+    let currentNextId = storage.getNextFavoriteId(favorites);
+    let firstNewFavoriteId: string | null = null;
+    
+    // 處理每個文本
+    for (let i = 0; i < textsToAdd.length; i++) {
+      const currentText = textsToAdd[i];
+      
+      // 跳過空字符串
+      if (!currentText.trim()) continue;
+      
+      // 檢查是否已存在相同文本
+      const existingFavorite = favorites.find(fav => fav.text === currentText);
+      if (existingFavorite) {
+        // 如果存在且不是批次添加，更新標籤並提示
+        if (!Array.isArray(text)) {
+          updateFavoriteTags(existingFavorite.id, tagIds.length ? tagIds : selectedTags);
+          alert("此句子已在我的最愛！已更新標籤。");
+          
+          // 切換到我的最愛標籤頁
+          handleTabChange('favorites');
+          // 設置最後添加的ID為此已存在項目
+          setLastAddedFavoriteId(existingFavorite.id);
+        }
+        continue; // 跳過已存在的文本
+      }
+      
+      // 創建新收藏項目
+      const newId = currentNextId.toString();
+      // 記錄第一個新添加的ID
+      if (firstNewFavoriteId === null) {
+        firstNewFavoriteId = newId;
+      }
+      
+      const newFavorite = {
+        id: newId,
+        text: currentText,
+        tagIds: tagIds.length ? tagIds : selectedTags, // 使用當前選中的標籤或指定的標籤
+        createdAt: Date.now() + i // 添加索引偏移確保順序正確
+      };
+      
+      newFavorites.push(newFavorite);
+      currentNextId++;
     }
     
-    // 每次添加新收藏时重新计算nextId，确保不会重复
-    const currentNextId = storage.getNextFavoriteId(favorites);
+    // 如果沒有新增項目則直接返回
+    if (newFavorites.length === 0) return;
     
-    // 添加新收藏
-    const newFavorite = {
-      id: currentNextId.toString(),
-      text: text,
-      tagIds: tagIds.length ? tagIds : selectedTags, // 使用當前選中的標籤或指定的標籤
-      createdAt: Date.now()
-    };
-    
-    // 修改这里，将新项放在最前面，而不是最后
-    const updatedFavorites = [newFavorite, ...favorites].slice(0, 20);
+    // 一次性更新所有收藏，新項目放在最前面
+    const updatedFavorites = [...newFavorites, ...favorites].slice(0, 20);
     setFavorites(updatedFavorites);
     storage.saveFavorites(updatedFavorites);
     
-    // 更新nextFavoriteId为下一个值
-    const newNextId = currentNextId + 1;
-    setNextFavoriteId(newNextId);
-    storage.saveNextFavoriteId(newNextId);
+    // 更新 nextFavoriteId
+    setNextFavoriteId(currentNextId);
+    storage.saveNextFavoriteId(currentNextId);
+    
+    // 如果是批次添加，顯示添加成功的提示
+    if (Array.isArray(text) && newFavorites.length > 0) {
+      console.log(`成功添加 ${newFavorites.length} 個句子到收藏`);
+    }
+    
+    // 切換到我的最愛標籤頁
+    handleTabChange('favorites');
+    
+    // 設置最後添加的收藏項目ID，用於聚焦
+    if (firstNewFavoriteId) {
+      setLastAddedFavoriteId(firstNewFavoriteId);
+    }
   };
   
   const removeFromFavorite = (id: string) => {
@@ -750,6 +548,9 @@ const PronunciationAssessment: React.FC = () => {
       } catch (e) {
         console.log('保存頂部標籤頁狀態失敗，可能處於無痕模式');
       }
+      
+      // 在切換到頂部標籤頁時重置lastAddedFavoriteId
+      setLastAddedFavoriteId(null);
     } 
     // 處理底部標籤頁區域的切換
     else {
@@ -758,6 +559,11 @@ const PronunciationAssessment: React.FC = () => {
         storage.saveBottomActiveTab(tab as storage.BottomTabName);
       } catch (e) {
         console.log('保存底部標籤頁狀態失敗，可能處於無痕模式');
+      }
+      
+      // 如果不是切換到收藏標籤頁，則重置lastAddedFavoriteId
+      if (tab !== 'favorites') {
+        setLastAddedFavoriteId(null);
       }
     }
   };
@@ -830,6 +636,192 @@ const PronunciationAssessment: React.FC = () => {
       loadSharedData();
     }
   }, []); // 只在組件首次載入時執行
+
+  // 統一的開始評估入口
+  const startAssessment = async () => {
+    try {
+      setError(null);
+      setResult(null);
+      setIsAssessing(true);
+      
+      if (useBackend) {
+        // 使用後端API
+        await recorder.startRecording();
+      } else {
+        // 直接使用Azure
+        // 檢查API key和region是否已設置
+        if (!azureSettings.key || !azureSettings.region) {
+          setError('請先設置Azure API key和區域');
+          setIsAssessing(false);
+          return;
+        }
+        
+        setIsLoading(true);
+        
+        const result = await azureSpeech.assessWithAzure(
+          referenceText, 
+          strictMode,
+          azureSettings
+        );
+        
+        if (result) {
+          setResult(result);
+        }
+      }
+    } catch (err) {
+      console.error('啟動評估失敗:', err);
+      setError(`啟動評估失敗: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      if (!useBackend) {
+        setIsAssessing(false);
+        setIsLoading(false);
+      }
+    }
+  };
+  
+  // 停止評估
+  const stopAssessment = () => {
+    if (recorder.recording) {
+      recorder.stopRecording();
+      
+      // 如果有錄音數據並且使用後端API，則發送到後端
+      if (recorder.audioData && useBackend) {
+        processPronunciationAssessment();
+      }
+    }
+    
+    azureSpeech.cancelAzureSpeech();
+    setIsAssessing(false);
+  };
+  
+  // 統一的文本轉語音入口
+  const speakText = async () => {
+    try {
+      if (!referenceText) {
+        alert("請先輸入要發音的文字！");
+        return;
+      }
+      
+      setIsLoading(true);
+      
+      // 始終使用瀏覽器內置的Web Speech API
+      if ('speechSynthesis' in window) {
+        speakTextWithBrowserAPI();
+      } else {
+        // 如果不支持Web Speech API，嘗試使用後端或Azure
+        if (useBackend) {
+          await backendSpeech.speakWithBackend(referenceText);
+        } else {
+          await azureSpeech.speakWithAzure(referenceText, azureSettings);
+        }
+      }
+    } catch (err) {
+      console.error('文本轉語音失敗:', err);
+      setError(`文本轉語音失敗: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // 處理粘貼事件，支持文本和圖片
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // 檢查是否有圖片
+      if (e.clipboardData.files.length > 0) {
+        const file = e.clipboardData.files[0];
+        
+        if (file.type.startsWith('image/')) {
+          // 動態導入Tesseract.js
+          try {
+            const Tesseract = await import('tesseract.js');
+            // 處理圖片OCR
+            setIsLoading(true);
+            setError(null);
+            const result = await Tesseract.default.recognize(file, 'eng+chi_sim');
+            const text = result.data.text.trim();
+            setReferenceText(text);
+          } catch (ocrError) {
+            console.error("OCR庫加載失敗:", ocrError);
+            setError(`OCR庫加載失敗: ${ocrError instanceof Error ? ocrError.message : String(ocrError)}`);
+          }
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // 處理純文本
+      let text = e.clipboardData.getData('text').trim();
+      setReferenceText(text);
+    } catch (error) {
+      console.error("粘貼處理出錯:", error);
+      setError(`粘貼內容處理失敗: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // 標籤相關函數
+  const addTag = (name: string, color = '#' + Math.floor(Math.random()*16777215).toString(16)) => {
+    // 檢查ID是否存在，如果存在則遞增直到找到未使用的ID
+    let currentNextId = nextTagId;
+    let idStr = currentNextId.toString();
+    
+    // 檢查tagId是否已存在
+    while (tags.some(tag => tag.tagId === idStr)) {
+      currentNextId++;
+      idStr = currentNextId.toString();
+      console.log(`標籤ID "${(currentNextId-1)}" 已存在，嘗試使用新ID "${idStr}"`);
+    }
+    
+    const newTag: Tag = {
+      tagId: idStr,
+      name: name,
+      color: color,
+      createdAt: Date.now()
+    };
+    
+    const updatedTags = [...tags, newTag];
+    setTags(updatedTags);
+    storage.saveTags(updatedTags);
+    
+    // 保存遞增後的ID
+    const newNextId = currentNextId + 1;
+    setNextTagId(newNextId);
+    storage.saveNextTagId(newNextId);
+    
+    return newTag.tagId; // 返回新創建的標籤ID
+  };
+  
+  const editTag = (tagId: string, newName: string, newColor?: string) => {
+    const updatedTags = tags.map(tag => 
+      tag.tagId === tagId 
+        ? { ...tag, name: newName || tag.name, color: newColor || tag.color } 
+        : tag
+    );
+    
+    setTags(updatedTags);
+    storage.saveTags(updatedTags);
+  };
+  
+  const deleteTag = (tagId: string) => {
+    // 刪除標籤
+    const updatedTags = tags.filter(tag => tag.tagId !== tagId);
+    setTags(updatedTags);
+    storage.saveTags(updatedTags);
+    
+    // 從所有收藏中移除該標籤
+    const updatedFavorites = favorites.map(favorite => ({
+      ...favorite,
+      tagIds: favorite.tagIds.filter(tid => tid !== tagId)
+    }));
+    
+    setFavorites(updatedFavorites);
+    storage.saveFavorites(updatedFavorites);
+  };
 
   // JSX 渲染部分
   return (
@@ -991,6 +983,7 @@ const PronunciationAssessment: React.FC = () => {
               aiResponse={aiResponse}
               setAiResponse={setAiResponse}
               onAIResponseReceived={handleAIResponseReceived}
+              addToFavorites={addToFavorites}
             />
           )}
         </div>
@@ -1092,6 +1085,7 @@ const PronunciationAssessment: React.FC = () => {
                   onAddFavorite={addToFavorites}
                   onManageTags={() => handleTabChange('tags')}
                   currentText={referenceText}
+                  lastAddedFavoriteId={lastAddedFavoriteId}
                 />
               )}
               
@@ -1168,6 +1162,12 @@ const PronunciationAssessment: React.FC = () => {
               0% { opacity: 0; }
               50% { opacity: 0.5; }
               100% { opacity: 0; }
+            }
+            
+            @keyframes highlightFavorite {
+              0% { background: rgba(255, 159, 10, 0.3); }
+              70% { background: rgba(255, 159, 10, 0.15); }
+              100% { background: rgba(44, 44, 48, 0.5); }
             }
           `}
         </style>

@@ -16,6 +16,7 @@ interface AIDataProcessorProps {
   aiResponse: string | null;
   setAiResponse: (response: string | null) => void;
   onAIResponseReceived: () => void;
+  addToFavorites: (text: string | string[]) => void;
 }
 
 const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
@@ -27,7 +28,8 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   onUpdateHistoryRecords,
   aiResponse,
   setAiResponse,
-  onAIResponseReceived
+  onAIResponseReceived,
+  addToFavorites
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,10 +42,10 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   
   // 定義範例提示句
   const examplePrompts = [
-    "請幫我為收藏的句子分類或者創建新的標籤",
+    
     "分析我的發音歷史記錄，幫我用這些字做一個短文",
-    "生成3個跟圖片內容句子並添加到我的收藏中",
-    "幫我產生1個IELTS等級8分的人會讀到的新科技短文(不要只有一句話)，同時幫我創立一個標籤叫做IELTS8分"
+    "產生3個跟圖片內容有關的句子",
+    "幫我產生1個IELTS等級9分的人會讀到的新科技短文(不要只有一句話)"
   ];
   
   // 處理範例提示點擊
@@ -191,8 +193,6 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         };
       });
       const jsonData = JSON.stringify({
-        favorites: favorites,
-        tags: tags,
         historyRecords: filteredHistoryRecords,
         prompt: currentPrompt
       });
@@ -221,6 +221,21 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         if (typeof data === 'object' && data !== null) {
           // 如果是對象，以字符串形式保存
           setAiResponse(JSON.stringify(data, null, 2));
+          
+          // 處理返回的 favorites 數據，將其添加到用戶的收藏中
+          if (data.favorites && Array.isArray(data.favorites)) {
+            // 收集所有要添加的文本
+            const textsToAdd = data.favorites
+              .filter(fav => fav && typeof fav.text === 'string')
+              .map(fav => fav.text);
+            
+            // 如果有文本要添加，一次性調用 addToFavorites 函數
+            if (textsToAdd.length > 0) {
+              addToFavorites(textsToAdd);
+              // 記錄添加了多少條收藏
+              console.log(`已添加 ${textsToAdd.length} 條新收藏`);
+            }
+          }
         } else {
           // 其他類型直接設置
           setAiResponse(String(data));
@@ -238,117 +253,13 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       // 驗證收到的數據結構
       let isValid = true;
       
-      // 驗證 favorites
-      if (data.favorites) {
-        if (!Array.isArray(data.favorites)) {
-          console.error('解析錯誤-favorites不是陣列');
-          isValid = false;
-        } else {
-          // 檢查每個favorite項目
-          for (let i = 0; i < data.favorites.length; i++) {
-            const fav = data.favorites[i];
-            if (!fav.id || typeof fav.id !== 'string') {
-              console.error(`解析錯誤-favorites[${i}]缺少有效id`);
-              isValid = false;
-              break;
-            }
-            if (!fav.text || typeof fav.text !== 'string') {
-              console.error(`解析錯誤-favorites[${i}]缺少有效text`);
-              isValid = false;
-              break;
-            }
-            // 支持 tagIds 或 tags 欄位
-            if (!fav.tagIds && !fav.tags) {
-              console.warn(`警告-favorites[${i}]缺少tagIds或tags，設置為空數組`);
-              fav.tagIds = [];
-            } else if (fav.tags && !fav.tagIds) {
-              // 將 tags 轉換為 tagIds
-              console.log(`修正-favorites[${i}]使用tags欄位，轉換為tagIds`);
-              fav.tagIds = Array.isArray(fav.tags) ? fav.tags : [];
-            }
-            
-            // 確保 tagIds 是陣列
-            if (fav.tagIds && !Array.isArray(fav.tagIds)) {
-              console.error(`解析錯誤-favorites[${i}].tagIds不是陣列，設置為空數組`);
-              fav.tagIds = [];
-            }
-            
-            if (!fav.createdAt || typeof fav.createdAt !== 'number') {
-              console.error(`解析錯誤-favorites[${i}]缺少有效createdAt`);
-              isValid = false;
-              break;
-            }
-          }
-        }
-      }
-      
-      // 驗證 tags
-      if (data.tags) {
-        if (!Array.isArray(data.tags)) {
-          console.error('解析錯誤-tags不是陣列');
-          isValid = false;
-        } else {
-          // 檢查每個tag項目
-          for (let i = 0; i < data.tags.length; i++) {
-            const tag = data.tags[i];
-            if (!tag.tagId || typeof tag.tagId !== 'string') {
-              console.error(`解析錯誤-tags[${i}]缺少有效tagId`);
-              isValid = false;
-              break;
-            }
-            if (!tag.name || typeof tag.name !== 'string') {
-              console.error(`解析錯誤-tags[${i}]缺少有效name`);
-              isValid = false;
-              break;
-            }
-            if (!tag.color || typeof tag.color !== 'string') {
-              console.error(`解析錯誤-tags[${i}]缺少有效color`);
-              isValid = false;
-              break;
-            }
-            if (!tag.createdAt || typeof tag.createdAt !== 'number') {
-              console.error(`解析錯誤-tags[${i}]缺少有效createdAt`);
-              isValid = false;
-              break;
-            }
-          }
-        }
-      }
+      // 不再驗證 favorites 和 tags，因為我們不再發送和接收這些數據
       
       // API 返回中不會包含 historyRecords，不再進行驗證
       
       // 處理AI返回的數據，只有在資料驗證通過的情況下才更新
       if (isValid) {
-        if (data.favorites) {
-          // 兼容後端可能返回的 tags 欄位 (陣列) 而非 tagIds
-          const normalizedFavorites = (data.favorites as any[]).map((fav) => {
-            if (!fav.tagIds && fav.tags) {
-              // 將 tags 改名為 tagIds
-              return {
-                ...fav,
-                tagIds: Array.isArray(fav.tags) ? fav.tags : [],
-              };
-            }
-            return fav;
-          });
-          
-          // 根據創建時間排序，最新的排在前面
-          const sortedFavorites = [...normalizedFavorites].sort((a, b) => {
-            // 確保 createdAt 是數字類型，如果不是則使用默認值
-            const createdAtA = typeof a.createdAt === 'number' ? a.createdAt : 0;
-            const createdAtB = typeof b.createdAt === 'number' ? b.createdAt : 0;
-            return createdAtB - createdAtA; // 降序排列，最新的在前
-          });
-          
-          onUpdateFavorites(sortedFavorites);
-          storage.saveFavorites(sortedFavorites);
-        }
-
-        if (data.tags) {
-          onUpdateTags(data.tags);
-          storage.saveTags(data.tags);
-        }
-
+        // 由於不再發送favorites和tags，也不再處理它們的回應
         // API 返回中不會包含 historyRecords，不再進行更新
       } else {
         console.error('資料驗證失敗，保留原始數據');
@@ -475,8 +386,8 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         fontSize: "14px",
         color: "var(--ios-text-secondary)"
       }}>
-        將你的收藏、標籤和歷史紀錄發送給AI，獲取智能建議和整理。還可以上傳相關圖片供AI分析。
-        <p>注意：如果想依照發音準確度產生句子，資料來源僅為最新十次發音紀錄。</p>
+        將你的歷史紀錄發送給AI，獲取智能建議和整理。還可以上傳相關圖片供AI分析。
+        <p>注意：資料來源僅為最新十次發音紀錄。</p>
       </div>
       
       {/* 範例提示區域放到最後 */}
