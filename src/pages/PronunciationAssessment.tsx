@@ -93,18 +93,9 @@ const PronunciationAssessment: React.FC = () => {
   // 用於跟踪最新添加的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
   
-  // 新增狀態來追踪使用哪種TTS方式
-  const [useSteamTTS, setUseStreamTTS] = useState<boolean>(true);
+  // TTS相關狀態 (只在Azure直連模式下使用流式TTS)
   const [streamLoading, setStreamLoading] = useState<boolean>(false);
   const [cacheTipVisible, setCacheTipVisible] = useState<boolean>(false);
-  
-  // 當切換到Azure直連模式時，自動將流式TTS設置為開啟
-  useEffect(() => {
-    if (!useBackend) {
-      // 在Azure直連模式下，強制使用流式TTS
-      setUseStreamTTS(true);
-    }
-  }, [useBackend]);
   
   // 處理錄音評估
   const processPronunciationAssessment = useCallback(async () => {
@@ -786,7 +777,7 @@ const PronunciationAssessment: React.FC = () => {
       setIsLoading(true);
       setError(null); // 重置可能的錯誤狀態
       
-      // 使用Azure直連模式時，總是使用流式TTS
+      // 使用Azure直連模式時，使用AI服務器API
       if (!useBackend) {
         try {
           // 在Azure直連模式下，總是使用流式API
@@ -813,59 +804,20 @@ const PronunciationAssessment: React.FC = () => {
           setStreamLoading(false);
         }
       } else {
-        // 遠端模式下，根據用戶選擇的模式使用不同的API
-        if (useSteamTTS) {
-          try {
-            setStreamLoading(true);
-            const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice);
-            setStreamLoading(false);
-            console.log("流式TTS已完成", result.audio);
-            return;
-          } catch (err) {
-            console.warn('流式TTS失敗，嘗試標準TTS:', err);
-            setStreamLoading(false);
-            
-            // 嘗試標準TTS
-            try {
-              const result = await azureSpeech.speakWithAIServer(referenceText, selectedAIVoice);
-              // 如果是从缓存加载的，显示提示
-              if (result.fromCache) {
-                setCacheTipVisible(true);
-                setTimeout(() => {
-                  setCacheTipVisible(false);
-                }, 1500);
-              }
-              return;
-            } catch (standardErr) {
-              console.warn('標準TTS也失敗:', standardErr);
-              // 繼續嘗試其他方法
-            }
-          }
+        // 遠端模式下，直接使用瀏覽器API
+        if ('speechSynthesis' in window) {
+          console.log('使用瀏覽器的Web Speech API');
+          speakTextWithBrowserAPI();
+          return;
         } else {
-          try {
-            const result = await azureSpeech.speakWithAIServer(referenceText, selectedAIVoice);
-            // 如果是从缓存加载的，显示提示
-            if (result.fromCache) {
-              setCacheTipVisible(true);
-              setTimeout(() => {
-                setCacheTipVisible(false);
-              }, 1500);
-            }
-            return;
-          } catch (err) {
-            console.warn('標準TTS失敗，嘗試其他方式:', err);
-          }
+          // 如果瀏覽器不支持語音API，嘗試使用後端服務
+          console.log('瀏覽器不支持Web Speech API，嘗試使用後端服務');
+          await backendSpeech.speakWithBackend(referenceText);
+          return;
         }
       }
       
-      // 後備方案：嘗試使用瀏覽器內置的Web Speech API
-      if ('speechSynthesis' in window) {
-        console.log('使用瀏覽器的Web Speech API作為後備');
-        speakTextWithBrowserAPI();
-        return;
-      } 
-      
-      // 如果Web Speech API也不支持，嘗試使用最後的選項
+      // 以下是備用方案，如果上述方法都失敗
       if (useBackend) {
         console.log('嘗試使用後端服務進行TTS');
         await backendSpeech.speakWithBackend(referenceText);
@@ -1009,11 +961,6 @@ const PronunciationAssessment: React.FC = () => {
           const newMode = !useBackend; // 切換模式
           setUseBackend(newMode);
           storage.saveUseBackend(newMode);
-
-          // 如果切換到Azure直連模式，設置為使用流式TTS
-          if (newMode === false) {
-            setUseStreamTTS(true);
-          }
         }}
         style={{ 
           color: useBackend ? 'var(--ios-text-secondary)' : 'var(--ios-primary)',
@@ -1130,37 +1077,25 @@ const PronunciationAssessment: React.FC = () => {
               }}
               disabled={isLoading || streamLoading || !referenceText}
                     className={`btn btn-success btn-flex-0-5 ${(isLoading || streamLoading || !referenceText) ? 'btn-disabled' : ''}`}
-                    title={!useBackend ? "使用流式TTS" : (useSteamTTS ? "使用流式TTS" : "使用標準TTS")}
+                    title={!useBackend ? "使用AI語音播放" : "使用內建語音播放"}
                   >
-                    <i className={`fas ${!useBackend ? 'fa-broadcast-tower' : (useSteamTTS ? 'fa-broadcast-tower' : 'fa-volume-up')}`}></i>
+                    <i className={`fas ${!useBackend ? 'fa-broadcast-tower' : 'fa-volume-up'}`}></i>
                   </button>
                   
-                  {/* TTS模式切換按鈕 - 只在遠端模式下顯示 */}
-                  {useBackend && (
-                    <button
-                      onClick={() => setUseStreamTTS(!useSteamTTS)}
-                      disabled={isLoading || streamLoading}
-                      className={`btn btn-secondary btn-flex-0-5 ${(isLoading || streamLoading) ? 'btn-disabled' : ''}`}
-                      title={useSteamTTS ? "切換到標準TTS" : "切換到流式TTS"}
-                    >
-                      <i className={`fas ${useSteamTTS ? 'fa-wifi' : 'fa-file-audio'}`}></i>
-                    </button>
-                  )}
-                  
-                  {/* 前一句按鈕 - 如果在Azure直連模式，增加寬度補償 */}
+                  {/* 前一句按鈕 - 使用統一的按鈕寬度 */}
                   <button
                     onClick={goToPreviousSentence}
                     disabled={favorites.length === 0}
-                    className={`btn btn-nav ${!useBackend ? 'btn-flex-0-75' : 'btn-flex-0-5'} ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                    className={`btn btn-nav btn-flex-0-75 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
             >
                     <i className="fas fa-chevron-left"></i>
                   </button>
                   
-                  {/* 下一句按鈕 - 如果在Azure直連模式，增加寬度補償 */}
+                  {/* 下一句按鈕 - 使用統一的按鈕寬度 */}
                   <button
                     onClick={goToNextSentence}
                     disabled={favorites.length === 0}
-                    className={`btn btn-nav ${!useBackend ? 'btn-flex-0-75' : 'btn-flex-0-5'} ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                    className={`btn btn-nav btn-flex-0-75 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
                   >
                     <i className="fas fa-chevron-right"></i>
             </button>
