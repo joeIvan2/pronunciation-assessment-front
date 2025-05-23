@@ -1,6 +1,7 @@
 // 本地存储工具函数
 
 import { Tag, Favorite } from '../types/speech';
+import { AI_SERVER_URL } from './api'; // 從api.ts導入常量
 
 // 获取localStorage中的数据，返回默认值如果不存在
 export const getItem = <T>(key: string, defaultValue: T): T => {
@@ -542,7 +543,18 @@ export interface ShareInfo {
 }
 
 // API基礎URL
-const API_BASE_URL = 'https://pronunciation-ai-server.onrender.com';
+const API_BASE_URL = AI_SERVER_URL; // 使用導入的常量
+
+// 檢查URL是否有效（不是blob URL，並且是有效的HTTP或相對路徑）
+export const isValidURL = (url: string): boolean => {
+  // 不緩存blob URL，因為它們在頁面刷新後無效
+  if (url.startsWith('blob:')) {
+    return false;
+  }
+  
+  // 檢查是否是絕對URL或相對路徑
+  return url.startsWith('http') || url.startsWith('/');
+};
 
 // 分享當前的標籤和收藏數據
 export const shareTagsAndFavorites = async (): Promise<ShareResponse> => {
@@ -745,4 +757,67 @@ export const deleteShareInfo = (hash: string): void => {
   const shareInfos = getSavedShareInfo();
   const updatedInfos = shareInfos.filter(info => info.hash !== hash);
   setItem('savedShareInfo', updatedInfos);
+};
+
+// 获取AI语音设置
+export const getAIVoice = (): string => {
+  return getItem<string>('selectedAIVoice', 'Puck');
+};
+
+// 保存AI语音设置
+export const saveAIVoice = (voice: string): void => {
+  setItem('selectedAIVoice', voice);
+};
+
+// TTS缓存相关类型和函数
+export interface TTSCacheItem {
+  text: string;
+  voice: string;
+  audioUrl: string;
+  timestamp: number;
+}
+
+// 获取TTS缓存
+export const getTTSCache = (): TTSCacheItem[] => {
+  return getItem<TTSCacheItem[]>('ttsCache', []);
+};
+
+// 根据文本和语音获取缓存项
+export const getTTSCacheItem = (text: string, voice: string): TTSCacheItem | undefined => {
+  const cache = getTTSCache();
+  return cache.find(item => item.text === text && item.voice === voice);
+};
+
+// 添加TTS缓存项
+export const addTTSCacheItem = (text: string, voice: string, audioUrl: string): void => {
+  // 不緩存blob URL或空URL
+  if (!audioUrl || !isValidURL(audioUrl)) {
+    console.log(`跳過緩存無效URL: ${audioUrl}`);
+    return;
+  }
+  
+  const cache = getTTSCache();
+  
+  // 检查是否已存在相同文本和语音的缓存
+  const existingIndex = cache.findIndex(item => item.text === text && item.voice === voice);
+  
+  const newItem: TTSCacheItem = {
+    text,
+    voice,
+    audioUrl,
+    timestamp: Date.now()
+  };
+  
+  // 更新已存在项或添加新项
+  if (existingIndex !== -1) {
+    cache[existingIndex] = newItem;
+  } else {
+    cache.unshift(newItem); // 添加到开头
+  }
+  
+  // 仅保留最新的5个缓存项
+  const updatedCache = cache.slice(0, 5);
+  setItem('ttsCache', updatedCache);
+  
+  console.log(`成功添加TTS緩存: ${text.slice(0, 20)}... (${voice})`);
 }; 

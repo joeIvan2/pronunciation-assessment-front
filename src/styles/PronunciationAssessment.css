@@ -1051,6 +1051,11 @@ h4 {
   flex: 0.5;
 }
 
+/* 新增 0.75 寬度的 flex 按鈕樣式 */
+.btn-flex-0-75 {
+  flex: 0.75;
+}
+
 /* 麥克風圖標右邊距 */
 .mic-icon-margin {
   margin-right: 5px;

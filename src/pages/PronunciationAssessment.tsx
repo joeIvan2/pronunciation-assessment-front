@@ -45,6 +45,8 @@ const PronunciationAssessment: React.FC = () => {
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(() => storage.getCardExpandStates().voicePicker);
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
+  // 新增AI語音設置
+  const [selectedAIVoice, setSelectedAIVoice] = useState<string>("Puck");
   
   // 標籤系統
   const [isTagExpanded, setIsTagExpanded] = useState<boolean>(() => storage.getCardExpandStates().tagManager);
@@ -90,7 +92,20 @@ const PronunciationAssessment: React.FC = () => {
 
   // 用於跟踪最新添加的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
-
+  
+  // 新增狀態來追踪使用哪種TTS方式
+  const [useSteamTTS, setUseStreamTTS] = useState<boolean>(true);
+  const [streamLoading, setStreamLoading] = useState<boolean>(false);
+  const [cacheTipVisible, setCacheTipVisible] = useState<boolean>(false);
+  
+  // 當切換到Azure直連模式時，自動將流式TTS設置為開啟
+  useEffect(() => {
+    if (!useBackend) {
+      // 在Azure直連模式下，強制使用流式TTS
+      setUseStreamTTS(true);
+    }
+  }, [useBackend]);
+  
   // 處理錄音評估
   const processPronunciationAssessment = useCallback(async () => {
     if (!recorder.audioData || processingRef.current) return;
@@ -137,9 +152,9 @@ const PronunciationAssessment: React.FC = () => {
     
     // 創建語音合成utterance
     const utterance = new SpeechSynthesisUtterance(referenceText);
-    
+      
     // 設置語音
-    if (selectedVoice) {
+      if (selectedVoice) {
       utterance.voice = selectedVoice;
     }
     
@@ -155,15 +170,15 @@ const PronunciationAssessment: React.FC = () => {
     // 處理空輸入
     if (!text || (Array.isArray(text) && text.length === 0)) {
       alert("請先輸入句子再加入我的最愛！");
-      return;
-    }
-    
+        return;
+      }
+
     // 確保 text 為數組形式以統一處理
     const textsToAdd = Array.isArray(text) ? text : [text];
     const newFavorites: Favorite[] = [];
     let currentNextId = storage.getNextFavoriteId(favorites);
     let firstNewFavoriteId: string | null = null;
-    
+
     // 處理每個文本
     for (let i = 0; i < textsToAdd.length; i++) {
       const currentText = textsToAdd[i];
@@ -172,7 +187,7 @@ const PronunciationAssessment: React.FC = () => {
       if (typeof currentText !== 'string' || !currentText) {
         console.warn('跳過非字符串或空值:', currentText);
         continue;
-      }
+    }
       
       // 跳過空字符串
       const trimmedText = currentText.trim();
@@ -190,7 +205,7 @@ const PronunciationAssessment: React.FC = () => {
           handleTabChange('favorites');
           // 設置最後添加的ID為此已存在項目
           setLastAddedFavoriteId(existingFavorite.id);
-        }
+          }
         continue; // 跳過已存在的文本
       }
       
@@ -199,7 +214,7 @@ const PronunciationAssessment: React.FC = () => {
       // 記錄第一個新添加的ID
       if (firstNewFavoriteId === null) {
         firstNewFavoriteId = newId;
-      }
+    }
       
       const newFavorite = {
         id: newId,
@@ -469,6 +484,13 @@ const PronunciationAssessment: React.FC = () => {
       
       // 首次加載嘗試
       loadVoices();
+      
+      // 加載AI語音設置
+      const savedAIVoice = storage.getAIVoice();
+      if (savedAIVoice) {
+        setSelectedAIVoice(savedAIVoice);
+        console.log(`從存儲中恢復AI語音: ${savedAIVoice}`);
+      }
       
       // 監聽voices加載完成事件
       window.speechSynthesis.onvoiceschanged = loadVoices;
@@ -762,23 +784,105 @@ const PronunciationAssessment: React.FC = () => {
       }
       
       setIsLoading(true);
+      setError(null); // 重置可能的錯誤狀態
       
-      // 始終使用瀏覽器內置的Web Speech API
-      if ('speechSynthesis' in window) {
-        speakTextWithBrowserAPI();
+      // 使用Azure直連模式時，總是使用流式TTS
+      if (!useBackend) {
+        try {
+          // 在Azure直連模式下，總是使用流式API
+          setStreamLoading(true);
+          const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice)
+            .catch((err) => {
+              console.error('流式TTS失敗，嘗試標準TTS:', err);
+              // 如果流式失敗，嘗試標準TTS API
+              return azureSpeech.speakWithAIServer(referenceText, selectedAIVoice)
+                .then(res => ({ audio: new Audio(), fromCache: res.fromCache }));
+            });
+            
+          setStreamLoading(false);
+          console.log("TTS已完成", result);
+          return;
+        } catch (err) {
+          console.warn('AI服務器TTS完全失敗，嘗試瀏覽器API:', err);
+          // 所有AI服務器方法都失敗，回退到瀏覽器API
+          if ('speechSynthesis' in window) {
+            speakTextWithBrowserAPI();
+            return;
+          }
+        } finally {
+          setStreamLoading(false);
+        }
       } else {
-        // 如果不支持Web Speech API，嘗試使用後端或Azure
-        if (useBackend) {
-          await backendSpeech.speakWithBackend(referenceText);
+        // 遠端模式下，根據用戶選擇的模式使用不同的API
+        if (useSteamTTS) {
+          try {
+            setStreamLoading(true);
+            const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice);
+            setStreamLoading(false);
+            console.log("流式TTS已完成", result.audio);
+            return;
+          } catch (err) {
+            console.warn('流式TTS失敗，嘗試標準TTS:', err);
+            setStreamLoading(false);
+            
+            // 嘗試標準TTS
+            try {
+              const result = await azureSpeech.speakWithAIServer(referenceText, selectedAIVoice);
+              // 如果是从缓存加载的，显示提示
+              if (result.fromCache) {
+                setCacheTipVisible(true);
+                setTimeout(() => {
+                  setCacheTipVisible(false);
+                }, 1500);
+              }
+              return;
+            } catch (standardErr) {
+              console.warn('標準TTS也失敗:', standardErr);
+              // 繼續嘗試其他方法
+            }
+          }
         } else {
+          try {
+            const result = await azureSpeech.speakWithAIServer(referenceText, selectedAIVoice);
+            // 如果是从缓存加载的，显示提示
+            if (result.fromCache) {
+              setCacheTipVisible(true);
+              setTimeout(() => {
+                setCacheTipVisible(false);
+              }, 1500);
+            }
+            return;
+          } catch (err) {
+            console.warn('標準TTS失敗，嘗試其他方式:', err);
+          }
+        }
+      }
+      
+      // 後備方案：嘗試使用瀏覽器內置的Web Speech API
+      if ('speechSynthesis' in window) {
+        console.log('使用瀏覽器的Web Speech API作為後備');
+        speakTextWithBrowserAPI();
+        return;
+      } 
+      
+      // 如果Web Speech API也不支持，嘗試使用最後的選項
+      if (useBackend) {
+        console.log('嘗試使用後端服務進行TTS');
+        await backendSpeech.speakWithBackend(referenceText);
+      } else {
+        console.log('嘗試直接使用Azure API進行TTS');
+        if (azureSettings.key && azureSettings.region) {
           await azureSpeech.speakWithAzure(referenceText, azureSettings);
+        } else {
+          throw new Error('未設置Azure憑據，無法使用語音服務');
         }
       }
     } catch (err) {
-      console.error('文本轉語音失敗:', err);
+      console.error('所有文本轉語音方法均失敗:', err);
       setError(`文本轉語音失敗: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
+      setStreamLoading(false);
     }
   };
   
@@ -882,6 +986,13 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveFavorites(updatedFavorites);
   };
 
+  // 處理AI語音選擇
+  const handleSelectAIVoice = (voice: string) => {
+    setSelectedAIVoice(voice);
+    // 可以考慮存儲到localStorage
+    storage.saveAIVoice(voice);
+  };
+
   // JSX 渲染部分
   return (
     <div className="pa-container">
@@ -898,6 +1009,11 @@ const PronunciationAssessment: React.FC = () => {
           const newMode = !useBackend; // 切換模式
           setUseBackend(newMode);
           storage.saveUseBackend(newMode);
+
+          // 如果切換到Azure直連模式，設置為使用流式TTS
+          if (newMode === false) {
+            setUseStreamTTS(true);
+          }
         }}
         style={{ 
           color: useBackend ? 'var(--ios-text-secondary)' : 'var(--ios-primary)',
@@ -986,58 +1102,77 @@ const PronunciationAssessment: React.FC = () => {
               disabled={!referenceText}
               title="添加到收藏"
               className={!referenceText ? "control-button favorite-button-disabled" : "control-button favorite-button-dynamic"}
-            >
-              <i className="fas fa-star"></i>
-            </button>
+                  >
+                    <i className="fas fa-star"></i>
+              </button>
         </div>
         
                 {/* 操作按钮区 */}
                 <div className="textarea-action-bar">
                   {/* 評分按鈕 */}
-                  <button
-                    onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
-                    disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
+            <button
+              onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
+              disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
                     className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"} btn-flex-1-5`}
-                  >
+            >
                     <i className="fas fa-microphone mic-icon-margin"></i>
-                    {isAssessing || recorder.recording
-                      ? "停止錄音"
-                      : isLoading
-                      ? "處理中..."
+              {isAssessing || recorder.recording
+                ? "停止錄音"
+                : isLoading
+                ? "處理中..."
                       : "評分"}
-                  </button>
-                  
+            </button>
+            
                   {/* 發音按鈕 */}
-                  <button
-                    onClick={speakText}
-                    disabled={isLoading || !referenceText}
-                    className={`btn btn-success btn-flex-0-5 ${(isLoading || !referenceText) ? 'btn-disabled' : ''}`}
+            <button
+              onClick={() => {
+                speakText();
+              }}
+              disabled={isLoading || streamLoading || !referenceText}
+                    className={`btn btn-success btn-flex-0-5 ${(isLoading || streamLoading || !referenceText) ? 'btn-disabled' : ''}`}
+                    title={!useBackend ? "使用流式TTS" : (useSteamTTS ? "使用流式TTS" : "使用標準TTS")}
                   >
-                    <i className="fas fa-volume-up"></i>
+                    <i className={`fas ${!useBackend ? 'fa-broadcast-tower' : (useSteamTTS ? 'fa-broadcast-tower' : 'fa-volume-up')}`}></i>
                   </button>
                   
-                  {/* 前一句按鈕 */}
+                  {/* TTS模式切換按鈕 - 只在遠端模式下顯示 */}
+                  {useBackend && (
+                    <button
+                      onClick={() => setUseStreamTTS(!useSteamTTS)}
+                      disabled={isLoading || streamLoading}
+                      className={`btn btn-secondary btn-flex-0-5 ${(isLoading || streamLoading) ? 'btn-disabled' : ''}`}
+                      title={useSteamTTS ? "切換到標準TTS" : "切換到流式TTS"}
+                    >
+                      <i className={`fas ${useSteamTTS ? 'fa-wifi' : 'fa-file-audio'}`}></i>
+                    </button>
+                  )}
+                  
+                  {/* 前一句按鈕 - 如果在Azure直連模式，增加寬度補償 */}
                   <button
                     onClick={goToPreviousSentence}
                     disabled={favorites.length === 0}
-                    className={`btn btn-nav btn-flex-0-5 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
-                  >
+                    className={`btn btn-nav ${!useBackend ? 'btn-flex-0-75' : 'btn-flex-0-5'} ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+            >
                     <i className="fas fa-chevron-left"></i>
                   </button>
                   
-                  {/* 下一句按鈕 */}
+                  {/* 下一句按鈕 - 如果在Azure直連模式，增加寬度補償 */}
                   <button
                     onClick={goToNextSentence}
                     disabled={favorites.length === 0}
-                    className={`btn btn-nav btn-flex-0-5 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                    className={`btn btn-nav ${!useBackend ? 'btn-flex-0-75' : 'btn-flex-0-5'} ${favorites.length === 0 ? 'btn-disabled' : ''}`}
                   >
                     <i className="fas fa-chevron-right"></i>
-                  </button>
+            </button>
                 </div>
             
             {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}
             
             {isLoading && <div className="loading-indicator">處理中...</div>}
+            
+            {streamLoading && <div className="loading-indicator stream-loading">流式處理中...</div>}
+            
+            {cacheTipVisible && <div className="cache-tip">使用已緩存的語音</div>}
           </div>
             </>
           )}
@@ -1186,17 +1321,18 @@ const PronunciationAssessment: React.FC = () => {
               
               {/* 語音選擇標籤頁 */}
               {bottomActiveTab === 'voices' && (
-                <VoicePicker
+                <VoicePicker 
+                  isExpanded={isVoiceExpanded}
+                  onToggleExpand={handleVoiceExpandToggle}
                   availableVoices={availableVoices}
                   selectedVoice={selectedVoice}
-                  voiceSearchTerm={voiceSettings.searchTerm}
-                  speechRate={voiceSettings.rate}
-                  referenceText={referenceText}
                   onSelectVoice={handleSelectVoice}
-                  onChangeSearchTerm={handleVoiceSearchChange}
-                  onChangeSpeechRate={handleSpeechRateChange}
-                  isExpanded={true} // 標籤頁模式下始終展開
-                  onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
+                  onSearchChange={handleVoiceSearchChange}
+                  rate={voiceSettings.rate}
+                  onRateChange={handleSpeechRateChange}
+                  useAzureDirect={!useBackend}
+                  selectedAIVoice={selectedAIVoice}
+                  onSelectAIVoice={handleSelectAIVoice}
                 />
               )}
               
@@ -1239,6 +1375,35 @@ const PronunciationAssessment: React.FC = () => {
               0% { background: rgba(255, 159, 10, 0.3); }
               70% { background: rgba(255, 159, 10, 0.15); }
               100% { background: rgba(44, 44, 48, 0.5); }
+            }
+            
+            .stream-loading {
+              background-color: rgba(0, 122, 255, 0.2);
+              color: rgba(0, 122, 255, 1);
+            }
+            
+            .cache-tip {
+              position: fixed;
+              bottom: 30px;
+              left: 50%;
+              transform: translateX(-50%);
+              background-color: rgba(52, 199, 89, 0.9);
+              color: white;
+              padding: 8px 16px;
+              border-radius: 20px;
+              font-size: 14px;
+              z-index: 1000;
+              animation: fadeIn 0.3s, fadeOut 0.5s 1s forwards;
+            }
+            
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            
+            @keyframes fadeOut {
+              from { opacity: 1; }
+              to { opacity: 0; }
             }
           `}
         </style>

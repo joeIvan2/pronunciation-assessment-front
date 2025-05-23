@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import * as storage from '../utils/storage';
 import { Tag, Favorite, Word } from '../types/speech';
 import ResizableTextarea from './ResizableTextarea';
+import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
 
-// 後端API URL，從環境變量獲取或使用默認值
-const API_URL = process.env.REACT_APP_AI_PROXY_URL || 'https://pronunciation-ai-server.onrender.com';
+// 後端API URL
+const API_URL = AI_SERVER_URL;
 
 interface AIDataProcessorProps {
   favorites: Favorite[];
