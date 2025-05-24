@@ -527,7 +527,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               const appendBuffer = (chunk: Uint8Array): Promise<void> => {
                 return new Promise((resolve, reject) => {
                   const updateEndHandler = () => {
-                    console.log(`SourceBuffer updateend - 數據塊 ${chunkCount} 處理完成`);
+                    // console.log(`SourceBuffer updateend - 數據塊 ${chunkCount} 處理完成`);
                     resolve();
                   };
                   const errorHandler = (e: any) => {
@@ -539,7 +539,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   sourceBuffer.addEventListener('error', errorHandler, { once: true });
                   
                   try {
-                    console.log(`嘗試添加數據塊 ${chunkCount}，大小: ${chunk.length} 字節`);
+                    // console.log(`嘗試添加數據塊 ${chunkCount}，大小: ${chunk.length} 字節`);
                     sourceBuffer.appendBuffer(chunk);
                   } catch (e) {
                     console.error(`appendBuffer失敗 - 數據塊 ${chunkCount}:`, e);
@@ -566,7 +566,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   while (true) {
                     const { done, value } = await reader.read();
                     consecutiveReads++;
-                    console.log(`強制讀取 #${consecutiveReads} - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
+                    // console.log(`強制讀取 #${consecutiveReads} - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
                     
                     if (done) {
                       console.log(`強制讀取完成，總共讀取 ${consecutiveReads} 次`);
@@ -576,7 +576,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     
                     if (value && value.length > 0) {
                       dataQueue.push(value);
-                      console.log(`數據強制入隊，隊列長度: ${dataQueue.length}`);
+                      // console.log(`數據強制入隊，隊列長度: ${dataQueue.length}`);
                       
                       // 積極讀取：立即繼續循環，無延遲
                       // 瀏覽器兼容的立即執行
@@ -670,7 +670,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   chunkCount++;
                   totalBytesReceived += value.length;
                   chunks.push(value); // 保存到chunks用於緩存
-                  console.log(`處理數據塊 ${chunkCount}，大小: ${value.length} 字節，總計: ${totalBytesReceived} 字節，隊列剩餘: ${dataQueue.length}`);
+                  // console.log(`處理數據塊 ${chunkCount}，大小: ${value.length} 字節，總計: ${totalBytesReceived} 字節，隊列剩餘: ${dataQueue.length}`);
                   
                   // 等待上一次操作完成
                   if (sourceBuffer.updating) {
@@ -689,19 +689,19 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   // 添加數據到 buffer
                   try {
                     await appendBuffer(value);
-                    console.log(`成功添加數據塊 ${chunkCount}`);
+                    // console.log(`成功添加數據塊 ${chunkCount}`);
                     
                     // 每次添加數據塊後都檢查是否可以開始播放和播放狀態
                     const currentBufferedInfo = audio.buffered.length > 0 ? 
                       `start:${audio.buffered.start(0).toFixed(3)}, end:${audio.buffered.end(0).toFixed(3)}` : 
                       "無緩衝";
-                    console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}], 隊列:${dataQueue.length}`);
+                    // console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}], 隊列:${dataQueue.length}`);
                     
                     // 強制積極模式：移除緩衝保護，讓音頻持續播放
                     if (hasStartedPlaying && audio.buffered.length > 0) {
                       const bufferedEnd = audio.buffered.end(0);
                       const remainingBuffer = bufferedEnd - audio.currentTime;
-                      console.log(`強制模式 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}, 持續播放`);
+                      // console.log(`強制模式 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}, 持續播放`);
                       
                       // 不進行任何暫停操作，讓音頻自然播放
                       // 依賴強制讀取確保數據及時到達
@@ -890,16 +890,16 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             if (audio.buffered.length > 0) {
               const bufferedEnd = audio.buffered.end(0);
               const remainingBuffer = bufferedEnd - audio.currentTime;
-              if (remainingBuffer < 0.5 || audio.currentTime % 1 < 0.1) { // 每秒或緩衝不足0.5秒時log
-                console.log(`播放進度 - currentTime:${audio.currentTime.toFixed(3)}, buffered:[${audio.buffered.start(0).toFixed(3)}-${bufferedEnd.toFixed(3)}], 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
-              }
+                                    // if (remainingBuffer < 0.5 || audio.currentTime % 1 < 0.1) { // 每秒或緩衝不足0.5秒時log
+                      //   console.log(`播放進度 - currentTime:${audio.currentTime.toFixed(3)}, buffered:[${audio.buffered.start(0).toFixed(3)}-${bufferedEnd.toFixed(3)}], 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
+                      // }
             }
           });
-          audio.addEventListener('progress', () => {
-            if (audio.buffered.length > 0) {
-              console.log(`緩衝進度 - buffered:[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]`);
-            }
-          });
+                      audio.addEventListener('progress', () => {
+              // if (audio.buffered.length > 0) {
+              //   console.log(`緩衝進度 - buffered:[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]`);
+              // }
+            });
           audio.addEventListener('error', (e) => console.error('Audio error:', e));
         });
       };
@@ -958,7 +958,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               lastDataTime = Date.now();
               chunks.push(value);
               totalBytes += value.length;
-              console.log(`接收到WebM數據塊: ${value.length} 字節，總計: ${totalBytes} 字節`);
+              // console.log(`接收到WebM數據塊: ${value.length} 字節，總計: ${totalBytes} 字節`);
             }
             resolve();
           } catch (err) {
