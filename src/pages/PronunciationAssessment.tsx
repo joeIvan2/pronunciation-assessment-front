@@ -83,6 +83,7 @@ const PronunciationAssessment: React.FC = () => {
   
   // Refs
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
   const processingRef = useRef(false);
   
   // 使用自定義鉤子
@@ -265,9 +266,9 @@ const PronunciationAssessment: React.FC = () => {
       // 切換到發音評分標籤頁
       handleTabChange('input');
       
-      // 聚焦到textarea
-      if (textareaRef.current) {
-        textareaRef.current.focus();
+      // 聚焦到textarea的父容器(避免手機端跳出鍵盤)
+      if (inputContainerRef.current) {
+        inputContainerRef.current.focus();
       }
     }
   };
@@ -1019,7 +1020,7 @@ const PronunciationAssessment: React.FC = () => {
           >
           </h3>
               
-              <div className="integrated-input-container">
+              <div className="integrated-input-container" ref={inputContainerRef} tabIndex={0}>
                 {/* 文本输入区 */}
                 <ResizableTextarea
               ref={textareaRef}

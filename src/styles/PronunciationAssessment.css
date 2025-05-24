@@ -841,6 +841,11 @@ h4 {
   box-shadow: 0 2px 8px var(--ios-shadow);
 }
 
+.integrated-input-container:focus {
+  outline: none;
+  box-shadow: 0 2px 8px var(--ios-shadow), 0 0 0 2px rgba(10, 132, 255, 0.25);
+}
+
 .textarea-toolbar {
   position: absolute;
   right: 10px;
