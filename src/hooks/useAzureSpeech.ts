@@ -492,6 +492,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         console.log("設置audio.src:", audio.src);
         
         return new Promise((resolve, reject) => {
+          let isStreamEnded = false; // 標記數據流是否已結束
+          let wasAutoPaused = false; // 標記是否因緩衝不足被自動暫停
+          
           // 添加超時保護
           const timeoutId = setTimeout(() => {
             console.error("MediaSource初始化超時");
@@ -612,6 +615,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 
                 if (done) {
                   console.log("流數據讀取完成");
+                  isStreamEnded = true; // 標記數據流已結束
                   break;
                 }
                 
@@ -796,6 +800,18 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             if (audio.buffered.length > 0) {
               const bufferedEnd = audio.buffered.end(0);
               const remainingBuffer = bufferedEnd - audio.currentTime;
+              
+              // 動態緩衝管理
+              if (!isStreamEnded && !audio.paused && remainingBuffer < 0.5) {
+                console.log(`⚠️ 緩衝不足自動暫停 - currentTime:${audio.currentTime.toFixed(3)}, 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
+                audio.pause();
+                wasAutoPaused = true;
+              } else if (wasAutoPaused && remainingBuffer > 1.0) {
+                console.log(`✅ 緩衝恢復自動播放 - currentTime:${audio.currentTime.toFixed(3)}, 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
+                audio.play().catch(e => console.warn("自動恢復播放失敗:", e));
+                wasAutoPaused = false;
+              }
+              
               if (remainingBuffer < 0.5 || audio.currentTime % 1 < 0.1) { // 每秒或緩衝不足0.5秒時log
                 console.log(`播放進度 - currentTime:${audio.currentTime.toFixed(3)}, buffered:[${audio.buffered.start(0).toFixed(3)}-${bufferedEnd.toFixed(3)}], 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
               }
