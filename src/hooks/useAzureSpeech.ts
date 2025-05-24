@@ -456,7 +456,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       const hasMediaSource = 'MediaSource' in window && MediaSource.isTypeSupported('audio/webm; codecs="opus"');
       const hasWebAudio = 'AudioContext' in window || 'webkitAudioContext' in window;
       
-      console.log(`瀏覽器支持: MediaSource WebM/Opus=${hasMediaSource}, WebAudio=${hasWebAudio}`);
+      // console.log(`瀏覽器支持: MediaSource WebM/Opus=${hasMediaSource}, WebAudio=${hasWebAudio}`);
       
       // WebM流式播放方法
       const streamWebMSpeech = async (text: string, voice: string = "Puck"): Promise<Response> => {
@@ -485,11 +485,11 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         const mediaSource = new MediaSource();
         const audio = new Audio();
         
-        console.log("創建MediaSource和Audio元素");
+        // console.log("創建MediaSource和Audio元素");
         
         // 將 MediaSource 綁定到 audio 元素
         audio.src = URL.createObjectURL(mediaSource);
-        console.log("設置audio.src:", audio.src);
+        // console.log("設置audio.src:", audio.src);
         
         return new Promise((resolve, reject) => {
           // 添加超時保護
@@ -500,21 +500,21 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           
           // 監聽 MediaSource 開啟事件
           mediaSource.addEventListener('sourceopen', async () => {
-            console.log("MediaSource sourceopen 事件觸發");
+            // console.log("MediaSource sourceopen 事件觸發");
             clearTimeout(timeoutId);
             
             try {
               // 檢查MediaSource狀態
-              console.log("MediaSource readyState:", mediaSource.readyState);
+              // console.log("MediaSource readyState:", mediaSource.readyState);
               
               // 創建 SourceBuffer
               const sourceBuffer = mediaSource.addSourceBuffer('audio/webm; codecs="opus"');
-              console.log("SourceBuffer創建成功");
+              // console.log("SourceBuffer創建成功");
               
               // 發送請求獲取流
-              console.log("開始發送WebM流請求");
+              // console.log("開始發送WebM流請求");
               const response = await streamWebMSpeech(text, voice);
-              console.log("WebM流請求成功，開始讀取數據");
+              // console.log("WebM流請求成功，開始讀取數據");
               
               const reader = response.body!.getReader();
               
@@ -550,7 +550,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 });
               };
               
-              console.log("開始讀取流數據");
+              // console.log("開始讀取流數據");
               
               // 數據隊列：強制積極讀取策略
               const dataQueue: Uint8Array[] = [];
@@ -560,7 +560,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               // 強制積極讀取：無視反壓控制，立即讀取所有可用數據
               const aggressiveReadDataAsync = async () => {
                 try {
-                  console.log("開始強制積極讀取數據流（無反壓控制）");
+                  // console.log("開始強制積極讀取數據流（無反壓控制）");
                   let consecutiveReads = 0;
                   
                   while (true) {
@@ -569,7 +569,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     // console.log(`強制讀取 #${consecutiveReads} - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
                     
                     if (done) {
-                      console.log(`強制讀取完成，總共讀取 ${consecutiveReads} 次`);
+                      // console.log(`強制讀取完成，總共讀取 ${consecutiveReads} 次`);
                       isReadingComplete = true;
                       break;
                     }
@@ -619,27 +619,27 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       console.error("播放失敗:", playError);
                       // 如果是自動播放策略問題，等待用戶交互
                       if (playError.name === 'NotAllowedError') {
-                        console.log("自動播放被阻止，等待用戶交互");
+                        // console.log("自動播放被阻止，等待用戶交互");
                       }
                     }
                   } else {
-                    console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少1秒");
+                    // console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少1秒");
                   }
                 } else {
-                  console.log("音頻還沒準備好，readyState:", audio.readyState, "buffered:", audio.buffered.length);
+                  // console.log("音頻還沒準備好，readyState:", audio.readyState, "buffered:", audio.buffered.length);
                 }
               };
               
               // 監聽音頻準備就緒事件
               audio.addEventListener('canplay', () => {
-                console.log('Audio canplay 事件觸發');
+                // console.log('Audio canplay 事件觸發');
                 if (!hasStartedPlaying) {
                   tryToPlay();
                 }
               }, { once: true });
               
               audio.addEventListener('canplaythrough', () => {
-                console.log('Audio canplaythrough 事件觸發');
+                // console.log('Audio canplaythrough 事件觸發');
                 if (!hasStartedPlaying) {
                   tryToPlay();
                 }
@@ -660,7 +660,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 
                 // 如果隊列空且讀取完成，退出
                 if (dataQueue.length === 0 && isReadingComplete) {
-                  console.log("所有數據強制處理完成");
+                  // console.log("所有數據強制處理完成");
                   break;
                 }
                 
@@ -722,7 +722,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               // 確保強制讀取完成
               await readPromise;
               
-              console.log(`所有數據接收完成，總共 ${chunkCount} 個數據塊，${totalBytesReceived} 字節`);
+              // console.log(`所有數據接收完成，總共 ${chunkCount} 個數據塊，${totalBytesReceived} 字節`);
               
               // 確保所有數據塊都已處理完成
               let retryCount = 0;
@@ -751,26 +751,26 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               
               // 標記流結束 - 更保守的處理
               if (mediaSource.readyState === 'open') {
-                console.log("準備標記MediaSource流結束");
+                // console.log("準備標記MediaSource流結束");
                 
                 // 檢查是否接近音頻結尾，如果是則延遲endOfStream
                 if (audio.buffered.length > 0) {
                   const bufferedEnd = audio.buffered.end(0);
                   const currentTime = audio.currentTime;
                   const remainingTime = bufferedEnd - currentTime;
-                  console.log(`檢查播放狀態 - 當前:${currentTime.toFixed(3)}s, 緩衝結束:${bufferedEnd.toFixed(3)}s, 剩餘:${remainingTime.toFixed(3)}s`);
+                  // console.log(`檢查播放狀態 - 當前:${currentTime.toFixed(3)}s, 緩衝結束:${bufferedEnd.toFixed(3)}s, 剩餘:${remainingTime.toFixed(3)}s`);
                   
                   // 如果播放接近結尾(剩餘<1秒)，延遲endOfStream調用
                   if (remainingTime < 1) {
-                    console.log("播放接近結尾，延遲endOfStream調用避免破音");
+                    // console.log("播放接近結尾，延遲endOfStream調用避免破音");
                     await new Promise(resolve => setTimeout(resolve, 300));
                   }
                 }
                 
                 try {
-                  console.log("標記MediaSource流結束");
+                  // console.log("標記MediaSource流結束");
                   mediaSource.endOfStream();
-                  console.log("endOfStream調用成功");
+                  // console.log("endOfStream調用成功");
                 } catch (endError) {
                   console.warn("endOfStream調用失敗:", endError);
                   // 如果失敗，再等待一下再試
@@ -785,38 +785,38 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     }
                   }
                 }
-              } else {
-                console.log(`MediaSource狀態不是open(${mediaSource.readyState})，跳過endOfStream`);
-              }
-              
-              console.log("WebM流式播放設置完成");
+                              } else {
+                  // console.log(`MediaSource狀態不是open(${mediaSource.readyState})，跳過endOfStream`);
+                }
+                
+                // console.log("WebM流式播放設置完成");
               
               // 如果還沒開始播放，現在嘗試播放
               if (!hasStartedPlaying && audio.paused) {
-                console.log("音頻仍然暫停且未開始播放，嘗試播放");
+                // console.log("音頻仍然暫停且未開始播放，嘗試播放");
                 try {
                   await audio.play();
                   hasStartedPlaying = true;
-                  console.log("延遲播放成功");
+                  // console.log("延遲播放成功");
                 } catch (delayedPlayError) {
                   console.error("延遲播放也失敗:", delayedPlayError);
                 }
               } else if (hasStartedPlaying) {
-                console.log("音頻已開始播放，跳過重複播放");
+                // console.log("音頻已開始播放，跳過重複播放");
               }
               
               // 創建完整的blob用於緩存
               const blob = new Blob(chunks, { type: 'audio/webm; codecs="opus"' });
               const blobUrl = URL.createObjectURL(blob);
               addToMemoryCache(text, voice, blob, blobUrl);
-              console.log("添加到內存緩存完成");
+              // console.log("添加到內存緩存完成");
               
               // 設置播放結束事件
               audio.onended = () => {
                 const bufferedInfo = audio.buffered.length > 0 ? 
                   `[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]` : 
                   "無緩衝";
-                console.log(`WebM音頻播放完成 - currentTime:${audio.currentTime.toFixed(3)}, duration:${audio.duration.toFixed(3)}, buffered:${bufferedInfo}`);
+                // console.log(`WebM音頻播放完成 - currentTime:${audio.currentTime.toFixed(3)}, duration:${audio.duration.toFixed(3)}, buffered:${bufferedInfo}`);
                 audioRef.current = null;
                 // 清理MediaSource URL
                 if (audio.src && audio.src.startsWith('blob:')) {
@@ -861,30 +861,30 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           
           // 添加其他事件監聽
           mediaSource.addEventListener('sourceended', () => {
-            console.log('MediaSource sourceended 事件');
+            // console.log('MediaSource sourceended 事件');
           });
           
           mediaSource.addEventListener('sourceclose', () => {
-            console.log('MediaSource sourceclose 事件');
+            // console.log('MediaSource sourceclose 事件');
           });
           
           // 音頻事件監聽
-          audio.addEventListener('loadstart', () => console.log('Audio loadstart'));
-          audio.addEventListener('loadedmetadata', () => console.log('Audio loadedmetadata'));
-          audio.addEventListener('loadeddata', () => console.log('Audio loadeddata'));
-          audio.addEventListener('canplay', () => console.log('Audio canplay'));
-          audio.addEventListener('canplaythrough', () => console.log('Audio canplaythrough'));
+          // audio.addEventListener('loadstart', () => console.log('Audio loadstart'));
+          // audio.addEventListener('loadedmetadata', () => console.log('Audio loadedmetadata'));
+          // audio.addEventListener('loadeddata', () => console.log('Audio loadeddata'));
+          // audio.addEventListener('canplay', () => console.log('Audio canplay'));
+          // audio.addEventListener('canplaythrough', () => console.log('Audio canplaythrough'));
           audio.addEventListener('playing', () => {
             const bufferedInfo = audio.buffered.length > 0 ? 
               `[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]` : 
               "無緩衝";
-            console.log(`Audio playing - currentTime:${audio.currentTime.toFixed(3)}, buffered:${bufferedInfo}`);
+            // console.log(`Audio playing - currentTime:${audio.currentTime.toFixed(3)}, buffered:${bufferedInfo}`);
           });
           audio.addEventListener('pause', () => {
             const bufferedInfo = audio.buffered.length > 0 ? 
               `[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]` : 
               "無緩衝";
-            console.log(`Audio pause - currentTime:${audio.currentTime.toFixed(3)}, buffered:${bufferedInfo}, ended:${audio.ended}`);
+            // console.log(`Audio pause - currentTime:${audio.currentTime.toFixed(3)}, buffered:${bufferedInfo}, ended:${audio.ended}`);
           });
           audio.addEventListener('timeupdate', () => {
             if (audio.buffered.length > 0) {
@@ -906,10 +906,10 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       
       // 傳統方法：收集所有WebM數據後再播放
       const fallbackToTraditionalMethod = async (): Promise<{ audio: HTMLAudioElement }> => {
-        console.log("使用傳統方法處理WebM音頻流");
+        // console.log("使用傳統方法處理WebM音頻流");
         
         const response = await generateSpeechStream(text, voice);
-        console.log("WebM流式響應狀態:", response.status, response.statusText);
+        // console.log("WebM流式響應狀態:", response.status, response.statusText);
         
         if (!response.body) {
           throw new Error("服務器未返回有效的WebM音頻流");
@@ -938,7 +938,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               const timeoutPromise = new Promise<{ done: true, value: undefined }>((resolveTimeout) => {
                 timeoutId = setTimeout(() => {
                   const timeSinceLastData = Date.now() - lastDataTime;
-                  console.log(`WebM數據接收超時 (${timeSinceLastData}ms 無新數據)，視為傳輸完成`);
+                  // console.log(`WebM數據接收超時 (${timeSinceLastData}ms 無新數據)，視為傳輸完成`);
                   resolveTimeout({ done: true, value: undefined });
                 }, TIMEOUT_MS);
               });
@@ -950,7 +950,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               ]);
               
               if (done) {
-                console.log(`WebM數據流結束，總共接收: ${totalBytes} 字節`);
+                // console.log(`WebM數據流結束，總共接收: ${totalBytes} 字節`);
                 break;
               }
               
@@ -973,7 +973,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         await readAllData;
         
         const downloadTime = Date.now() - startTime;
-        console.log(`總共接收: ${totalBytes} 字節的WebM音頻數據，耗時: ${downloadTime}ms`);
+        // console.log(`總共接收: ${totalBytes} 字節的WebM音頻數據，耗時: ${downloadTime}ms`);
         
         if (totalBytes === 0) {
           throw new Error("服務器返回了空的WebM音頻數據");
@@ -1001,7 +1001,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         const serverUrl = response.headers.get('x-audio-url') || '';
         if (serverUrl) {
           addTTSCacheItem(text, voice, serverUrl);
-          console.log("將服務器WebM音頻URL添加到localStorage:", serverUrl);
+          // console.log("將服務器WebM音頻URL添加到localStorage:", serverUrl);
         } else {
           // 如果沒有服務器URL，使用blob URL（雖然會在頁面刷新後失效）
           addTTSCacheItem(text, voice, audioUrl);
@@ -1009,7 +1009,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         
         // 設置音頻就緒事件 - 加強緩衝檢查
         traditionalAudio.oncanplaythrough = async () => {
-          console.log("WebM音頻數據就緒，準備播放");
+          // console.log("WebM音頻數據就緒，準備播放");
           
           // 額外等待確保音頻完全解碼
           await new Promise(resolve => setTimeout(resolve, 200));
@@ -1018,11 +1018,11 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           if (traditionalAudio.buffered.length > 0) {
             const bufferedEnd = traditionalAudio.buffered.end(0);
             const duration = traditionalAudio.duration || 0;
-            console.log(`緩衝檢查: buffered=${bufferedEnd.toFixed(3)}s, duration=${duration.toFixed(3)}s, 完整度=${((bufferedEnd/duration)*100).toFixed(1)}%`);
+            // console.log(`緩衝檢查: buffered=${bufferedEnd.toFixed(3)}s, duration=${duration.toFixed(3)}s, 完整度=${((bufferedEnd/duration)*100).toFixed(1)}%`);
             
             // 確保至少90%的音頻已緩衝
             if (duration > 0 && bufferedEnd >= duration * 0.9) {
-              console.log("音頻緩衝充足，開始播放");
+              // console.log("音頻緩衝充足，開始播放");
             } else {
               console.warn("音頻緩衝不足，等待更多數據");
               await new Promise(resolve => setTimeout(resolve, 300));
@@ -1030,12 +1030,12 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           }
           
           const processingTime = Date.now() - startTime - downloadTime;
-          console.log(`WebM音頻處理時間: ${processingTime}ms`);
+          // console.log(`WebM音頻處理時間: ${processingTime}ms`);
           
           try {
             const playStartTime = Date.now();
             await traditionalAudio.play();
-            console.log(`WebM播放開始，從請求到播放總延遲: ${Date.now() - startTime}ms`);
+            // console.log(`WebM播放開始，從請求到播放總延遲: ${Date.now() - startTime}ms`);
           } catch (playError) {
             console.error("WebM播放失敗:", playError);
           }
@@ -1043,7 +1043,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         
         // 播放完成后只清理引用
         traditionalAudio.onended = () => {
-          console.log("WebM音頻播放完成");
+          // console.log("WebM音頻播放完成");
           audioRef.current = null;
         };
         

@@ -97,6 +97,9 @@ const PronunciationAssessment: React.FC = () => {
   const [streamLoading, setStreamLoading] = useState<boolean>(false);
   const [cacheTipVisible, setCacheTipVisible] = useState<boolean>(false);
   
+  // 控制評分按鈕CSS延遲變化的狀態
+  const [buttonStyleDelayed, setButtonStyleDelayed] = useState<boolean>(false);
+  
   // 處理錄音評估
   const processPronunciationAssessment = useCallback(async () => {
     if (!recorder.audioData || processingRef.current) return;
@@ -131,6 +134,7 @@ const PronunciationAssessment: React.FC = () => {
       setIsLoading(false);
       processingRef.current = false;
       recorder.resetRecording();
+      setButtonStyleDelayed(false); // 重置按鈕樣式狀態
     }
   }, [recorder, backendSpeech, referenceText, strictMode, useBackend, setIsLoading, setResult, setError, setUseBackend]);
   
@@ -716,6 +720,11 @@ const PronunciationAssessment: React.FC = () => {
       setResult(null);
       setIsAssessing(true);
       
+      // 延遲0.5秒後改變按鈕CSS樣式
+      setTimeout(() => {
+        setButtonStyleDelayed(true);
+      }, 500);
+      
       if (useBackend) {
         // 使用後端API
         await recorder.startRecording();
@@ -747,6 +756,7 @@ const PronunciationAssessment: React.FC = () => {
       if (!useBackend) {
         setIsAssessing(false);
         setIsLoading(false);
+        setButtonStyleDelayed(false); // 重置按鈕樣式狀態
       }
     }
   };
@@ -764,6 +774,7 @@ const PronunciationAssessment: React.FC = () => {
     
     azureSpeech.cancelAzureSpeech();
     setIsAssessing(false);
+    setButtonStyleDelayed(false); // 重置按鈕樣式狀態
   };
   
   // 統一的文本轉語音入口
@@ -1060,10 +1071,10 @@ const PronunciationAssessment: React.FC = () => {
             <button
               onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
               disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
-                    className={`btn ${isAssessing || recorder.recording ? "btn-danger" : "btn-primary"} btn-flex-1-5`}
+                    className={`btn ${(isAssessing || recorder.recording) && buttonStyleDelayed ? "btn-danger" : "btn-primary"} btn-flex-1-5`}
             >
                     <i className="fas fa-microphone mic-icon-margin"></i>
-              {isAssessing || recorder.recording
+              {(isAssessing || recorder.recording) && buttonStyleDelayed
                 ? "停止錄音"
                 : isLoading
                 ? "處理中..."
