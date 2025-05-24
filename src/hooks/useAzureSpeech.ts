@@ -588,12 +588,16 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               // 監聽音頻準備就緒事件
               audio.addEventListener('canplay', () => {
                 console.log('Audio canplay 事件觸發');
-                tryToPlay();
+                if (!hasStartedPlaying) {
+                  tryToPlay();
+                }
               }, { once: true });
               
               audio.addEventListener('canplaythrough', () => {
                 console.log('Audio canplaythrough 事件觸發');
-                tryToPlay();
+                if (!hasStartedPlaying) {
+                  tryToPlay();
+                }
               }, { once: true });
               
               // 讀取並處理數據流
@@ -684,14 +688,17 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               console.log("WebM流式播放設置完成");
               
               // 如果還沒開始播放，現在嘗試播放
-              if (audio.paused) {
-                console.log("音頻仍然暫停，嘗試播放");
+              if (!hasStartedPlaying && audio.paused) {
+                console.log("音頻仍然暫停且未開始播放，嘗試播放");
                 try {
                   await audio.play();
+                  hasStartedPlaying = true;
                   console.log("延遲播放成功");
                 } catch (delayedPlayError) {
                   console.error("延遲播放也失敗:", delayedPlayError);
                 }
+              } else if (hasStartedPlaying) {
+                console.log("音頻已開始播放，跳過重複播放");
               }
               
               // 創建完整的blob用於緩存
