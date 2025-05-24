@@ -552,6 +552,40 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               
               console.log("開始讀取流數據");
               
+              // 數據隊列：並行讀取和處理
+              const dataQueue: Uint8Array[] = [];
+              let isReadingComplete = false;
+              let readError: Error | null = null;
+              
+              // 並行讀取流程：持續讀取數據到隊列
+              const readDataAsync = async () => {
+                try {
+                  console.log("開始並行讀取數據流");
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    console.log(`並行讀取 - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
+                    
+                    if (done) {
+                      console.log("並行讀取完成");
+                      isReadingComplete = true;
+                      break;
+                    }
+                    
+                    if (value && value.length > 0) {
+                      dataQueue.push(value);
+                      console.log(`數據入隊，隊列長度: ${dataQueue.length}, 總待處理數據塊`);
+                    }
+                  }
+                } catch (error) {
+                  console.error("並行讀取發生錯誤:", error);
+                  readError = error as Error;
+                  isReadingComplete = true;
+                }
+              };
+              
+              // 啟動並行讀取（不等待）
+              const readPromise = readDataAsync();
+              
               // 嘗試播放的函數
               const tryToPlay = async () => {
                 if (hasStartedPlaying) return;
@@ -605,21 +639,32 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 }
               }, { once: true });
               
-              // 讀取並處理數據流
+              // 並行處理數據流：從隊列取數據處理
               while (true) {
-                const { done, value } = await reader.read();
-                console.log(`讀取流數據 - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
+                // 等待有數據或讀取完成
+                while (dataQueue.length === 0 && !isReadingComplete) {
+                  console.log("等待數據到達隊列...");
+                  await new Promise(resolve => setTimeout(resolve, 10)); // 短暫等待
+                }
                 
-                if (done) {
-                  console.log("流數據讀取完成");
+                // 檢查是否有錯誤
+                if (readError) {
+                  throw readError;
+                }
+                
+                // 如果隊列空且讀取完成，退出
+                if (dataQueue.length === 0 && isReadingComplete) {
+                  console.log("所有數據處理完成");
                   break;
                 }
                 
-                if (value && value.length > 0) {
+                // 從隊列取出數據處理
+                if (dataQueue.length > 0) {
+                  const value = dataQueue.shift()!;
                   chunkCount++;
                   totalBytesReceived += value.length;
                   chunks.push(value); // 保存到chunks用於緩存
-                  console.log(`接收到數據塊 ${chunkCount}，大小: ${value.length} 字節，總計: ${totalBytesReceived} 字節`);
+                  console.log(`處理數據塊 ${chunkCount}，大小: ${value.length} 字節，總計: ${totalBytesReceived} 字節，隊列剩餘: ${dataQueue.length}`);
                   
                   // 等待上一次操作完成
                   if (sourceBuffer.updating) {
@@ -644,17 +689,18 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     const currentBufferedInfo = audio.buffered.length > 0 ? 
                       `start:${audio.buffered.start(0).toFixed(3)}, end:${audio.buffered.end(0).toFixed(3)}` : 
                       "無緩衝";
-                    console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}]`);
+                    console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}], 隊列:${dataQueue.length}`);
                     
                     // 檢查緩衝狀況，如果剩餘緩衝太少且還有更多數據要來，暫停播放等待
                     if (hasStartedPlaying && !audio.paused && audio.buffered.length > 0) {
                       const bufferedEnd = audio.buffered.end(0);
                       const remainingBuffer = bufferedEnd - audio.currentTime;
-                      console.log(`緩衝檢查 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 數據塊:${chunkCount}/${chunkCount}`);
+                      const hasMoreData = dataQueue.length > 0 || !isReadingComplete;
+                      console.log(`緩衝檢查 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}`);
                       
-                      // 如果剩餘緩衝少於0.5秒，預防性暫停
-                      if (remainingBuffer < 0.5) {
-                        console.log("剩餘緩衝不足0.5秒，預防性暫停等待更多數據");
+                      // 如果剩餘緩衝少於0.5秒且還有更多數據，預防性暫停
+                      if (remainingBuffer < 0.5 && hasMoreData) {
+                        console.log("剩餘緩衝不足0.5秒且還有更多數據，預防性暫停等待");
                         audio.pause();
                         // 標記需要恢復播放
                         (audio as any)._needsResume = true;
@@ -687,6 +733,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   }
                 }
               }
+              
+              // 確保並行讀取完成
+              await readPromise;
               
               console.log(`所有數據接收完成，總共 ${chunkCount} 個數據塊，${totalBytesReceived} 字節`);
               
