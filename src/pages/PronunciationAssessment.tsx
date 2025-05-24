@@ -780,21 +780,21 @@ const PronunciationAssessment: React.FC = () => {
       // 使用Azure直連模式時，使用AI服務器API
       if (!useBackend) {
         try {
-          // 在Azure直連模式下，總是使用流式API
+          // 在Azure直連模式下，使用WebM/Opus格式的流式TTS API
           setStreamLoading(true);
           const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice)
             .catch((err) => {
-              console.error('流式TTS失敗，嘗試標準TTS:', err);
-              // 如果流式失敗，嘗試標準TTS API
+              console.error('WebM流式TTS失敗，嘗試標準TTS:', err);
+              // 如果WebM流式失敗，嘗試標準TTS API
               return azureSpeech.speakWithAIServer(referenceText, selectedAIVoice)
                 .then(res => ({ audio: new Audio(), fromCache: res.fromCache }));
             });
             
           setStreamLoading(false);
-          console.log("TTS已完成", result);
+          console.log("WebM TTS已完成", result);
           return;
         } catch (err) {
-          console.warn('AI服務器TTS完全失敗，嘗試瀏覽器API:', err);
+          console.warn('AI服務器WebM TTS完全失敗，嘗試瀏覽器API:', err);
           // 所有AI服務器方法都失敗，回退到瀏覽器API
           if ('speechSynthesis' in window) {
             speakTextWithBrowserAPI();

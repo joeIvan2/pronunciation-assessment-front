@@ -420,180 +420,361 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     text: string,
     voice: string = "Puck"
   ): Promise<{ audio: HTMLAudioElement }> => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    
     try {
-      if (!text) {
-        throw new Error("請先輸入要發音的文字！");
-      }
-      
-      setState({ isLoading: true, error: null });
-      
-      // 停止之前的音頻播放
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      
-      // 關閉上一個音頻上下文
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        try {
-          await audioContextRef.current.close();
-        } catch (e) {
-          console.warn("關閉上一個音頻上下文失敗:", e);
-        }
-        audioContextRef.current = null;
-      }
-      
-      // 首先檢查內存緩存
-      const memoryCachedItem = getMemoryCacheItem(text, voice);
-      if (memoryCachedItem) {
-        console.log("使用內存緩存的音頻:", text.substring(0, 20) + "...", voice);
+      // 檢查內存緩存
+      const cached = getMemoryCacheItem(text, voice);
+      if (cached && cached.blob) {
+        console.log("從內存緩存播放");
         
-        try {
-          if (memoryCachedItem.url) {
-            // 使用緩存的URL直接播放
-            const audio = new Audio(memoryCachedItem.url);
-            audioRef.current = audio;
-            
-            // 播放完成后清理引用
-            audio.onended = () => {
-              audioRef.current = null;
-            };
-            
-            // 預加載
-            audio.preload = "auto";
-            
-            // 設置音頻就緒事件
-            audio.oncanplaythrough = async () => {
-              try {
-                await audio.play();
-                console.log("從內存緩存成功播放音頻");
-              } catch (playError) {
-                console.error("播放緩存音頻失敗:", playError);
-              }
-            };
-            
-            // 觸發加載
-            audio.load();
-            
-            setState(prev => ({ ...prev, isLoading: false }));
-            return { audio };
-          } 
-          else if (memoryCachedItem.blob) {
-            // 從blob創建URL
-            const audioUrl = URL.createObjectURL(memoryCachedItem.blob);
-            
-            // 更新緩存項的URL
-            memoryCachedItem.url = audioUrl;
-            
-            const audio = new Audio(audioUrl);
-            audioRef.current = audio;
-            
-            // 播放完成后清理引用
-            audio.onended = () => {
-              audioRef.current = null;
-            };
-            
-            // 預加載
-            audio.preload = "auto";
-            
-            // 設置音頻就緒事件
-            audio.oncanplaythrough = async () => {
-              try {
-                await audio.play();
-                console.log("從內存緩存的blob創建URL並播放成功");
-              } catch (playError) {
-                console.error("播放緩存blob失敗:", playError);
-              }
-            };
-            
-            // 觸發加載
-            audio.load();
-            
-            setState(prev => ({ ...prev, isLoading: false }));
-            return { audio };
-          }
-        } catch (playError) {
-          console.warn("播放內存緩存音頻失敗:", playError);
-          // 失敗後將嘗試其他方式
-        }
-      }
-      
-      // 檢查localStorage緩存
-      const cachedItem = getTTSCacheItem(text, voice);
-      
-      // 嘗試使用localStorage緩存
-      if (cachedItem && cachedItem.audioUrl) {
-        console.log("嘗試使用localStorage緩存音頻URL:", cachedItem.text.substring(0, 20) + "...", cachedItem.voice);
+        const audio = new Audio();
+        audioRef.current = audio;
+        audio.src = cached.url || URL.createObjectURL(cached.blob);
+        audio.preload = "auto";
         
-        try {
-          // 檢查是否為有效的URL
-          if (cachedItem.audioUrl.startsWith('http') || 
-              cachedItem.audioUrl.startsWith('/')) {
-              
-            // 創建完整的音頻URL
-            const fullAudioUrl = cachedItem.audioUrl.startsWith('http') 
-              ? cachedItem.audioUrl 
-              : `${AI_SERVER_URL}${cachedItem.audioUrl}`;
-            
-            // 測試URL是否有效
-            const testRequest = await fetch(fullAudioUrl, { method: 'HEAD' }).catch(() => null);
-            if (testRequest && testRequest.ok) {
-              // 播放缓存的音频
-              const audio = new Audio(fullAudioUrl);
-              audioRef.current = audio;
-              
-              // 播放完成后清理
-              audio.onended = () => {
-                audioRef.current = null;
-              };
-              
-              // 預加載
-              audio.preload = "auto";
-              
-              // 設置音頻就緒事件
-              audio.oncanplaythrough = async () => {
-                try {
-                  await audio.play();
-                  console.log("從localStorage緩存成功播放音頻");
-                } catch (playError) {
-                  console.error("播放緩存音頻失敗:", playError);
-                }
-              };
-              
-              // 觸發加載
-              audio.load();
-              
-              // 同時將此URL添加到內存緩存
-              addToMemoryCache(text, voice, undefined, fullAudioUrl);
-              
-              setState(prev => ({ ...prev, isLoading: false }));
-              return { audio };
-            } else {
-              console.log("localStorage緩存的URL無效，將重新請求");
-              // URL無效，繼續執行後續代碼請求新音頻
-            }
+        audio.oncanplaythrough = async () => {
+          try {
+            await audio.play();
+            console.log("緩存音頻播放成功");
+          } catch (playError) {
+            console.error("緩存音頻播放失敗:", playError);
           }
-        } catch (playError) {
-          console.log("播放localStorage緩存音頻失敗，將重新請求:", playError);
-          // 播放失敗，繼續執行後續代碼請求新音頻
-        }
+        };
+        
+        audio.onended = () => {
+          console.log("緩存音頻播放完成");
+          audioRef.current = null;
+        };
+        
+        audio.load();
+        setState(prev => ({ ...prev, isLoading: false }));
+        return { audio };
       }
       
-      // 檢查瀏覽器音頻支持情況
+      // 檢查瀏覽器WebM/Opus支持情況
       const hasMediaSource = 'MediaSource' in window && MediaSource.isTypeSupported('audio/webm; codecs="opus"');
       const hasWebAudio = 'AudioContext' in window || 'webkitAudioContext' in window;
       
-      console.log(`瀏覽器支持: MediaSource=${hasMediaSource}, WebAudio=${hasWebAudio}`);
+      console.log(`瀏覽器支持: MediaSource WebM/Opus=${hasMediaSource}, WebAudio=${hasWebAudio}`);
       
-      // 傳統方法：收集所有數據後再播放
+      // WebM流式播放方法
+      const streamWebMSpeech = async (text: string, voice: string = "Puck"): Promise<Response> => {
+        const response = await fetch(`${AI_SERVER_URL}/generate-speech-stream-webm`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            voice: voice,
+            languageCode: "en-US"
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('WebM流式請求失敗: ' + response.status);
+        }
+        
+        return response;
+      };
+      
+      // 使用MediaSource API播放WebM流
+      const playStreamingWebMAudio = async (text: string, voice: string): Promise<HTMLAudioElement> => {
+        // 創建 MediaSource 對象
+        const mediaSource = new MediaSource();
+        const audio = new Audio();
+        
+        console.log("創建MediaSource和Audio元素");
+        
+        // 將 MediaSource 綁定到 audio 元素
+        audio.src = URL.createObjectURL(mediaSource);
+        console.log("設置audio.src:", audio.src);
+        
+        return new Promise((resolve, reject) => {
+          // 添加超時保護
+          const timeoutId = setTimeout(() => {
+            console.error("MediaSource初始化超時");
+            reject(new Error("MediaSource初始化超時"));
+          }, 10000); // 10秒超時
+          
+          // 監聽 MediaSource 開啟事件
+          mediaSource.addEventListener('sourceopen', async () => {
+            console.log("MediaSource sourceopen 事件觸發");
+            clearTimeout(timeoutId);
+            
+            try {
+              // 檢查MediaSource狀態
+              console.log("MediaSource readyState:", mediaSource.readyState);
+              
+              // 創建 SourceBuffer
+              const sourceBuffer = mediaSource.addSourceBuffer('audio/webm; codecs="opus"');
+              console.log("SourceBuffer創建成功");
+              
+              // 發送請求獲取流
+              console.log("開始發送WebM流請求");
+              const response = await streamWebMSpeech(text, voice);
+              console.log("WebM流請求成功，開始讀取數據");
+              
+              const reader = response.body!.getReader();
+              
+              let hasStartedPlaying = false;
+              let totalBytesReceived = 0;
+              let chunkCount = 0;
+              const chunks: Uint8Array[] = [];
+              
+              // 處理音頻數據塊的函數
+              const appendBuffer = (chunk: Uint8Array): Promise<void> => {
+                return new Promise((resolve, reject) => {
+                  const updateEndHandler = () => {
+                    console.log(`SourceBuffer updateend - 數據塊 ${chunkCount} 處理完成`);
+                    resolve();
+                  };
+                  const errorHandler = (e: any) => {
+                    console.error(`SourceBuffer error - 數據塊 ${chunkCount}:`, e);
+                    reject(e);
+                  };
+                  
+                  sourceBuffer.addEventListener('updateend', updateEndHandler, { once: true });
+                  sourceBuffer.addEventListener('error', errorHandler, { once: true });
+                  
+                  try {
+                    console.log(`嘗試添加數據塊 ${chunkCount}，大小: ${chunk.length} 字節`);
+                    sourceBuffer.appendBuffer(chunk);
+                  } catch (e) {
+                    console.error(`appendBuffer失敗 - 數據塊 ${chunkCount}:`, e);
+                    sourceBuffer.removeEventListener('updateend', updateEndHandler);
+                    sourceBuffer.removeEventListener('error', errorHandler);
+                    reject(e);
+                  }
+                });
+              };
+              
+              console.log("開始讀取流數據");
+              
+              // 嘗試播放的函數
+              const tryToPlay = async () => {
+                if (hasStartedPlaying) return;
+                
+                console.log("嘗試播放 - readyState:", audio.readyState, "buffered:", audio.buffered.length);
+                
+                // 檢查是否有足夠的緩衝數據，並且確保有足夠的緩衝時間
+                if (audio.readyState >= 3 && audio.buffered.length > 0) { // HAVE_FUTURE_DATA或更高
+                  const bufferedEnd = audio.buffered.end(0);
+                  console.log("音頻緩衝時間:", bufferedEnd, "秒");
+                  
+                  // 確保至少有2秒的緩衝時間再開始播放
+                  if (bufferedEnd >= 2.0) {
+                    console.log("音頻準備就緒且有足夠緩衝，開始播放");
+                    try {
+                      await audio.play();
+                      hasStartedPlaying = true;
+                      console.log("WebM流式播放開始成功！");
+                    } catch (playError) {
+                      console.error("播放失敗:", playError);
+                      // 如果是自動播放策略問題，等待用戶交互
+                      if (playError.name === 'NotAllowedError') {
+                        console.log("自動播放被阻止，等待用戶交互");
+                      }
+                    }
+                  } else {
+                    console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少2秒");
+                  }
+                } else {
+                  console.log("音頻還沒準備好，readyState:", audio.readyState, "buffered:", audio.buffered.length);
+                }
+              };
+              
+              // 監聽音頻準備就緒事件
+              audio.addEventListener('canplay', () => {
+                console.log('Audio canplay 事件觸發');
+                tryToPlay();
+              }, { once: true });
+              
+              audio.addEventListener('canplaythrough', () => {
+                console.log('Audio canplaythrough 事件觸發');
+                tryToPlay();
+              }, { once: true });
+              
+              // 讀取並處理數據流
+              while (true) {
+                const { done, value } = await reader.read();
+                console.log(`讀取流數據 - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
+                
+                if (done) {
+                  console.log("流數據讀取完成");
+                  break;
+                }
+                
+                if (value && value.length > 0) {
+                  chunkCount++;
+                  totalBytesReceived += value.length;
+                  chunks.push(value); // 保存到chunks用於緩存
+                  console.log(`接收到數據塊 ${chunkCount}，大小: ${value.length} 字節，總計: ${totalBytesReceived} 字節`);
+                  
+                  // 等待上一次操作完成
+                  if (sourceBuffer.updating) {
+                    console.log("等待上一次SourceBuffer操作完成");
+                    await new Promise(resolve => {
+                      sourceBuffer.addEventListener('updateend', resolve, { once: true });
+                    });
+                  }
+                  
+                  // 檢查MediaSource狀態
+                  if (mediaSource.readyState !== 'open') {
+                    console.error("MediaSource不再開放，狀態:", mediaSource.readyState);
+                    break;
+                  }
+                  
+                  // 添加數據到 buffer
+                  try {
+                    await appendBuffer(value);
+                    console.log(`成功添加數據塊 ${chunkCount}`);
+                    
+                    // 在接收到足夠數據後嘗試播放，但不要太早開始
+                    if (!hasStartedPlaying && totalBytesReceived > 65536) { // 提高到64KB
+                      console.log("接收到足夠數據，嘗試播放");
+                      await tryToPlay();
+                    }
+                    
+                  } catch (bufferError) {
+                    console.error(`添加數據塊 ${chunkCount} 失敗:`, bufferError);
+                    throw bufferError;
+                  }
+                }
+              }
+              
+              console.log(`所有數據接收完成，總共 ${chunkCount} 個數據塊，${totalBytesReceived} 字節`);
+              
+              // 確保所有數據塊都已處理完成
+              let retryCount = 0;
+              const maxRetries = 50; // 最多等待5秒
+              while (sourceBuffer.updating && retryCount < maxRetries) {
+                console.log(`等待SourceBuffer完成處理，重試 ${retryCount + 1}/${maxRetries}`);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                retryCount++;
+              }
+              
+              if (sourceBuffer.updating) {
+                console.warn("SourceBuffer仍在更新，但已達到最大等待時間");
+              }
+              
+              // 額外等待一小段時間確保處理完成
+              await new Promise(resolve => setTimeout(resolve, 200));
+              
+              // 標記流結束
+              if (mediaSource.readyState === 'open') {
+                console.log("標記MediaSource流結束");
+                try {
+                  mediaSource.endOfStream();
+                } catch (endError) {
+                  console.warn("endOfStream調用失敗:", endError);
+                  // 如果失敗，再等待一下再試
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                  if (mediaSource.readyState === 'open') {
+                    try {
+                      mediaSource.endOfStream();
+                    } catch (retryError) {
+                      console.error("重試endOfStream也失敗:", retryError);
+                    }
+                  }
+                }
+              }
+              
+              console.log("WebM流式播放設置完成");
+              
+              // 如果還沒開始播放，現在嘗試播放
+              if (audio.paused) {
+                console.log("音頻仍然暫停，嘗試播放");
+                try {
+                  await audio.play();
+                  console.log("延遲播放成功");
+                } catch (delayedPlayError) {
+                  console.error("延遲播放也失敗:", delayedPlayError);
+                }
+              }
+              
+              // 創建完整的blob用於緩存
+              const blob = new Blob(chunks, { type: 'audio/webm; codecs="opus"' });
+              const blobUrl = URL.createObjectURL(blob);
+              addToMemoryCache(text, voice, blob, blobUrl);
+              console.log("添加到內存緩存完成");
+              
+              // 設置播放結束事件
+              audio.onended = () => {
+                console.log("WebM音頻播放完成");
+                audioRef.current = null;
+                // 清理MediaSource URL
+                if (audio.src && audio.src.startsWith('blob:')) {
+                  URL.revokeObjectURL(audio.src);
+                }
+              };
+              
+              // 設置錯誤處理
+              audio.onerror = (error) => {
+                console.error("音頻播放錯誤:", error);
+                if (mediaSource.readyState === 'open') {
+                  try {
+                    mediaSource.endOfStream('decode');
+                  } catch (e) {
+                    console.warn("錯誤時endOfStream失敗:", e);
+                  }
+                }
+              };
+              
+              resolve(audio);
+              
+            } catch (error) {
+              console.error('WebM流式播放錯誤:', error);
+              clearTimeout(timeoutId);
+              if (mediaSource.readyState === 'open') {
+                try {
+                  mediaSource.endOfStream('decode');
+                } catch (e) {
+                  console.warn("endOfStream('decode')失敗:", e);
+                }
+              }
+              reject(error);
+            }
+          });
+          
+          // MediaSource錯誤處理
+          mediaSource.addEventListener('error', (event) => {
+            console.error('MediaSource錯誤事件:', event);
+            clearTimeout(timeoutId);
+            reject(new Error('MediaSource錯誤'));
+          });
+          
+          // 添加其他事件監聽
+          mediaSource.addEventListener('sourceended', () => {
+            console.log('MediaSource sourceended 事件');
+          });
+          
+          mediaSource.addEventListener('sourceclose', () => {
+            console.log('MediaSource sourceclose 事件');
+          });
+          
+          // 音頻事件監聽
+          audio.addEventListener('loadstart', () => console.log('Audio loadstart'));
+          audio.addEventListener('loadedmetadata', () => console.log('Audio loadedmetadata'));
+          audio.addEventListener('loadeddata', () => console.log('Audio loadeddata'));
+          audio.addEventListener('canplay', () => console.log('Audio canplay'));
+          audio.addEventListener('canplaythrough', () => console.log('Audio canplaythrough'));
+          audio.addEventListener('playing', () => console.log('Audio playing'));
+          audio.addEventListener('pause', () => console.log('Audio pause'));
+          audio.addEventListener('error', (e) => console.error('Audio error:', e));
+        });
+      };
+      
+      // 傳統方法：收集所有WebM數據後再播放
       const fallbackToTraditionalMethod = async (): Promise<{ audio: HTMLAudioElement }> => {
-        console.log("使用傳統方法處理音頻流");
+        console.log("使用傳統方法處理WebM音頻流");
         
         const response = await generateSpeechStream(text, voice);
-        console.log("流式響應狀態:", response.status, response.statusText);
+        console.log("WebM流式響應狀態:", response.status, response.statusText);
         
         if (!response.body) {
-          throw new Error("服務器未返回有效的音頻流");
+          throw new Error("服務器未返回有效的WebM音頻流");
         }
         
         // 獲取流讀取器
@@ -619,7 +800,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               const timeoutPromise = new Promise<{ done: true, value: undefined }>((resolveTimeout) => {
                 timeoutId = setTimeout(() => {
                   const timeSinceLastData = Date.now() - lastDataTime;
-                  console.log(`數據接收超時 (${timeSinceLastData}ms 無新數據)，視為傳輸完成`);
+                  console.log(`WebM數據接收超時 (${timeSinceLastData}ms 無新數據)，視為傳輸完成`);
                   resolveTimeout({ done: true, value: undefined });
                 }, TIMEOUT_MS);
               });
@@ -631,7 +812,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               ]);
               
               if (done) {
-                console.log(`數據流結束，總共接收: ${totalBytes} 字節`);
+                console.log(`WebM數據流結束，總共接收: ${totalBytes} 字節`);
                 break;
               }
               
@@ -639,11 +820,11 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               lastDataTime = Date.now();
               chunks.push(value);
               totalBytes += value.length;
-              console.log(`接收到數據塊: ${value.length} 字節，總計: ${totalBytes} 字節`);
+              console.log(`接收到WebM數據塊: ${value.length} 字節，總計: ${totalBytes} 字節`);
             }
             resolve();
           } catch (err) {
-            console.error("讀取流數據時發生錯誤:", err);
+            console.error("讀取WebM流數據時發生錯誤:", err);
             reject(err);
           } finally {
             if (timeoutId) clearTimeout(timeoutId);
@@ -654,22 +835,14 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         await readAllData;
         
         const downloadTime = Date.now() - startTime;
-        console.log(`總共接收: ${totalBytes} 字節的音頻數據，耗時: ${downloadTime}ms`);
+        console.log(`總共接收: ${totalBytes} 字節的WebM音頻數據，耗時: ${downloadTime}ms`);
         
         if (totalBytes === 0) {
-          throw new Error("服務器返回了空的音頻數據");
+          throw new Error("服務器返回了空的WebM音頻數據");
         }
         
-        // 根據服務器響應頭確定正確的MIME類型
-        let mimeType = 'audio/wav'; // 默認值
-        const contentType = response.headers.get('content-type');
-        if (contentType) {
-          mimeType = contentType;
-          console.log(`使用服務器提供的MIME類型: ${mimeType}`);
-        }
-        
-        // 創建 Blob 及其 URL
-        const blob = new Blob(chunks, { type: mimeType });
+        // 創建WebM Blob及其URL
+        const blob = new Blob(chunks, { type: 'audio/webm; codecs="opus"' });
         const audioUrl = URL.createObjectURL(blob);
         
         // 創建新的音頻元素
@@ -686,7 +859,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         const serverUrl = response.headers.get('x-audio-url') || '';
         if (serverUrl) {
           addTTSCacheItem(text, voice, serverUrl);
-          console.log("將服務器音頻URL添加到localStorage:", serverUrl);
+          console.log("將服務器WebM音頻URL添加到localStorage:", serverUrl);
         } else {
           // 如果沒有服務器URL，使用blob URL（雖然會在頁面刷新後失效）
           addTTSCacheItem(text, voice, audioUrl);
@@ -694,23 +867,23 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         
         // 設置音頻就緒事件
         traditionalAudio.oncanplaythrough = async () => {
-          console.log("音頻數據就緒，準備播放");
+          console.log("WebM音頻數據就緒，準備播放");
           
           const processingTime = Date.now() - startTime - downloadTime;
-          console.log(`音頻處理時間: ${processingTime}ms`);
+          console.log(`WebM音頻處理時間: ${processingTime}ms`);
           
           try {
             const playStartTime = Date.now();
             await traditionalAudio.play();
-            console.log(`播放開始，從請求到播放總延遲: ${Date.now() - startTime}ms`);
+            console.log(`WebM播放開始，從請求到播放總延遲: ${Date.now() - startTime}ms`);
           } catch (playError) {
-            console.error("播放失敗:", playError);
+            console.error("WebM播放失敗:", playError);
           }
         };
         
         // 播放完成后只清理引用
         traditionalAudio.onended = () => {
-          console.log("音頻播放完成");
+          console.log("WebM音頻播放完成");
           audioRef.current = null;
         };
         
@@ -725,332 +898,33 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       const audio = new Audio();
       audioRef.current = audio;
       
-      // 嘗試使用 MediaSource API 實現真正的流式播放
+      // 嘗試使用 MediaSource API 實現真正的WebM流式播放
       if (hasMediaSource) {
         try {
-          const mediaSource = new MediaSource();
-          audio.src = URL.createObjectURL(mediaSource);
-          
-          // 當 MediaSource 就緒時添加 SourceBuffer
-          mediaSource.addEventListener('sourceopen', async () => {
-            try {
-              console.log("嘗試直接流式播放 (MediaSource)");
-              // 發起請求
-              const response = await generateSpeechStream(text, voice);
-              
-              if (!response.ok) {
-                throw new Error(`請求失敗: ${response.status}`);
-              }
-              
-              // 獲取MIME類型
-              const contentType = response.headers.get('content-type') || 'audio/wav';
-              console.log(`收到的內容類型: ${contentType}`);
-              
-              // 不同瀏覽器支持的音頻格式不同
-              // MediaSource API 通常只支持 MP4 和 WebM 容器格式
-              const mimeCodec = contentType.includes('mp4') ? 'audio/mp4; codecs="mp4a.40.2"' : 
-                               contentType.includes('webm') ? 'audio/webm; codecs="opus"' : 
-                               'audio/webm; codecs="vorbis"';  // 嘗試一個通用格式
-              
-              // 檢查是否支持該音頻格式
-              if (!MediaSource.isTypeSupported(mimeCodec)) {
-                console.log(`瀏覽器不支持該音頻格式: ${mimeCodec} (${contentType})，切換到傳統方法`);
-                // 平滑切換到傳統方法，不拋出錯誤
-                try {
-                  // 只有在 open 狀態才能調用 endOfStream
-                  if (mediaSource.readyState === 'open') {
-                    mediaSource.endOfStream();
-                  }
-                } catch (e) {
-                  console.warn("關閉 MediaSource 時發生錯誤:", e);
-                }
-                
-                // 直接轉到傳統方法
-                return await fallbackToTraditionalMethod();
-              }
-              
-              const sourceBuffer = mediaSource.addSourceBuffer(mimeCodec);
-              const reader = response.body!.getReader();
-              const chunks: Uint8Array[] = [];
-              
-              // 處理流數據
-              const processStream = async () => {
-                let startPlaying = false;
-                let totalBytes = 0;
-                let appendQueue: Uint8Array[] = []; // 待處理的數據隊列
-                let isProcessingQueue = false; // 是否正在處理隊列
-                let sourceClosed = false; // SourceBuffer 是否已關閉
-                
-                // 序列化處理 appendBuffer 的函數
-                const processQueue = async () => {
-                  if (isProcessingQueue || appendQueue.length === 0 || sourceClosed) return;
-                  
-                  isProcessingQueue = true;
-                  
-                  try {
-                    // 檢查 MediaSource 和 SourceBuffer 狀態
-                    if (mediaSource.readyState === 'closed' || 
-                        !mediaSource.sourceBuffers.length) {
-                      console.log("MediaSource 已關閉或 SourceBuffer 已分離，停止處理隊列");
-                      sourceClosed = true;
-                      return;
-                    }
-                    
-                    // 檢查是否正在更新
-                    if (sourceBuffer.updating) {
-                      // 等待更新完成後再處理
-                      await new Promise(resolve => {
-                        sourceBuffer.addEventListener('updateend', resolve, { once: true });
-                      });
-                    }
-                    
-                    // 獲取下一個數據塊
-                    const nextChunk = appendQueue.shift();
-                    if (!nextChunk) {
-                      isProcessingQueue = false;
-                      return;
-                    }
-                    
-                    // 追加數據
-                    sourceBuffer.appendBuffer(nextChunk);
-                    
-                    // 當追加完成後處理下一個
-                    sourceBuffer.addEventListener('updateend', () => {
-                      isProcessingQueue = false;
-                      processQueue();
-                    }, { once: true });
-                    
-                  } catch (e) {
-                    console.warn("處理數據隊列時發生錯誤:", e);
-                    isProcessingQueue = false;
-                    
-                    // 檢查是否需要切換到傳統方法
-                    if (String(e).includes("SourceBuffer has been removed") || 
-                        String(e).includes("Invalid state")) {
-                      sourceClosed = true;
-                      console.log("媒體源錯誤，將繼續收集數據但不再嘗試流式播放");
-                    }
-                  }
-                };
-                
-                try {
-                  // 設置數據接收超時
-                  let lastDataTime = Date.now();
-                  const TIMEOUT_MS = 800; // 0.8秒超時
-                  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-                  
-                  while (true) {
-                    // 清除前一個超時
-                    if (timeoutId) clearTimeout(timeoutId);
-                    
-                    // 設置超時
-                    const timeoutPromise = new Promise<{ done: true, value: undefined }>((resolveTimeout) => {
-                      timeoutId = setTimeout(() => {
-                        const timeSinceLastData = Date.now() - lastDataTime;
-                        console.log(`數據接收超時 (${timeSinceLastData}ms 無新數據)，視為傳輸完成`);
-                        resolveTimeout({ done: true, value: undefined });
-                      }, TIMEOUT_MS);
-                    });
-                    
-                    // 讀取數據或超時
-                    const { done, value } = await Promise.race([
-                      reader.read(),
-                      timeoutPromise
-                    ]);
-                    
-                    if (done) {
-                      console.log(`數據流讀取完成或超時，總共接收: ${totalBytes} 字節`);
-                      break;
-                    }
-                    
-                    // 更新最後接收數據的時間
-                    lastDataTime = Date.now();
-                    chunks.push(value);
-                    totalBytes += value.length;
-                    
-                    console.log(`流式接收: ${value.length} 字節，總計: ${totalBytes} 字節`);
-                    
-                    // 向隊列添加數據，但不直接操作 SourceBuffer
-                    if (!sourceClosed) {
-                      appendQueue.push(value);
-                      processQueue();
-                    }
-                    
-                    // 積累了足夠數據後開始播放
-                    if (!startPlaying && totalBytes > 32768 && !sourceClosed) { // 約32KB
-                      startPlaying = true;
-                      try {
-                        await audio.play();
-                        console.log("開始流式播放");
-                      } catch (playErr) {
-                        console.warn("流式播放失敗，可能數據格式不受支持:", playErr);
-                        sourceClosed = true;  // 停止嘗試使用 MediaSource
-                      }
-                    }
-                  }
-                  
-                  // 清理超時計時器
-                  if (timeoutId) clearTimeout(timeoutId);
-                  
-                  // 流讀取完成，關閉 MediaSource
-                  if (mediaSource.readyState === 'open' && !sourceClosed) {
-                    try {
-                      // 等待所有更新完成
-                      if (sourceBuffer.updating) {
-                        await new Promise(resolve => {
-                          sourceBuffer.addEventListener('updateend', resolve, { once: true });
-                        });
-                      }
-                      mediaSource.endOfStream();
-                      console.log("流式播放完成，MediaSource 已關閉");
-                    } catch (e) {
-                      console.warn("關閉 MediaSource 時發生錯誤:", e);
-                    }
-                  }
-                  
-                  // 無論 MediaSource 是否正常工作，都創建一個完整的 blob 用於緩存
-                  const blob = new Blob(chunks, { type: contentType });
-                  const blobUrl = URL.createObjectURL(blob);
-                  console.log("已創建完整音頻的 Blob URL:", blobUrl);
-                  
-                  // 添加到內存緩存
-                  addToMemoryCache(text, voice, blob, blobUrl);
-                  
-                  // 獲取服務器返回的實際URL（如果有）進行 localStorage 緩存
-                  const serverUrl = response.headers.get('x-audio-url') || '';
-                  if (serverUrl) {
-                    addTTSCacheItem(text, voice, serverUrl);
-                    console.log("將服務器音頻URL添加到localStorage:", serverUrl);
-                  } else {
-                    // 如果沒有服務器URL，則將 blob URL 添加到 localStorage（僅當前會話有效）
-                    addTTSCacheItem(text, voice, blobUrl);
-                    console.log("將 blob URL 添加到 localStorage（僅當前會話有效）");
-                  }
-                  
-                  // 如果 sourceClosed 為 true 表示 MediaSource 播放失敗，需要使用傳統方法播放
-                  if (sourceClosed || !startPlaying) {
-                    console.log("MediaSource 播放失敗或未開始播放，嘗試傳統方法播放");
-                    
-                    // 確保先重置當前音頻
-                    if (audio.src) {
-                      try {
-                        audio.pause();
-                      } catch (e) { /* 忽略 */ }
-                    }
-                    
-                    // 重新創建音頻元素避免之前的影響
-                    const fallbackAudio = new Audio(blobUrl);
-                    audioRef.current = fallbackAudio;
-                    
-                    // 創建互動事件監聽器，用於處理自動播放策略問題
-                    const autoPlayHandler = async () => {
-                      try {
-                        // 嘗試播放(即使之前尚未加載完成)
-                        await fallbackAudio.play();
-                        console.log("用戶互動後成功播放音頻");
-                        
-                        // 播放成功後移除事件監聽器
-                        document.removeEventListener('click', autoPlayHandler);
-                        document.removeEventListener('touchstart', autoPlayHandler);
-                        document.removeEventListener('keydown', autoPlayHandler);
-                      } catch (e) {
-                        console.error("交互後播放仍然失敗:", e);
-                      }
-                    };
-                    
-                    fallbackAudio.oncanplaythrough = async () => {
-                      try {
-                        console.log("傳統方法準備播放音頻");
-                        await fallbackAudio.play();
-                        console.log("傳統方法成功播放音頻");
-                        
-                        // 播放成功後移除事件監聽器
-                        document.removeEventListener('click', autoPlayHandler);
-                        document.removeEventListener('touchstart', autoPlayHandler);
-                        document.removeEventListener('keydown', autoPlayHandler);
-                      } catch (e) {
-                        console.warn("自動播放失敗，等待用戶交互:", e);
-                        
-                        // 自動播放失敗，添加用戶交互事件監聽器
-                        document.addEventListener('click', autoPlayHandler, { once: false });
-                        document.addEventListener('touchstart', autoPlayHandler, { once: false });
-                        document.addEventListener('keydown', autoPlayHandler, { once: false });
-                      }
-                    };
-                    
-                    fallbackAudio.onerror = (e) => {
-                      console.error("音頻加載錯誤:", e);
-                      // 移除事件監聽器
-                      document.removeEventListener('click', autoPlayHandler);
-                      document.removeEventListener('touchstart', autoPlayHandler);
-                      document.removeEventListener('keydown', autoPlayHandler);
-                    };
-                    
-                    // 播放結束事件
-                    fallbackAudio.onended = () => {
-                      console.log("音頻播放完成");
-                      audioRef.current = null;
-                      // 移除事件監聽器
-                      document.removeEventListener('click', autoPlayHandler);
-                      document.removeEventListener('touchstart', autoPlayHandler);
-                      document.removeEventListener('keydown', autoPlayHandler);
-                    };
-                    
-                    fallbackAudio.load();
-                  }
-                  
-                  console.log("流式處理完成，數據已緩存");
-                  
-                } catch (streamErr) {
-                  console.error("流數據處理錯誤:", streamErr);
-                }
-              };
-              
-              // 啟動流處理
-              processStream().catch(e => console.error("流處理失敗:", e));
-              
-            } catch (error) {
-              console.log("MediaSource 流式處理不支持，切換到傳統方法:", error);
-              // 關閉當前 MediaSource
-              try {
-                if (mediaSource.readyState === 'open') {
-                  mediaSource.endOfStream();
-                }
-              } catch (e) { /* 忽略關閉錯誤 */ }
-              
-              // 如果 MediaSource 方法失敗，回退到傳統方法
-              return await fallbackToTraditionalMethod();
-            }
-          });
-          
-          // 錯誤處理
-          mediaSource.addEventListener('error', () => {
-            console.log("MediaSource 發生錯誤，切換到傳統方法");
-            // 不再需要額外處理，直接切換到傳統方法
-            fallbackToTraditionalMethod().catch(e => 
-              console.error("傳統方法失敗:", e)
-            );
-          });
-          
+          console.log("嘗試WebM MediaSource流式播放");
+          const streamAudio = await playStreamingWebMAudio(text, voice);
+          audioRef.current = streamAudio;
           setState(prev => ({ ...prev, isLoading: false }));
-          return { audio };
-          
-        } catch (msError) {
-          console.error("MediaSource 初始化失敗:", msError);
-          // 回退到傳統方法
-          return await fallbackToTraditionalMethod();
+          return { audio: streamAudio };
+        } catch (error) {
+          console.warn("WebM MediaSource播放失敗，切換到傳統方法:", error);
+          // 繼續嘗試傳統方法
         }
       } else {
-        // 瀏覽器不支持 MediaSource，回退到傳統方法
-        console.warn("瀏覽器不支持 MediaSource API，使用傳統方法");
-        return await fallbackToTraditionalMethod();
+        console.log("瀏覽器不支持WebM/Opus MediaSource，使用傳統方法");
       }
+      
+      // 如果MediaSource失敗或不支持，使用傳統方法
+      console.log("開始使用傳統方法處理WebM音頻");
+      return await fallbackToTraditionalMethod();
+      
     } catch (err) {
-      console.error('流式AI服務器語音合成失敗:', err);
-      setState({ 
-        isLoading: false, 
-        error: `流式AI服務器語音合成失敗: ${err instanceof Error ? err.message : String(err)}` 
-      });
+      console.error('WebM流式語音生成失敗:', err);
+      setState(prev => ({ 
+        ...prev, 
+        error: `WebM流式語音生成失敗: ${err instanceof Error ? err.message : String(err)}`,
+        isLoading: false 
+      }));
       throw err;
     }
   };

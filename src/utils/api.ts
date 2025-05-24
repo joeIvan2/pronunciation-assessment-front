@@ -105,7 +105,13 @@ export const sendTTSRequest = async (text: string): Promise<Response> => {
   throw lastError || new Error('所有TTS API路徑嘗試均失敗');
 }; 
 
-// 使用新的AI服務器生成語音
+/**
+ * 使用新的AI服務器生成語音
+ * @param text - 要轉換為語音的文本
+ * @param voice - 語音角色，支持的選項：Puck, Charon, Kore, Fenrir, Aoede, Leda, Orus, Zephyr
+ * @param languageCode - 語言代碼，默認為 "en-US"
+ * @returns Promise<Response> - 包含音頻數據的響應
+ */
 export const generateSpeech = async (
   text: string, 
   voice: string = "Puck", 
@@ -141,7 +147,21 @@ export const generateSpeech = async (
   }
 }; 
 
-// 使用新的AI服務器生成流式語音
+/**
+ * 使用新的AI服務器生成流式語音（WebM/Opus格式）
+ * @param text - 要轉換為語音的文本
+ * @param voice - 語音角色，支持的選項：
+ *   - Puck: 默認中性聲音
+ *   - Charon: 深邃神秘男聲
+ *   - Kore: 清新純淨女聲
+ *   - Fenrir: 強勁有力男聲
+ *   - Aoede: 優雅歌唱女聲
+ *   - Leda: 溫柔親切女聲
+ *   - Orus: 莊重威嚴男聲
+ *   - Zephyr: 輕柔清風聲音
+ * @param languageCode - 語言代碼，默認為 "en-US"
+ * @returns Promise<Response> - 包含WebM/Opus格式音頻流的響應
+ */
 export const generateSpeechStream = async (
   text: string, 
   voice: string = "Puck", 
@@ -155,8 +175,8 @@ export const generateSpeechStream = async (
   // 定義重試函數
   const fetchWithRetry = async (retryCount = 0): Promise<Response> => {
     try {
-      const apiUrl = `${AI_SERVER_URL}/generate-speech-stream`;
-      console.log(`嘗試連接AI服務器流式TTS API (嘗試 ${retryCount + 1}/${MAX_RETRIES + 1}): ${apiUrl}`);
+      const apiUrl = `${AI_SERVER_URL}/generate-speech-stream-webm`;
+      console.log(`嘗試連接AI服務器WebM流式TTS API (嘗試 ${retryCount + 1}/${MAX_RETRIES + 1}): ${apiUrl}`);
       
       // 創建請求控制器，用於超時控制
       const controller = new AbortController();
@@ -184,16 +204,16 @@ export const generateSpeechStream = async (
         clearTimeout(timeoutId);
         
         if (response.ok) {
-          console.log(`成功連接到AI服務器流式TTS API，狀態碼：${response.status}`);
+          console.log(`成功連接到AI服務器WebM流式TTS API，狀態碼：${response.status}`);
           
           // 檢查響應頭
           const contentType = response.headers.get('content-type') || '';
           console.log(`響應內容類型: ${contentType}`);
           
-          if (contentType.includes('audio/') || contentType.includes('application/octet-stream')) {
+          if (contentType.includes('webm') || contentType.includes('audio/') || contentType.includes('application/octet-stream')) {
             return response;
           } else {
-            console.warn(`警告：響應內容類型不是音頻 (${contentType})`);
+            console.warn(`警告：響應內容類型不是WebM音頻 (${contentType})`);
             return response; // 仍然返回響應，後續處理將嘗試多種格式
           }
         } else {
@@ -204,10 +224,10 @@ export const generateSpeechStream = async (
             errorText = '無法讀取錯誤詳情';
           }
           
-          console.warn(`AI服務器流式TTS API失敗: ${response.status} ${response.statusText}`);
+          console.warn(`AI服務器WebM流式TTS API失敗: ${response.status} ${response.statusText}`);
           console.warn(`返回內容: ${errorText}`);
           
-          const error = new Error(`AI服務器流式請求失敗: ${response.status} - ${errorText}`);
+          const error = new Error(`AI服務器WebM流式請求失敗: ${response.status} - ${errorText}`);
           throw error;
         }
       } finally {
@@ -220,7 +240,7 @@ export const generateSpeechStream = async (
         throw new Error(`AI服務器請求超時 (${REQUEST_TIMEOUT}ms)`);
       }
       
-      console.warn(`AI服務器流式TTS API嘗試失敗: ${err instanceof Error ? err.message : String(err)}`);
+      console.warn(`AI服務器WebM流式TTS API嘗試失敗: ${err instanceof Error ? err.message : String(err)}`);
       
       // 是否還有重試機會
       if (retryCount < MAX_RETRIES) {

@@ -29,16 +29,17 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   onSelectAIVoice
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [showAIVoices, setShowAIVoices] = useState<boolean>(false);
   
   // AI服務器提供的聲音選項
   const aiVoiceOptions = [
     { id: 'Puck', name: 'Puck (中性)', description: '默認中性聲音' },
-    { id: 'Nova', name: 'Nova (女聲)', description: '明亮女聲' },
-    { id: 'Linden', name: 'Linden (男聲)', description: '穩重男聲' },
-    { id: 'Sage', name: 'Sage (男聲)', description: '睿智男聲' },
-    { id: 'Ember', name: 'Ember (女聲)', description: '溫暖女聲' },
-    { id: 'Orion', name: 'Orion (男聲)', description: '深沉男聲' }
+    { id: 'Charon', name: 'Charon (男聲)', description: '深邃神秘男聲' },
+    { id: 'Kore', name: 'Kore (女聲)', description: '清新純淨女聲' },
+    { id: 'Fenrir', name: 'Fenrir (男聲)', description: '強勁有力男聲' },
+    { id: 'Aoede', name: 'Aoede (女聲)', description: '優雅歌唱女聲' },
+    { id: 'Leda', name: 'Leda (女聲)', description: '溫柔親切女聲' },
+    { id: 'Orus', name: 'Orus (男聲)', description: '莊重威嚴男聲' },
+    { id: 'Zephyr', name: 'Zephyr (中性)', description: '輕柔清風聲音' }
   ];
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,21 +66,14 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
       
       {isExpanded && (
         <div className="voice-picker-content">
-          {/* 模式切換 */}
-          {useAzureDirect && (
-            <div className="voice-mode-switch">
-              <button 
-                className={`mode-button ${!showAIVoices ? 'active' : ''}`}
-                onClick={() => setShowAIVoices(false)}
-              >
-                本地語音
-              </button>
-              <button 
-                className={`mode-button ${showAIVoices ? 'active' : ''}`}
-                onClick={() => setShowAIVoices(true)}
-              >
-                AI語音
-              </button>
+          {/* 模式說明 */}
+          {useAzureDirect ? (
+            <div className="voice-mode-info azure-mode">
+              <p className="mode-info-text">Azure直連模式：僅支援AI語音</p>
+            </div>
+          ) : (
+            <div className="voice-mode-info remote-mode">
+              <p className="mode-info-text">遠端模式：僅支援本地語音</p>
             </div>
           )}
           
@@ -97,8 +91,22 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             />
           </div>
           
-          {!showAIVoices ? (
-            /* 本地語音選擇 */
+          {useAzureDirect ? (
+            /* Azure直連模式：僅顯示AI語音選擇 */
+            <div className="voice-list ai-voice-list">
+              {aiVoiceOptions.map((voice) => (
+                <div 
+                  key={voice.id} 
+                  className={`voice-item ${selectedAIVoice === voice.id ? 'selected' : ''}`}
+                  onClick={() => onSelectAIVoice(voice.id)}
+                >
+                  <div className="voice-name">{voice.name}</div>
+                  <div className="voice-lang">{voice.description}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* 遠端模式：僅顯示本地語音選擇 */
             <>
               <div className="search-container">
                 <input 
@@ -126,20 +134,6 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
                 )}
               </div>
             </>
-          ) : (
-            /* AI語音選擇 */
-            <div className="voice-list ai-voice-list">
-              {aiVoiceOptions.map((voice) => (
-                <div 
-                  key={voice.id} 
-                  className={`voice-item ${selectedAIVoice === voice.id ? 'selected' : ''}`}
-                  onClick={() => onSelectAIVoice(voice.id)}
-                >
-                  <div className="voice-name">{voice.name}</div>
-                  <div className="voice-lang">{voice.description}</div>
-                </div>
-              ))}
-            </div>
           )}
         </div>
       )}
