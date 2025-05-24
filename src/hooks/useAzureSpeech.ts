@@ -608,8 +608,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   const bufferedDuration = bufferedEnd - bufferedStart;
                   console.log(`音頻緩衝詳情: 開始:${bufferedStart.toFixed(3)}s, 結束:${bufferedEnd.toFixed(3)}s, 持續:${bufferedDuration.toFixed(3)}s`);
                   
-                  // 確保至少有2秒的緩衝時間再開始播放
-                  if (bufferedEnd >= 2) {
+                  // 確保至少有3秒的緩衝時間再開始播放（更保守）
+                  if (bufferedEnd >= 3) {
                     console.log("音頻準備就緒且有足夠緩衝，開始播放 版本0845");
                     try {
                       await audio.play();
@@ -623,7 +623,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       }
                     }
                   } else {
-                    console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少2秒");
+                    console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少3秒");
                   }
                 } else {
                   console.log("音頻還沒準備好，readyState:", audio.readyState, "buffered:", audio.buffered.length);
@@ -645,12 +645,12 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 }
               }, { once: true });
               
-              // 強制積極處理：優先處理隊列中的數據
+              // 超積極處理：並行處理隊列數據，無等待
               while (true) {
-                // 減少等待時間，更積極地檢查隊列
+                // 立即檢查隊列，無延遲等待
                 while (dataQueue.length === 0 && !isReadingComplete) {
-                  console.log("積極檢查隊列中...");
-                  await new Promise(resolve => setTimeout(resolve, 1)); // 極短等待：1ms
+                  // 立即檢查，不等待
+                  await new Promise(resolve => setImmediate ? setImmediate(resolve) : setTimeout(resolve, 0));
                 }
                 
                 // 檢查是否有錯誤
@@ -664,7 +664,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   break;
                 }
                 
-                // 從隊列取出數據處理
+                                // 從隊列取出數據處理  
                 if (dataQueue.length > 0) {
                   const value = dataQueue.shift()!;
                   chunkCount++;
