@@ -556,12 +556,17 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               const tryToPlay = async () => {
                 if (hasStartedPlaying) return;
                 
-                console.log("嘗試播放 - readyState:", audio.readyState, "buffered:", audio.buffered.length);
+                const bufferedInfo = audio.buffered.length > 0 ? 
+                  `start:${audio.buffered.start(0).toFixed(3)}, end:${audio.buffered.end(0).toFixed(3)}` : 
+                  "無緩衝";
+                console.log(`嘗試播放 - readyState:${audio.readyState}, currentTime:${audio.currentTime.toFixed(3)}, buffered:${audio.buffered.length} [${bufferedInfo}]`);
                 
                 // 檢查是否有足夠的緩衝數據，並且確保有足夠的緩衝時間
                 if (audio.readyState >= 3 && audio.buffered.length > 0) { // HAVE_FUTURE_DATA或更高
                   const bufferedEnd = audio.buffered.end(0);
-                  console.log("音頻緩衝時間:", bufferedEnd, "秒");
+                  const bufferedStart = audio.buffered.start(0);
+                  const bufferedDuration = bufferedEnd - bufferedStart;
+                  console.log(`音頻緩衝詳情: 開始:${bufferedStart.toFixed(3)}s, 結束:${bufferedEnd.toFixed(3)}s, 持續:${bufferedDuration.toFixed(3)}s`);
                   
                   // 確保至少有2秒的緩衝時間再開始播放
                   if (bufferedEnd >= 2) {
@@ -635,7 +640,12 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     await appendBuffer(value);
                     console.log(`成功添加數據塊 ${chunkCount}`);
                     
-                    // 每次添加數據塊後都檢查是否可以開始播放
+                    // 每次添加數據塊後都檢查是否可以開始播放和播放狀態
+                    const currentBufferedInfo = audio.buffered.length > 0 ? 
+                      `start:${audio.buffered.start(0).toFixed(3)}, end:${audio.buffered.end(0).toFixed(3)}` : 
+                      "無緩衝";
+                    console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}]`);
+                    
                     if (!hasStartedPlaying) {
                       console.log("檢查緩衝時間是否足夠播放");
                       await tryToPlay();
@@ -709,7 +719,10 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               
               // 設置播放結束事件
               audio.onended = () => {
-                console.log("WebM音頻播放完成");
+                const bufferedInfo = audio.buffered.length > 0 ? 
+                  `[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]` : 
+                  "無緩衝";
+                console.log(`WebM音頻播放完成 - currentTime:${audio.currentTime.toFixed(3)}, duration:${audio.duration.toFixed(3)}, buffered:${bufferedInfo}`);
                 audioRef.current = null;
                 // 清理MediaSource URL
                 if (audio.src && audio.src.startsWith('blob:')) {
@@ -767,8 +780,32 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           audio.addEventListener('loadeddata', () => console.log('Audio loadeddata'));
           audio.addEventListener('canplay', () => console.log('Audio canplay'));
           audio.addEventListener('canplaythrough', () => console.log('Audio canplaythrough'));
-          audio.addEventListener('playing', () => console.log('Audio playing'));
-          audio.addEventListener('pause', () => console.log('Audio pause'));
+          audio.addEventListener('playing', () => {
+            const bufferedInfo = audio.buffered.length > 0 ? 
+              `[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]` : 
+              "無緩衝";
+            console.log(`Audio playing - currentTime:${audio.currentTime.toFixed(3)}, buffered:${bufferedInfo}`);
+          });
+          audio.addEventListener('pause', () => {
+            const bufferedInfo = audio.buffered.length > 0 ? 
+              `[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]` : 
+              "無緩衝";
+            console.log(`Audio pause - currentTime:${audio.currentTime.toFixed(3)}, buffered:${bufferedInfo}, ended:${audio.ended}`);
+          });
+          audio.addEventListener('timeupdate', () => {
+            if (audio.buffered.length > 0) {
+              const bufferedEnd = audio.buffered.end(0);
+              const remainingBuffer = bufferedEnd - audio.currentTime;
+              if (remainingBuffer < 0.5 || audio.currentTime % 1 < 0.1) { // 每秒或緩衝不足0.5秒時log
+                console.log(`播放進度 - currentTime:${audio.currentTime.toFixed(3)}, buffered:[${audio.buffered.start(0).toFixed(3)}-${bufferedEnd.toFixed(3)}], 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
+              }
+            }
+          });
+          audio.addEventListener('progress', () => {
+            if (audio.buffered.length > 0) {
+              console.log(`緩衝進度 - buffered:[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]`);
+            }
+          });
           audio.addEventListener('error', (e) => console.error('Audio error:', e));
         });
       };
