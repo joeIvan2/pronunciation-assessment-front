@@ -578,11 +578,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       dataQueue.push(value);
                       console.log(`數據強制入隊，隊列長度: ${dataQueue.length}`);
                       
-                      // 積極讀取：立即嘗試讀取下一個，不等待任何緩衝條件
-                      // 無 await，無延遲，持續讀取
-                      setImmediate(() => {
-                        // 非阻塞式繼續下一次讀取
-                      });
+                      // 積極讀取：立即繼續循環，無延遲
+                      // 瀏覽器兼容的立即執行
                     }
                   }
                 } catch (error) {
