@@ -565,7 +565,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   
                   // 確保至少有0.5秒的緩衝時間再開始播放
                   if (bufferedEnd >= 0.5) {
-                    console.log("音頻準備就緒且有足夠緩衝，開始播放 - 時間:", new Date().toLocaleTimeString());
+                    console.log("音頻準備就緒且有足夠緩衝，開始播放 版本0845");
                     try {
                       await audio.play();
                       hasStartedPlaying = true;
