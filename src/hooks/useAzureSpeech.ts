@@ -635,9 +635,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     await appendBuffer(value);
                     console.log(`成功添加數據塊 ${chunkCount}`);
                     
-                    // 在接收到足夠數據後嘗試播放，但不要太早開始
-                    if (!hasStartedPlaying && totalBytesReceived > 65536) { // 提高到64KB
-                      console.log("接收到足夠數據，嘗試播放");
+                    // 每次添加數據塊後都檢查是否可以開始播放
+                    if (!hasStartedPlaying) {
+                      console.log("檢查緩衝時間是否足夠播放");
                       await tryToPlay();
                     }
                     
