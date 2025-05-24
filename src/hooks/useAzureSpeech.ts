@@ -552,39 +552,48 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               
               console.log("開始讀取流數據");
               
-              // 數據隊列：並行讀取和處理
+              // 數據隊列：強制積極讀取策略
               const dataQueue: Uint8Array[] = [];
               let isReadingComplete = false;
               let readError: Error | null = null;
               
-              // 並行讀取流程：持續讀取數據到隊列
-              const readDataAsync = async () => {
+              // 強制積極讀取：無視反壓控制，立即讀取所有可用數據
+              const aggressiveReadDataAsync = async () => {
                 try {
-                  console.log("開始並行讀取數據流");
+                  console.log("開始強制積極讀取數據流（無反壓控制）");
+                  let consecutiveReads = 0;
+                  
                   while (true) {
                     const { done, value } = await reader.read();
-                    console.log(`並行讀取 - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
+                    consecutiveReads++;
+                    console.log(`強制讀取 #${consecutiveReads} - done: ${done}, value存在: ${!!value}, 大小: ${value?.length || 0}`);
                     
                     if (done) {
-                      console.log("並行讀取完成");
+                      console.log(`強制讀取完成，總共讀取 ${consecutiveReads} 次`);
                       isReadingComplete = true;
                       break;
                     }
                     
                     if (value && value.length > 0) {
                       dataQueue.push(value);
-                      console.log(`數據入隊，隊列長度: ${dataQueue.length}, 總待處理數據塊`);
+                      console.log(`數據強制入隊，隊列長度: ${dataQueue.length}`);
+                      
+                      // 積極讀取：立即嘗試讀取下一個，不等待任何緩衝條件
+                      // 無 await，無延遲，持續讀取
+                      setImmediate(() => {
+                        // 非阻塞式繼續下一次讀取
+                      });
                     }
                   }
                 } catch (error) {
-                  console.error("並行讀取發生錯誤:", error);
+                  console.error("強制讀取發生錯誤:", error);
                   readError = error as Error;
                   isReadingComplete = true;
                 }
               };
               
-              // 啟動並行讀取（不等待）
-              const readPromise = readDataAsync();
+              // 啟動強制積極讀取（立即執行）
+              const readPromise = aggressiveReadDataAsync();
               
               // 嘗試播放的函數
               const tryToPlay = async () => {
@@ -639,12 +648,12 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 }
               }, { once: true });
               
-              // 並行處理數據流：從隊列取數據處理
+              // 強制積極處理：優先處理隊列中的數據
               while (true) {
-                // 等待有數據或讀取完成
+                // 減少等待時間，更積極地檢查隊列
                 while (dataQueue.length === 0 && !isReadingComplete) {
-                  console.log("等待數據到達隊列...");
-                  await new Promise(resolve => setTimeout(resolve, 10)); // 短暫等待
+                  console.log("積極檢查隊列中...");
+                  await new Promise(resolve => setTimeout(resolve, 1)); // 極短等待：1ms
                 }
                 
                 // 檢查是否有錯誤
@@ -654,7 +663,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 
                 // 如果隊列空且讀取完成，退出
                 if (dataQueue.length === 0 && isReadingComplete) {
-                  console.log("所有數據處理完成");
+                  console.log("所有數據強制處理完成");
                   break;
                 }
                 
@@ -691,43 +700,14 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       "無緩衝";
                     console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}], 隊列:${dataQueue.length}`);
                     
-                    // 檢查緩衝狀況，如果剩餘緩衝太少且還有更多數據要來，暫停播放等待
-                    if (hasStartedPlaying && !audio.paused && audio.buffered.length > 0) {
+                    // 強制積極模式：移除緩衝保護，讓音頻持續播放
+                    if (hasStartedPlaying && audio.buffered.length > 0) {
                       const bufferedEnd = audio.buffered.end(0);
                       const remainingBuffer = bufferedEnd - audio.currentTime;
-                      const hasMoreData = dataQueue.length > 0 || !isReadingComplete;
-                      console.log(`緩衝檢查 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}`);
+                      console.log(`強制模式 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}, 持續播放`);
                       
-                      // 激進的緩衝保護策略
-                      if (remainingBuffer < 1.5 && hasMoreData && !isReadingComplete) {
-                        // 如果播放已經進行很久（超過總緩衝的80%），考慮直接等待到結束
-                        const playedPercentage = audio.currentTime / bufferedEnd;
-                        if (playedPercentage > 0.8) {
-                          console.log(`播放進度${(playedPercentage*100).toFixed(1)}%，接近結尾，等待自然完成而不暫停`);
-                        } else {
-                          console.log(`剩餘緩衝不足1.5秒(${remainingBuffer.toFixed(3)}s)且還有更多數據，預防性暫停等待`);
-                          audio.pause();
-                          // 標記需要恢復播放
-                          (audio as any)._needsResume = true;
-                        }
-                      } else if (remainingBuffer < 1.5 && isReadingComplete) {
-                        console.log(`剩餘緩衝不足1.5秒(${remainingBuffer.toFixed(3)}s)但讀取已完成，不暫停讓音頻自然播放完畢`);
-                      }
-                    }
-                    
-                    // 如果之前因緩衝不足暫停，且現在緩衝足夠，恢復播放
-                    if (hasStartedPlaying && audio.paused && (audio as any)._needsResume && audio.buffered.length > 0) {
-                      const bufferedEnd = audio.buffered.end(0);
-                      const remainingBuffer = bufferedEnd - audio.currentTime;
-                      if (remainingBuffer >= 2) {
-                        console.log(`緩衝恢復到${remainingBuffer.toFixed(3)}s，恢復播放`);
-                        try {
-                          await audio.play();
-                          (audio as any)._needsResume = false;
-                        } catch (resumeError) {
-                          console.error("恢復播放失敗:", resumeError);
-                        }
-                      }
+                      // 不進行任何暫停操作，讓音頻自然播放
+                      // 依賴強制讀取確保數據及時到達
                     }
                     
                     if (!hasStartedPlaying) {
@@ -742,19 +722,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 }
               }
               
-              // 確保並行讀取完成
+              // 確保強制讀取完成
               await readPromise;
-              
-              // 如果音頻因緩衝不足被暫停，但所有數據已讀取完成，立即恢復播放
-              if (hasStartedPlaying && audio.paused && (audio as any)._needsResume) {
-                console.log("所有數據讀取完成，恢復被暫停的音頻播放");
-                try {
-                  await audio.play();
-                  (audio as any)._needsResume = false;
-                } catch (resumeError) {
-                  console.error("恢復播放失敗:", resumeError);
-                }
-              }
               
               console.log(`所有數據接收完成，總共 ${chunkCount} 個數據塊，${totalBytesReceived} 字節`);
               
