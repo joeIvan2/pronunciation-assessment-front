@@ -697,14 +697,24 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       "無緩衝";
                     // console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}], 隊列:${dataQueue.length}`);
                     
-                    // 強制積極模式：移除緩衝保護，讓音頻持續播放
+                    // 緩衝保護機制：防止播放追上緩衝導致破音
                     if (hasStartedPlaying && audio.buffered.length > 0) {
                       const bufferedEnd = audio.buffered.end(0);
                       const remainingBuffer = bufferedEnd - audio.currentTime;
-                      // console.log(`強制模式 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}, 持續播放`);
+                      // console.log(`剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}`);
                       
-                      // 不進行任何暫停操作，讓音頻自然播放
-                      // 依賴強制讀取確保數據及時到達
+                      // 如果緩衝不足且還有未處理數據，暫停播放等待
+                      if (remainingBuffer < 0.5 && (dataQueue.length > 0 || !isReadingComplete)) {
+                        if (!audio.paused) {
+                          console.log(`緩衝不足(${remainingBuffer.toFixed(3)}s)，暫停播放等待數據`);
+                          audio.pause();
+                        }
+                      }
+                      // 如果緩衝恢復充足，恢復播放
+                      else if (remainingBuffer >= 1.0 && audio.paused && !audio.ended) {
+                        console.log(`緩衝恢復(${remainingBuffer.toFixed(3)}s)，恢復播放`);
+                        audio.play().catch(e => console.warn("恢復播放失敗:", e));
+                      }
                     }
                     
                     if (!hasStartedPlaying) {
@@ -886,15 +896,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               "無緩衝";
             console.log(`Audio pause - currentTime:${audio.currentTime.toFixed(3)}, buffered:${bufferedInfo}, ended:${audio.ended}`);
           });
-          audio.addEventListener('timeupdate', () => {
-            if (audio.buffered.length > 0) {
-              const bufferedEnd = audio.buffered.end(0);
-              const remainingBuffer = bufferedEnd - audio.currentTime;
-                                    // if (remainingBuffer < 0.5 || audio.currentTime % 1 < 0.1) { // 每秒或緩衝不足0.5秒時log
-                      //   console.log(`播放進度 - currentTime:${audio.currentTime.toFixed(3)}, buffered:[${audio.buffered.start(0).toFixed(3)}-${bufferedEnd.toFixed(3)}], 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
-                      // }
-            }
-          });
+                      audio.addEventListener('timeupdate', () => {
+              // 移除播放進度日誌避免console過多輸出
+            });
                       audio.addEventListener('progress', () => {
               // if (audio.buffered.length > 0) {
               //   console.log(`緩衝進度 - buffered:[${audio.buffered.start(0).toFixed(3)}-${audio.buffered.end(0).toFixed(3)}]`);
