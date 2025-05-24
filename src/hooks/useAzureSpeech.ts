@@ -698,12 +698,14 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       const hasMoreData = dataQueue.length > 0 || !isReadingComplete;
                       console.log(`緩衝檢查 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}`);
                       
-                      // 如果剩餘緩衝少於0.5秒且還有更多數據，預防性暫停
-                      if (remainingBuffer < 0.5 && hasMoreData) {
+                      // 只有在還有更多數據且緩衝不足時才暫停
+                      if (remainingBuffer < 0.5 && hasMoreData && !isReadingComplete) {
                         console.log("剩餘緩衝不足0.5秒且還有更多數據，預防性暫停等待");
                         audio.pause();
                         // 標記需要恢復播放
                         (audio as any)._needsResume = true;
+                      } else if (remainingBuffer < 0.5 && isReadingComplete) {
+                        console.log("剩餘緩衝不足但讀取已完成，不暫停讓音頻自然播放完畢");
                       }
                     }
                     
@@ -736,6 +738,17 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               
               // 確保並行讀取完成
               await readPromise;
+              
+              // 如果音頻因緩衝不足被暫停，但所有數據已讀取完成，立即恢復播放
+              if (hasStartedPlaying && audio.paused && (audio as any)._needsResume) {
+                console.log("所有數據讀取完成，恢復被暫停的音頻播放");
+                try {
+                  await audio.play();
+                  (audio as any)._needsResume = false;
+                } catch (resumeError) {
+                  console.error("恢復播放失敗:", resumeError);
+                }
+              }
               
               console.log(`所有數據接收完成，總共 ${chunkCount} 個數據塊，${totalBytesReceived} 字節`);
               
