@@ -26,14 +26,15 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
   const hasError = assessment?.ErrorType && assessment.ErrorType !== 'None';
   
   return (
-    <div className="word-container" style={{
+    <div className={`word-container ${isSelected ? 'word-selected' : ''}`} style={{
       display: 'inline-flex',
       flexDirection: 'column',
       alignItems: 'center',
       margin: '8px',
       width: '70px',
       maxWidth: '80px',
-      overflow: 'visible'
+      overflow: 'visible',
+      zIndex: isSelected ? 9999 : 1
     }}>
       {/* 分數顯示 */}
       {assessment?.AccuracyScore !== undefined && (
@@ -83,7 +84,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
 
       {/* 音素 Tooltip */}
       {isSelected && word.Phonemes && word.Phonemes.length > 0 && (
-        <div style={{ 
+        <div className="phoneme-details-popup" style={{ 
           position: 'absolute', 
           top: '100%', 
           left: '50%', 
@@ -92,7 +93,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
           padding: '10px',
           borderRadius: '12px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-          zIndex: 20,
+          zIndex: 9999,
           marginTop: '8px',
           minWidth: '120px'
         }}>

@@ -553,6 +553,17 @@ h4 {
   z-index: 1;
 }
 
+/* 選中的單詞容器 - 最高層級 */
+.word-container.word-selected {
+  z-index: 9999 !important;
+}
+
+/* 音素詳情彈出框樣式 */
+.phoneme-details-popup {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
 .word-container > div:first-child {
   background-color: rgba(0, 0, 0, 0.5);
   border-radius: 10px;
