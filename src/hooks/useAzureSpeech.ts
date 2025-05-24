@@ -492,9 +492,6 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         console.log("設置audio.src:", audio.src);
         
         return new Promise((resolve, reject) => {
-          let isStreamEnded = false; // 標記數據流是否已結束
-          let wasAutoPaused = false; // 標記是否因緩衝不足被自動暫停
-          
           // 添加超時保護
           const timeoutId = setTimeout(() => {
             console.error("MediaSource初始化超時");
@@ -615,7 +612,6 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 
                 if (done) {
                   console.log("流數據讀取完成");
-                  isStreamEnded = true; // 標記數據流已結束
                   break;
                 }
                 
@@ -677,26 +673,56 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 console.warn("SourceBuffer仍在更新，但已達到最大等待時間");
               }
               
-              // 額外等待一小段時間確保處理完成
-              await new Promise(resolve => setTimeout(resolve, 200));
+              // 額外等待更長時間確保音頻解碼器穩定
+              console.log("等待音頻解碼器穩定...");
+              await new Promise(resolve => setTimeout(resolve, 500)); // 增加到500ms
               
-              // 標記流結束
+              // 再次檢查SourceBuffer狀態
+              if (sourceBuffer.updating) {
+                console.log("SourceBuffer仍在更新，等待完成");
+                await new Promise(resolve => {
+                  sourceBuffer.addEventListener('updateend', resolve, { once: true });
+                });
+              }
+              
+              // 標記流結束 - 更保守的處理
               if (mediaSource.readyState === 'open') {
-                console.log("標記MediaSource流結束");
+                console.log("準備標記MediaSource流結束");
+                
+                // 檢查是否接近音頻結尾，如果是則延遲endOfStream
+                if (audio.buffered.length > 0) {
+                  const bufferedEnd = audio.buffered.end(0);
+                  const currentTime = audio.currentTime;
+                  const remainingTime = bufferedEnd - currentTime;
+                  console.log(`檢查播放狀態 - 當前:${currentTime.toFixed(3)}s, 緩衝結束:${bufferedEnd.toFixed(3)}s, 剩餘:${remainingTime.toFixed(3)}s`);
+                  
+                  // 如果播放接近結尾(剩餘<1秒)，延遲endOfStream調用
+                  if (remainingTime < 1) {
+                    console.log("播放接近結尾，延遲endOfStream調用避免破音");
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                  }
+                }
+                
                 try {
+                  console.log("標記MediaSource流結束");
                   mediaSource.endOfStream();
+                  console.log("endOfStream調用成功");
                 } catch (endError) {
                   console.warn("endOfStream調用失敗:", endError);
                   // 如果失敗，再等待一下再試
-                  await new Promise(resolve => setTimeout(resolve, 100));
+                  await new Promise(resolve => setTimeout(resolve, 200));
                   if (mediaSource.readyState === 'open') {
                     try {
+                      console.log("重試endOfStream");
                       mediaSource.endOfStream();
+                      console.log("重試endOfStream成功");
                     } catch (retryError) {
                       console.error("重試endOfStream也失敗:", retryError);
                     }
                   }
                 }
+              } else {
+                console.log(`MediaSource狀態不是open(${mediaSource.readyState})，跳過endOfStream`);
               }
               
               console.log("WebM流式播放設置完成");
@@ -800,18 +826,6 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             if (audio.buffered.length > 0) {
               const bufferedEnd = audio.buffered.end(0);
               const remainingBuffer = bufferedEnd - audio.currentTime;
-              
-              // 動態緩衝管理
-              if (!isStreamEnded && !audio.paused && remainingBuffer < 0.5) {
-                console.log(`⚠️ 緩衝不足自動暫停 - currentTime:${audio.currentTime.toFixed(3)}, 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
-                audio.pause();
-                wasAutoPaused = true;
-              } else if (wasAutoPaused && remainingBuffer > 1.0) {
-                console.log(`✅ 緩衝恢復自動播放 - currentTime:${audio.currentTime.toFixed(3)}, 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
-                audio.play().catch(e => console.warn("自動恢復播放失敗:", e));
-                wasAutoPaused = false;
-              }
-              
               if (remainingBuffer < 0.5 || audio.currentTime % 1 < 0.1) { // 每秒或緩衝不足0.5秒時log
                 console.log(`播放進度 - currentTime:${audio.currentTime.toFixed(3)}, buffered:[${audio.buffered.start(0).toFixed(3)}-${bufferedEnd.toFixed(3)}], 剩餘緩衝:${remainingBuffer.toFixed(3)}s`);
               }
