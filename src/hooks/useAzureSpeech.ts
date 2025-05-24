@@ -563,8 +563,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   const bufferedEnd = audio.buffered.end(0);
                   console.log("音頻緩衝時間:", bufferedEnd, "秒");
                   
-                  // 確保至少有0.5秒的緩衝時間再開始播放
-                  if (bufferedEnd >= 0.5) {
+                  // 確保至少有2秒的緩衝時間再開始播放
+                  if (bufferedEnd >= 2) {
                     console.log("音頻準備就緒且有足夠緩衝，開始播放 版本0845");
                     try {
                       await audio.play();
@@ -578,7 +578,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       }
                     }
                   } else {
-                    console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少0.5秒");
+                    console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少2秒");
                   }
                 } else {
                   console.log("音頻還沒準備好，readyState:", audio.readyState, "buffered:", audio.buffered.length);
