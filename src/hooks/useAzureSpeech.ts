@@ -649,8 +649,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               while (true) {
                 // 立即檢查隊列，無延遲等待
                 while (dataQueue.length === 0 && !isReadingComplete) {
-                  // 立即檢查，不等待
-                  await new Promise(resolve => setImmediate ? setImmediate(resolve) : setTimeout(resolve, 0));
+                  // 立即檢查，不等待（瀏覽器兼容）
+                  await new Promise(resolve => setTimeout(resolve, 0));
                 }
                 
                 // 檢查是否有錯誤
@@ -990,6 +990,10 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         // 預加載
         traditionalAudio.preload = "auto";
         
+        // WebM音頻修復：設置特殊屬性
+        traditionalAudio.controls = false;
+        traditionalAudio.crossOrigin = "anonymous";
+        
         // 添加到內存緩存
         addToMemoryCache(text, voice, blob, audioUrl);
         
@@ -1003,9 +1007,27 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           addTTSCacheItem(text, voice, audioUrl);
         }
         
-        // 設置音頻就緒事件
+        // 設置音頻就緒事件 - 加強緩衝檢查
         traditionalAudio.oncanplaythrough = async () => {
           console.log("WebM音頻數據就緒，準備播放");
+          
+          // 額外等待確保音頻完全解碼
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // 檢查是否真的有完整緩衝
+          if (traditionalAudio.buffered.length > 0) {
+            const bufferedEnd = traditionalAudio.buffered.end(0);
+            const duration = traditionalAudio.duration || 0;
+            console.log(`緩衝檢查: buffered=${bufferedEnd.toFixed(3)}s, duration=${duration.toFixed(3)}s, 完整度=${((bufferedEnd/duration)*100).toFixed(1)}%`);
+            
+            // 確保至少90%的音頻已緩衝
+            if (duration > 0 && bufferedEnd >= duration * 0.9) {
+              console.log("音頻緩衝充足，開始播放");
+            } else {
+              console.warn("音頻緩衝不足，等待更多數據");
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
           
           const processingTime = Date.now() - startTime - downloadTime;
           console.log(`WebM音頻處理時間: ${processingTime}ms`);
