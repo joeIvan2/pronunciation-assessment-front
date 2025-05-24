@@ -646,6 +646,36 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       "無緩衝";
                     console.log(`數據塊${chunkCount}處理後 - currentTime:${audio.currentTime.toFixed(3)}, paused:${audio.paused}, buffered:[${currentBufferedInfo}]`);
                     
+                    // 檢查緩衝狀況，如果剩餘緩衝太少且還有更多數據要來，暫停播放等待
+                    if (hasStartedPlaying && !audio.paused && audio.buffered.length > 0) {
+                      const bufferedEnd = audio.buffered.end(0);
+                      const remainingBuffer = bufferedEnd - audio.currentTime;
+                      console.log(`緩衝檢查 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 數據塊:${chunkCount}/${chunkCount}`);
+                      
+                      // 如果剩餘緩衝少於0.5秒，預防性暫停
+                      if (remainingBuffer < 0.5) {
+                        console.log("剩餘緩衝不足0.5秒，預防性暫停等待更多數據");
+                        audio.pause();
+                        // 標記需要恢復播放
+                        (audio as any)._needsResume = true;
+                      }
+                    }
+                    
+                    // 如果之前因緩衝不足暫停，且現在緩衝足夠，恢復播放
+                    if (hasStartedPlaying && audio.paused && (audio as any)._needsResume && audio.buffered.length > 0) {
+                      const bufferedEnd = audio.buffered.end(0);
+                      const remainingBuffer = bufferedEnd - audio.currentTime;
+                      if (remainingBuffer >= 1) {
+                        console.log(`緩衝恢復到${remainingBuffer.toFixed(3)}s，恢復播放`);
+                        try {
+                          await audio.play();
+                          (audio as any)._needsResume = false;
+                        } catch (resumeError) {
+                          console.error("恢復播放失敗:", resumeError);
+                        }
+                      }
+                    }
+                    
                     if (!hasStartedPlaying) {
                       console.log("檢查緩衝時間是否足夠播放");
                       await tryToPlay();
