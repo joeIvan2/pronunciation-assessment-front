@@ -698,14 +698,20 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                       const hasMoreData = dataQueue.length > 0 || !isReadingComplete;
                       console.log(`緩衝檢查 - 剩餘緩衝:${remainingBuffer.toFixed(3)}s, 隊列:${dataQueue.length}, 讀取完成:${isReadingComplete}`);
                       
-                      // 只有在還有更多數據且緩衝不足時才暫停
-                      if (remainingBuffer < 0.5 && hasMoreData && !isReadingComplete) {
-                        console.log("剩餘緩衝不足0.5秒且還有更多數據，預防性暫停等待");
-                        audio.pause();
-                        // 標記需要恢復播放
-                        (audio as any)._needsResume = true;
-                      } else if (remainingBuffer < 0.5 && isReadingComplete) {
-                        console.log("剩餘緩衝不足但讀取已完成，不暫停讓音頻自然播放完畢");
+                      // 激進的緩衝保護策略
+                      if (remainingBuffer < 1.5 && hasMoreData && !isReadingComplete) {
+                        // 如果播放已經進行很久（超過總緩衝的80%），考慮直接等待到結束
+                        const playedPercentage = audio.currentTime / bufferedEnd;
+                        if (playedPercentage > 0.8) {
+                          console.log(`播放進度${(playedPercentage*100).toFixed(1)}%，接近結尾，等待自然完成而不暫停`);
+                        } else {
+                          console.log(`剩餘緩衝不足1.5秒(${remainingBuffer.toFixed(3)}s)且還有更多數據，預防性暫停等待`);
+                          audio.pause();
+                          // 標記需要恢復播放
+                          (audio as any)._needsResume = true;
+                        }
+                      } else if (remainingBuffer < 1.5 && isReadingComplete) {
+                        console.log(`剩餘緩衝不足1.5秒(${remainingBuffer.toFixed(3)}s)但讀取已完成，不暫停讓音頻自然播放完畢`);
                       }
                     }
                     
@@ -713,7 +719,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     if (hasStartedPlaying && audio.paused && (audio as any)._needsResume && audio.buffered.length > 0) {
                       const bufferedEnd = audio.buffered.end(0);
                       const remainingBuffer = bufferedEnd - audio.currentTime;
-                      if (remainingBuffer >= 1) {
+                      if (remainingBuffer >= 2) {
                         console.log(`緩衝恢復到${remainingBuffer.toFixed(3)}s，恢復播放`);
                         try {
                           await audio.play();
