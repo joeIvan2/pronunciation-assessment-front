@@ -599,22 +599,22 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 const bufferedInfo = audio.buffered.length > 0 ? 
                   `start:${audio.buffered.start(0).toFixed(3)}, end:${audio.buffered.end(0).toFixed(3)}` : 
                   "無緩衝";
-                console.log(`嘗試播放 - readyState:${audio.readyState}, currentTime:${audio.currentTime.toFixed(3)}, buffered:${audio.buffered.length} [${bufferedInfo}]`);
+                // console.log(`嘗試播放 - readyState:${audio.readyState}, currentTime:${audio.currentTime.toFixed(3)}, buffered:${audio.buffered.length} [${bufferedInfo}]`);
                 
                 // 檢查是否有足夠的緩衝數據，並且確保有足夠的緩衝時間
                 if (audio.readyState >= 3 && audio.buffered.length > 0) { // HAVE_FUTURE_DATA或更高
                   const bufferedEnd = audio.buffered.end(0);
                   const bufferedStart = audio.buffered.start(0);
                   const bufferedDuration = bufferedEnd - bufferedStart;
-                  console.log(`音頻緩衝詳情: 開始:${bufferedStart.toFixed(3)}s, 結束:${bufferedEnd.toFixed(3)}s, 持續:${bufferedDuration.toFixed(3)}s`);
+                  // console.log(`音頻緩衝詳情: 開始:${bufferedStart.toFixed(3)}s, 結束:${bufferedEnd.toFixed(3)}s, 持續:${bufferedDuration.toFixed(3)}s`);
                   
                   // 確保至少有1秒的緩衝時間再開始播放（邊下載邊播放）
                   if (bufferedEnd >= 1) {
-                                          console.log("🎵 1秒緩衝就緒，開始邊下載邊播放！");
+                                          // console.log("🎵 1秒緩衝就緒，開始邊下載邊播放！");
                       try {
                         await audio.play();
                         hasStartedPlaying = true;
-                        console.log("✅ 邊下載邊播放已開始 - 1秒緩衝模式");
+                        // console.log("✅ 邊下載邊播放已開始 - 1秒緩衝模式");
                     } catch (playError) {
                       console.error("播放失敗:", playError);
                       // 如果是自動播放策略問題，等待用戶交互
@@ -708,7 +708,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     }
                     
                     if (!hasStartedPlaying) {
-                      console.log("檢查緩衝時間是否足夠播放");
+                      // console.log("檢查緩衝時間是否足夠播放");
                       await tryToPlay();
                     }
                     
@@ -1061,22 +1061,22 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       // 優先使用 MediaSource API 實現真正的邊下載邊播放（1秒緩衝）
       if (hasMediaSource) {
         try {
-          console.log("🚀 開始真正的邊下載邊播放 - MediaSource流式播放");
+          // console.log("🚀 開始真正的邊下載邊播放 - MediaSource流式播放");
           const streamAudio = await playStreamingWebMAudio(text, voice);
           audioRef.current = streamAudio;
           setState(prev => ({ ...prev, isLoading: false }));
-          console.log("✅ MediaSource邊下載邊播放成功！");
+          // console.log("✅ MediaSource邊下載邊播放成功！");
           return { audio: streamAudio };
         } catch (error) {
           console.warn("❌ MediaSource播放失敗，切換到傳統下載:", error);
           // 繼續嘗試傳統方法
         }
       } else {
-        console.log("⚠️ 瀏覽器不支持MediaSource，使用傳統下載方法");
+                  // console.log("⚠️ 瀏覽器不支持MediaSource，使用傳統下載方法");
       }
       
               // 如果MediaSource失敗或不支持，使用傳統方法（完全下載後播放）
-        console.log("📥 Fallback: 傳統完全下載方法");
+        // console.log("📥 Fallback: 傳統完全下載方法");
         return await fallbackToTraditionalMethod();
       
     } catch (err) {
