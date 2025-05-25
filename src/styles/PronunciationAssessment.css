@@ -33,10 +33,22 @@
 }
 
 .pa-title {
-  color: var(--ios-text);
-  font-size: 22px;
-  font-weight: 700;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 2px;
+}
+
+.pa-title-logo {
+  width: 100vw;
+  max-width: 300px;
+  min-width: 120px;
+  /* 設置固定高度比例來實現裁剪效果 */
+  aspect-ratio: 3/ 1; /* 可以根據原圖比例調整 */
+  object-fit: cover;
+  object-position: center;
+  /* 通過 clip-path 裁剪上下各10% */
+  clip-path: inset(10% 0 10% 0);
 }
 
 .pa-subtitle {
@@ -808,7 +820,7 @@ h4 {
   background-color: rgba(255, 255, 0, 0.1);
 }
 
-/* 添加分享卡片按鈕樣式 */
+/* 新增分享卡片按鈕樣式 */
 .primary-button, 
 .secondary-button {
   padding: 10px 18px;
@@ -1042,7 +1054,7 @@ h4 {
   transition: width 0.3s ease;
 }
 
-/* 高亮新添加的收藏项目动画 */
+/* 高亮新新增的收藏项目动画 */
 @keyframes highlightFavorite {
   0% {
     background: rgba(255, 215, 0, 0.4);

@@ -36,7 +36,7 @@ const TagManager: React.FC<TagManagerProps> = ({
       
       {isExpanded && (
         <>
-          {/* 添加新標籤 */}
+          {/* 新增新標籤 */}
           <div style={{ 
             marginBottom: 16, 
             background: "var(--ios-card)", 
@@ -49,7 +49,7 @@ const TagManager: React.FC<TagManagerProps> = ({
               margin: "0 0 8px 0",
               fontSize: 15,
               fontWeight: 600
-            }}>{editingTagId ? "編輯標籤" : "添加新標籤"}</h4>
+            }}>{editingTagId ? "編輯標籤" : "新增新標籤"}</h4>
             <div style={{ display: "flex", gap: 8 }}>
               <input 
                 type="text" 
@@ -93,7 +93,7 @@ const TagManager: React.FC<TagManagerProps> = ({
                   fontWeight: 500
                 }}
               >
-                {editingTagId ? "更新" : "添加"}
+                {editingTagId ? "更新" : "新增"}
               </button>
               
               {editingTagId && (

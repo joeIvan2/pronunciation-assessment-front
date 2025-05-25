@@ -191,11 +191,7 @@ export const generateSpeechStream = async (
           body: JSON.stringify({ 
             text, 
             voice, 
-            languageCode,
-            clientInfo: {
-              userAgent: navigator.userAgent,
-              timestamp: Date.now()
-            }
+            languageCode
           }),
           signal: controller.signal
         });

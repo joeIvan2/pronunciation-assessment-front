@@ -21,7 +21,7 @@ const HistoryRecord: React.FC<HistoryRecordProps> = ({
   isExpanded,
   onToggleExpand
 }) => {
-  // 添加詞語評分的顯示狀態
+  // 新增詞語評分的顯示狀態
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
   
   // 在组件挂载时检查isExpanded状态

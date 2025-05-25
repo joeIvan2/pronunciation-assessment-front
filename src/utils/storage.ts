@@ -162,7 +162,7 @@ export const saveNextTagId = (id: number): void => {
 
 // 获取收藏夹
 export const getFavorites = (): Favorite[] => {
-  // 默認值 - 使用預設的示例數據（使用從0開始的ID避免與用戶添加的項目衝突）
+  // 默認值 - 使用預設的示例數據（使用從0開始的ID避免與用戶新增的項目衝突）
   const defaultFavorites: Favorite[] = [
     {
       "id": "0",
@@ -290,15 +290,8 @@ export const getFavorites = (): Favorite[] => {
         return fav;
       });
       
-      // 根據創建時間排序，最新的排在前面
-      const sortedFavorites = [...normalized].sort((a, b) => {
-        // 確保 createdAt 是數字類型，如果不是則使用默認值
-        const createdAtA = typeof a.createdAt === 'number' ? a.createdAt : 0;
-        const createdAtB = typeof b.createdAt === 'number' ? b.createdAt : 0;
-        return createdAtB - createdAtA; // 降序排列，最新的在前
-      });
-      
-      return sortedFavorites;
+      // 移除自動排序，由addToFavorites手動控制排序時機
+      return normalized;
     }
   } catch (e) {
     console.error('解析收藏夾數據出錯:', e);
@@ -310,6 +303,7 @@ export const getFavorites = (): Favorite[] => {
 
 // 保存收藏夹
 export const saveFavorites = (favorites: Favorite[]): void => {
+  // 直接保存傳入的數據，不進行自動排序
   setItem('favorites', favorites);
 };
 
@@ -400,7 +394,7 @@ export interface HistoryItem {
   scorePronunciation: number;
   timestamp: number;
   recognizedText?: string;
-  words?: any[]; // 添加单词评分数据字段
+  words?: any[]; // 新增单词评分数据字段
 }
 
 // 获取历史记录
@@ -413,7 +407,7 @@ export const saveHistoryRecords = (records: HistoryItem[]): void => {
   setItem('historyRecords', records);
 };
 
-// 添加历史记录
+// 新增历史记录
 export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>): void => {
   const records = getHistoryRecords();
   const newRecord: HistoryItem = {
@@ -744,7 +738,7 @@ export const saveShareInfo = (info: Omit<ShareInfo, 'timestamp'>): void => {
   if (index !== -1) {
     shareInfos[index] = newInfo;
   } else {
-    shareInfos.unshift(newInfo); // 添加到列表開頭
+    shareInfos.unshift(newInfo); // 新增到列表開頭
   }
   
   // 只保留最近的5個分享
@@ -788,7 +782,7 @@ export const getTTSCacheItem = (text: string, voice: string): TTSCacheItem | und
   return cache.find(item => item.text === text && item.voice === voice);
 };
 
-// 添加TTS缓存项
+// 新增TTS缓存项
 export const addTTSCacheItem = (text: string, voice: string, audioUrl: string): void => {
   // 不緩存blob URL或空URL
   if (!audioUrl || !isValidURL(audioUrl)) {
@@ -808,16 +802,16 @@ export const addTTSCacheItem = (text: string, voice: string, audioUrl: string): 
     timestamp: Date.now()
   };
   
-  // 更新已存在项或添加新项
+  // 更新已存在项或新增新项
   if (existingIndex !== -1) {
     cache[existingIndex] = newItem;
   } else {
-    cache.unshift(newItem); // 添加到开头
+    cache.unshift(newItem); // 新增到开头
   }
   
   // 仅保留最新的5个缓存项
   const updatedCache = cache.slice(0, 5);
   setItem('ttsCache', updatedCache);
   
-  console.log(`成功添加TTS緩存: ${text.slice(0, 20)}... (${voice})`);
+  console.log(`成功新增TTS緩存: ${text.slice(0, 20)}... (${voice})`);
 }; 

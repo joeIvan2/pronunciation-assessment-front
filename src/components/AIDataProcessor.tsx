@@ -44,9 +44,10 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   // 定義範例提示句
   const examplePrompts = [
     
-    "分析我的發音歷史記錄，幫我用這些字做一個短文",
-    "產生3個跟圖片內容有關的句子",
-    "幫我產生1個IELTS等級9分的人會讀到的新科技短文(不要只有一句話)"
+    "客製化發音糾正：分析我的發音歷史記錄，幫我用這些字做一個短文",
+    "虛實轉換，圖生文情境：產生3個跟圖片內容有關的句子",
+    "指定英語能力：幫我產生1個IELTS等級8分的人會寫出的短文(不要只有一句話)",
+    "指定生活情境：幫我創造在百貨公司腳踏車專櫃，例如購買捷安特登山車情境時會講到的句子，以對話的形式，可以忽略人名，一個情境，5個來回對話句子"
   ];
   
   // 處理範例提示點擊
@@ -132,7 +133,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     setPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
-  // 添加一個簡單的 CSS 樣式到 head
+  // 新增一個簡單的 CSS 樣式到 head
   useEffect(() => {
     const styleElement = document.createElement('style');
     styleElement.innerHTML = `
@@ -199,7 +200,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       });
       formData.append('data', jsonData);
       
-      // 添加圖片（如果有）
+      // 新增圖片（如果有）
       images.forEach((image, index) => {
         formData.append(`image_${index}`, image);
       });
@@ -223,18 +224,18 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           // 如果是對象，以字符串形式保存
           setAiResponse(JSON.stringify(data, null, 2));
           
-          // 處理返回的 favorites 數據，將其添加到用戶的收藏中
+          // 處理返回的 favorites 數據，將其新增到用戶的收藏中
           if (data.favorites && Array.isArray(data.favorites)) {
-            // 收集所有要添加的文本
+            // 收集所有要新增的文本
             const textsToAdd = data.favorites
               .filter(fav => fav && typeof fav.text === 'string')
               .map(fav => fav.text);
             
-            // 如果有文本要添加，一次性調用 addToFavorites 函數
+            // 如果有文本要新增，將順序反轉後一次性調用 addToFavorites 函數（從最後往前加）
             if (textsToAdd.length > 0) {
-              addToFavorites(textsToAdd);
-              // 記錄添加了多少條收藏
-              console.log(`已添加 ${textsToAdd.length} 條新收藏`);
+              addToFavorites(textsToAdd.reverse());
+              // 記錄新增了多少條收藏
+              console.log(`已新增 ${textsToAdd.length} 條新收藏（從後往前）`);
             }
           }
         } else {
@@ -303,7 +304,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           id="image-upload"
         />
         
-          <label htmlFor="image-upload" className="control-button" title="添加圖片">
+          <label htmlFor="image-upload" className="control-button" title="新增圖片">
             <i className="fas fa-image"></i>
         </label>
         </div>

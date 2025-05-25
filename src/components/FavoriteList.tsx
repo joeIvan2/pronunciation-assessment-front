@@ -62,7 +62,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     return fav;
   });
   
-  // 添加列表展開/收起狀態
+  // 新增列表展開/收起狀態
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
   
   // 在组件挂载时设置展开状态
@@ -188,7 +188,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
         if (editingData.field === 'text') {
           return { ...fav, text: editingData.value };
         }
-        // 其他欄位可以根據需要添加
+        // 其他欄位可以根據需要新增
       }
       return fav;
     });
@@ -308,7 +308,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
             // 檢查ID是否是數字格式的字符串
             const isNumericId = /^\d+$/.test(String(fav.id));
             
-            // 如果是數字ID，將其轉為負數或使用時間戳前綴，避免與用戶添加的ID衝突
+            // 如果是數字ID，將其轉為負數或使用時間戳前綴，避免與用戶新增的ID衝突
             const newId = isNumericId 
               ? `imp-${timestamp}-${index}` // 使用前綴和索引
               : (fav.id || `imp-${timestamp}-${index}`);
@@ -345,7 +345,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   // 用於跟踪已經滾動過的項目ID
   const [scrolledItemId, setScrolledItemId] = useState<string | null>(null);
   
-  // 處理自動滾動到新添加的收藏項目
+  // 處理自動滾動到新新增的收藏項目
   useEffect(() => {
     if (lastAddedFavoriteId && lastAddedFavoriteId !== scrolledItemId) {
       const itemElement = document.getElementById(`favorite-item-${lastAddedFavoriteId}`);
@@ -353,7 +353,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
         // 使用setTimeout確保在DOM更新後滾動
         setTimeout(() => {
           itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 添加高亮效果
+          // 新增高亮效果
           itemElement.style.animation = 'highlightFavorite 2s';
           setScrolledItemId(lastAddedFavoriteId);
           
@@ -459,10 +459,10 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                         </span>
                       ))}
                     
-                    {/* 添加標籤按鈕 */}
+                    {/* 新增標籤按鈕 */}
                     {sortedTags
                       .filter(tag => !fav.tagIds.includes(tag.tagId))
-                      .slice(0, 3) // 只顯示前3個未添加的標籤
+                      .slice(0, 3) // 只顯示前3個未新增的標籤
                       .map(tag => (
                         <span
                           key={tag.tagId}
@@ -510,7 +510,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
               textAlign: "center",
               border: "1px solid var(--ios-border)"
             }}>
-              還沒有收藏的句子，請使用文本輸入框右下方的星號按鈕(★)添加
+              還沒有收藏的句子，請使用文本輸入框右下方的星號按鈕(★)新增
             </div>
           )}
           

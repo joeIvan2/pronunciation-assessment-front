@@ -3,8 +3,6 @@ import "../styles/PronunciationAssessment.css";
 
 // 組件導入
 import ScoreBar from "../components/ScoreBar";
-import ErrorTypeTag from "../components/ErrorTypeTag";
-import Word from "../components/Word";
 import WordsDisplay from "../components/WordsDisplay";
 import TagManager from "../components/TagManager";
 import VoicePicker from "../components/VoicePicker";
@@ -23,7 +21,7 @@ import { useAzureSpeech } from "../hooks/useAzureSpeech";
 import * as storage from "../utils/storage";
 
 // 類型導入
-import { SpeechAssessmentResult, Favorite, Tag, VoiceOption } from "../types/speech";
+import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
 
 // 我們在storage.ts中已經更新了TabName類型，所以這裡不需要再定義
 
@@ -41,12 +39,10 @@ const PronunciationAssessment: React.FC = () => {
   const [showAzureSettings, setShowAzureSettings] = useState<boolean>(false);
   
   // 語音設置
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(() => storage.getCardExpandStates().voicePicker);
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
   // 新增AI語音設置
-  const [selectedAIVoice, setSelectedAIVoice] = useState<string>("Puck");
+  const [selectedAIVoice, setSelectedAIVoice] = useState<string>(() => storage.getAIVoice());
   
   // 標籤系統
   const [isTagExpanded, setIsTagExpanded] = useState<boolean>(() => storage.getCardExpandStates().tagManager);
@@ -91,7 +87,7 @@ const PronunciationAssessment: React.FC = () => {
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
 
-  // 用於跟踪最新添加的收藏項目ID
+  // 用於跟踪最新新增的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
   
   // TTS相關狀態 (只在Azure直連模式下使用流式TTS)
@@ -138,28 +134,6 @@ const PronunciationAssessment: React.FC = () => {
       setButtonStyleDelayed(false); // 重置按鈕樣式狀態
     }
   }, [recorder, backendSpeech, referenceText, strictMode, useBackend, setIsLoading, setResult, setError, setUseBackend]);
-  
-  // 使用瀏覽器Web Speech API朗讀文本
-  const speakTextWithBrowserAPI = useCallback(() => {
-    if (!window.speechSynthesis) return;
-    
-    // 取消之前的語音
-    window.speechSynthesis.cancel();
-    
-    // 創建語音合成utterance
-    const utterance = new SpeechSynthesisUtterance(referenceText);
-      
-    // 設置語音
-      if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
-    
-    // 設置語速
-    utterance.rate = voiceSettings.rate;
-    
-    // 播放語音
-    window.speechSynthesis.speak(utterance);
-  }, [referenceText, selectedVoice, voiceSettings.rate]);
 
   // 收藏夾相關函數
   const addToFavorites = (text: string | string[], tagIds: string[] = []) => {
@@ -192,14 +166,14 @@ const PronunciationAssessment: React.FC = () => {
       // 檢查是否已存在相同文本
       const existingFavorite = favorites.find(fav => fav.text === trimmedText);
       if (existingFavorite) {
-        // 如果存在且不是批次添加，更新標籤並提示
+        // 如果存在且不是批次新增，更新標籤並提示
         if (!Array.isArray(text)) {
           updateFavoriteTags(existingFavorite.id, tagIds.length ? tagIds : selectedTags);
           alert("此句子已在我的最愛！已更新標籤。");
           
           // 切換到我的最愛標籤頁
           handleTabChange('favorites');
-          // 設置最後添加的ID為此已存在項目
+          // 設置最後新增的ID為此已存在項目
           setLastAddedFavoriteId(existingFavorite.id);
           }
         continue; // 跳過已存在的文本
@@ -207,7 +181,7 @@ const PronunciationAssessment: React.FC = () => {
       
       // 創建新收藏項目
       const newId = currentNextId.toString();
-      // 記錄第一個新添加的ID
+      // 記錄第一個新新增的ID
       if (firstNewFavoriteId === null) {
         firstNewFavoriteId = newId;
     }
@@ -216,7 +190,7 @@ const PronunciationAssessment: React.FC = () => {
         id: newId,
         text: trimmedText,
         tagIds: tagIds.length ? tagIds : selectedTags, // 使用當前選中的標籤或指定的標籤
-        createdAt: Date.now() + i // 添加索引偏移確保順序正確
+        createdAt: Date.now() + i // 新增索引偏移確保順序正確
       };
       
       newFavorites.push(newFavorite);
@@ -226,24 +200,45 @@ const PronunciationAssessment: React.FC = () => {
     // 如果沒有新增項目則直接返回
     if (newFavorites.length === 0) return;
     
-    // 一次性更新所有收藏，新項目放在最前面
-    const updatedFavorites = [...newFavorites, ...favorites].slice(0, 20);
-    setFavorites(updatedFavorites);
-    storage.saveFavorites(updatedFavorites);
+    // 合併所有收藏項目
+    const allFavorites = [...favorites, ...newFavorites];
+    
+    // 手動按 ID 數字大小排序，ID 數字大的排在前面
+    const sortedFavorites = allFavorites.sort((a, b) => {
+      // 將 ID 轉換為數字進行比較
+      const idA = parseInt(a.id, 10);
+      const idB = parseInt(b.id, 10);
+      
+      // 如果都是有效數字，按數字大小排序（降序）
+      if (!isNaN(idA) && !isNaN(idB)) {
+        return idB - idA; // 降序排列，數字大的在前
+      }
+      
+      // 如果一個是數字一個不是，數字的排在前面
+      if (!isNaN(idA) && isNaN(idB)) return -1;
+      if (isNaN(idA) && !isNaN(idB)) return 1;
+      
+      // 如果都不是數字，按字符串排序
+      return b.id.localeCompare(a.id);
+    });
+    
+    // 設置狀態和保存
+    setFavorites(sortedFavorites);
+    storage.saveFavorites(sortedFavorites);
     
     // 更新 nextFavoriteId
     setNextFavoriteId(currentNextId);
     storage.saveNextFavoriteId(currentNextId);
     
-    // 如果是批次添加，顯示添加成功的提示
+    // 如果是批次新增，顯示新增成功的提示
     if (Array.isArray(text) && newFavorites.length > 0) {
-      console.log(`成功添加 ${newFavorites.length} 個句子到收藏`);
+      console.log(`成功新增 ${newFavorites.length} 個句子到收藏`);
     }
     
     // 切換到我的最愛標籤頁
     handleTabChange('favorites');
     
-    // 設置最後添加的收藏項目ID，用於聚焦
+    // 設置最後新增的收藏項目ID，用於聚焦
     if (firstNewFavoriteId) {
       setLastAddedFavoriteId(firstNewFavoriteId);
     }
@@ -287,7 +282,7 @@ const PronunciationAssessment: React.FC = () => {
   const toggleTagOnFavorite = (favoriteId: string, tagId: string) => {
     const updatedFavorites = favorites.map(fav => {
       if (fav.id === favoriteId) {
-        // 如果標籤已存在，則移除；否則添加
+        // 如果標籤已存在，則移除；否則新增
         const hasTag = fav.tagIds.includes(tagId);
         return {
           ...fav,
@@ -324,18 +319,23 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   // 字體大小調整
-  const increaseFontSize = () => {
-    const newSize = fontSize + 1;
+  const decreaseFontSize = () => {
+    const newSize = Math.max(fontSize - 2, 12);
     setFontSize(newSize);
     storage.saveFontSize(newSize);
   };
   
-  const decreaseFontSize = () => {
-    if (fontSize > 12) { // 避免字體太小
-      const newSize = fontSize - 1;
+  const increaseFontSize = () => {
+    const newSize = fontSize + 1;
       setFontSize(newSize);
       storage.saveFontSize(newSize);
-    }
+  };
+  
+  // 語音設置相關
+  const handleSpeechRateChange = (rate: number) => {
+    const updatedSettings = { ...voiceSettings, rate: rate };
+    setVoiceSettings(updatedSettings);
+    storage.saveVoiceSettings(updatedSettings);
   };
   
   // 前一條和下一條句子功能
@@ -386,122 +386,6 @@ const PronunciationAssessment: React.FC = () => {
       storage.saveReferenceText(favorites[newIndex].text);
     }
   };
-  
-  // 語音設置相關
-  const handleVoiceSearchChange = (term: string) => {
-    const updatedSettings = { ...voiceSettings, searchTerm: term };
-    setVoiceSettings(updatedSettings);
-    storage.saveVoiceSettings(updatedSettings);
-  };
-  
-  const handleSpeechRateChange = (rate: number) => {
-    const updatedSettings = { ...voiceSettings, rate };
-    setVoiceSettings(updatedSettings);
-    storage.saveVoiceSettings(updatedSettings);
-  };
-  
-  const handleSelectVoice = (voice: SpeechSynthesisVoice) => {
-    console.log(`選擇語音: ${voice.name}, ${voice.lang}`);
-    
-    // 立即更新當前語音
-    setSelectedVoice(voice);
-    
-    // 保存語音設置到本地存儲，保留現有設置（如語速）
-    const updatedSettings = {
-      ...voiceSettings,
-      voiceName: voice.name,
-      voiceLang: voice.lang
-    };
-    setVoiceSettings(updatedSettings);
-    storage.saveVoiceSettings(updatedSettings);
-    
-    // 預先測試一下選擇的語音
-    const testUtterance = new SpeechSynthesisUtterance('Test');
-    testUtterance.voice = voice;
-    testUtterance.lang = "en-US";
-    testUtterance.volume = 30; // 靜音測試
-    window.speechSynthesis.speak(testUtterance);
-  };
-  
-  // 確保在組件加載時預加載語音
-  useEffect(() => {
-    // 在某些瀏覽器中，voices列表可能需要時間加載
-    if ('speechSynthesis' in window) {
-      // 獲取當前可用的語音
-      const loadVoices = () => {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length === 0) {
-          console.log('語音列表為空，稍後將重試');
-          return;
-        }
-
-        // 過濾所有包含 en 的語音
-        const enVoices = voices.filter(v => 
-          v.lang.toLowerCase().includes('en') || 
-          v.name.toLowerCase().includes('english')
-        );
-        
-        console.log(`加載了${enVoices.length}個英文語音選項`);
-        setAvailableVoices(enVoices);
-        
-        // 從 localStorage 中獲取保存的語音設置
-        const savedSettings = storage.getVoiceSettings();
-        
-        // 如果已經保存了語音名稱，嘗試在可用語音中尋找匹配的語音
-        if (savedSettings.voiceName && !selectedVoice) {
-          const savedVoice = enVoices.find(v => v.name === savedSettings.voiceName);
-          
-          if (savedVoice) {
-            console.log(`從存儲中恢復語音: ${savedVoice.name}, ${savedVoice.lang}`);
-            setSelectedVoice(savedVoice);
-            return; // 已找到保存的語音，無需設置默認語音
-          } else {
-            console.log(`未找到已保存的語音 "${savedSettings.voiceName}"，將選擇默認語音`);
-          }
-        }
-        
-        // 如果沒有找到保存的語音或者沒有保存過，選擇一個默認語音
-        if (!selectedVoice && enVoices.length > 0) {
-          // 優先選擇 en-US 語音，如果沒有則用第一個
-          const usVoice = enVoices.find(v => v.lang === 'en-US');
-          const preferredVoice = usVoice || enVoices[0];
-          
-          console.log(`設置默認語音: ${preferredVoice.name}, ${preferredVoice.lang}`);
-          setSelectedVoice(preferredVoice);
-          
-          // 保存語音設置
-          storage.saveVoiceSettings({
-            ...voiceSettings,
-            voiceName: preferredVoice.name,
-            voiceLang: preferredVoice.lang
-          });
-        }
-      };
-      
-      // 首次加載嘗試
-      loadVoices();
-      
-      // 加載AI語音設置
-      const savedAIVoice = storage.getAIVoice();
-      if (savedAIVoice) {
-        setSelectedAIVoice(savedAIVoice);
-        console.log(`從存儲中恢復AI語音: ${savedAIVoice}`);
-      }
-      
-      // 監聽voices加載完成事件
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-      
-      // 確保語音列表已加載 - 在某些瀏覽器中需要觸發一下
-      if (window.speechSynthesis.getVoices().length === 0) {
-        window.speechSynthesis.cancel();
-      }
-      
-      // 清理函數
-      return () => {
-        window.speechSynthesis.onvoiceschanged = null;
-      };
-    }
-  }, []);
   
   // 處理錄音狀態變化
   useEffect(() => {
@@ -563,7 +447,7 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveReferenceText(text);
   };
 
-  // 將評估結果添加到歷史記錄
+  // 將評估結果新增到歷史記錄
   useEffect(() => {
     if (result) {
       // 提取單詞評分數據
@@ -597,7 +481,7 @@ const PronunciationAssessment: React.FC = () => {
         record.timestamp > last5Seconds
       );
       
-      // 只有不存在相似記錄時才添加
+      // 只有不存在相似記錄時才新增
       if (!hasSimilarRecord) {
         storage.addHistoryRecord({
           text: referenceText,
@@ -787,66 +671,32 @@ const PronunciationAssessment: React.FC = () => {
       }
       
       setIsLoading(true);
-      setError(null); // 重置可能的錯誤狀態
+      setError(null);
       
-      // 使用Azure直連模式時，使用AI服務器API
-      if (!useBackend) {
         try {
-          // 在Azure直連模式下，使用WebM/Opus格式的流式TTS API
+        // 統一使用AI服務器語音合成，傳遞語音速度
           setStreamLoading(true);
-          const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice)
+        const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice, voiceSettings.rate)
             .catch((err) => {
               console.error('WebM流式TTS失敗，嘗試標準TTS:', err);
               // 如果WebM流式失敗，嘗試標準TTS API
-              return azureSpeech.speakWithAIServer(referenceText, selectedAIVoice)
+            return azureSpeech.speakWithAIServer(referenceText, selectedAIVoice, voiceSettings.rate)
                 .then(res => ({ audio: new Audio(), fromCache: res.fromCache }));
             });
             
           setStreamLoading(false);
-          console.log("WebM TTS已完成", result);
-          return;
+        console.log("AI TTS已完成", result);
         } catch (err) {
-          console.warn('AI服務器WebM TTS完全失敗，嘗試瀏覽器API:', err);
-          // 所有AI服務器方法都失敗，回退到瀏覽器API
-          if ('speechSynthesis' in window) {
-            speakTextWithBrowserAPI();
-            return;
-          }
+        console.error('AI語音合成失敗:', err);
+        setError(`AI語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
           setStreamLoading(false);
-        }
-      } else {
-        // 遠端模式下，直接使用瀏覽器API
-        if ('speechSynthesis' in window) {
-          console.log('使用瀏覽器的Web Speech API');
-          speakTextWithBrowserAPI();
-          return;
-        } else {
-          // 如果瀏覽器不支持語音API，嘗試使用後端服務
-          console.log('瀏覽器不支持Web Speech API，嘗試使用後端服務');
-          await backendSpeech.speakWithBackend(referenceText);
-          return;
-        }
-      }
-      
-      // 以下是備用方案，如果上述方法都失敗
-      if (useBackend) {
-        console.log('嘗試使用後端服務進行TTS');
-        await backendSpeech.speakWithBackend(referenceText);
-      } else {
-        console.log('嘗試直接使用Azure API進行TTS');
-        if (azureSettings.key && azureSettings.region) {
-          await azureSpeech.speakWithAzure(referenceText, azureSettings);
-        } else {
-          throw new Error('未設置Azure憑據，無法使用語音服務');
-        }
       }
     } catch (err) {
-      console.error('所有文本轉語音方法均失敗:', err);
-      setError(`文本轉語音失敗: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('語音合成失敗:', err);
+      setError(`語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
-      setStreamLoading(false);
     }
   };
   
@@ -960,27 +810,15 @@ const PronunciationAssessment: React.FC = () => {
   // JSX 渲染部分
   return (
     <div className="pa-container">
-      <h2 className="pa-title">發音評分</h2>
-      <p 
-        className="pa-subtitle" 
-        onClick={() => {
-          // 如果從後端切換到前端，需要檢查Azure憑據
-          if (useBackend && (!azureSettings.key || !azureSettings.region)) {
-            setShowAzureSettings(true);
-            return; // 等用戶填寫設置后再切換
-          }
-          
-          const newMode = !useBackend; // 切換模式
-          setUseBackend(newMode);
-          storage.saveUseBackend(newMode);
-        }}
-        style={{ 
-          color: useBackend ? 'var(--ios-text-secondary)' : 'var(--ios-primary)',
-          cursor: 'pointer'
-        }}
-      >
-        測試中25年0519更新
-      </p>
+      <div className="pa-title">
+        <img 
+          src="/nicetone.webp" 
+          alt="NiceTone" 
+          className="pa-title-logo" 
+          onClick={() => setShowAzureSettings(true)}
+          style={{ cursor: 'pointer' }}
+        />
+      </div>
       
       {/* 錯誤提示 */}
       {error && (
@@ -993,7 +831,7 @@ const PronunciationAssessment: React.FC = () => {
       <div className="pa-main-content">
         {/* 整合输入区域和控制按钮 */}
         <div className="card-section">
-          {/* 添加选项卡导航 */}
+          {/* 新增选项卡导航 */}
           <div className="tabs-nav input-tabs">
             <button 
               className={`tab-button ${topActiveTab === 'input' ? 'active' : ''}`}
@@ -1059,7 +897,7 @@ const PronunciationAssessment: React.FC = () => {
             <button
               onClick={() => addToFavorites(referenceText)}
               disabled={!referenceText}
-              title="添加到收藏"
+              title="新增到收藏"
               className={!referenceText ? "control-button favorite-button-disabled" : "control-button favorite-button-dynamic"}
                   >
                     <i className="fas fa-star"></i>
@@ -1099,6 +937,7 @@ const PronunciationAssessment: React.FC = () => {
                     onClick={goToPreviousSentence}
                     disabled={favorites.length === 0}
                     className={`btn btn-nav btn-flex-0-75 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                    title="上一個收藏句子"
             >
                     <i className="fas fa-chevron-left"></i>
                   </button>
@@ -1108,6 +947,7 @@ const PronunciationAssessment: React.FC = () => {
                     onClick={goToNextSentence}
                     disabled={favorites.length === 0}
                     className={`btn btn-nav btn-flex-0-75 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                    title="下一個收藏句子"
                   >
                     <i className="fas fa-chevron-right"></i>
             </button>
@@ -1271,13 +1111,8 @@ const PronunciationAssessment: React.FC = () => {
                 <VoicePicker 
                   isExpanded={isVoiceExpanded}
                   onToggleExpand={handleVoiceExpandToggle}
-                  availableVoices={availableVoices}
-                  selectedVoice={selectedVoice}
-                  onSelectVoice={handleSelectVoice}
-                  onSearchChange={handleVoiceSearchChange}
                   rate={voiceSettings.rate}
                   onRateChange={handleSpeechRateChange}
-                  useAzureDirect={!useBackend}
                   selectedAIVoice={selectedAIVoice}
                   onSelectAIVoice={handleSelectAIVoice}
                 />
@@ -1309,7 +1144,7 @@ const PronunciationAssessment: React.FC = () => {
           }} />
         )}
         
-        {/* 添加动画样式 */}
+        {/* 新增动画样式 */}
         <style>
           {`
             @keyframes fadeInOut {

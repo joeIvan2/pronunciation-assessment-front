@@ -21,7 +21,7 @@ const getMemoryCacheItem = (text: string, voice: string): MemoryCacheItem | unde
   return memoryCache.find(item => item.text === text && item.voice === voice);
 };
 
-// 添加到內存緩存
+// 新增到內存緩存
 const addToMemoryCache = (text: string, voice: string, blob?: Blob, url?: string): MemoryCacheItem => {
   // 查詢是否已有相同項
   const existingIndex = memoryCache.findIndex(item => item.text === text && item.voice === voice);
@@ -34,11 +34,11 @@ const addToMemoryCache = (text: string, voice: string, blob?: Blob, url?: string
     timestamp: Date.now()
   };
   
-  // 更新或添加新項
+  // 更新或新增新項
   if (existingIndex !== -1) {
     memoryCache[existingIndex] = newItem;
   } else {
-    // 添加到開頭
+    // 新增到開頭
     memoryCache.unshift(newItem);
     
     // 保持緩存大小在合理範圍（10項）
@@ -82,12 +82,14 @@ interface AzureSpeechResult extends AzureSpeechState {
   
   speakWithAIServer: (
     text: string,
-    voice?: string
+    voice?: string,
+    rate?: number
   ) => Promise<{ fromCache: boolean }>;
   
   speakWithAIServerStream: (
     text: string,
-    voice?: string
+    voice?: string,
+    rate?: number
   ) => Promise<{ audio: HTMLAudioElement }>;
   
   cancelAzureSpeech: () => void;
@@ -268,7 +270,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
   // 使用AI服務器進行文本轉語音
   const speakWithAIServer = async (
     text: string,
-    voice: string = "Puck"
+    voice: string = "Puck",
+    rate?: number
   ): Promise<{ fromCache: boolean }> => {
     try {
       if (!text) {
@@ -294,13 +297,16 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             const audio = new Audio(memoryCachedItem.url);
             audioRef.current = audio;
             
+            // 設置播放速度
+            audio.playbackRate = rate || 1.0;
+            
             // 播放完成后清理引用
             audio.onended = () => {
               audioRef.current = null;
             };
             
             await audio.play();
-            console.log("從內存緩存成功播放音頻");
+            console.log(`從內存緩存成功播放音頻，速度: ${audio.playbackRate}x`);
             setState(prev => ({ ...prev, isLoading: false }));
             return { fromCache: true };
           } 
@@ -314,13 +320,16 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             const audio = new Audio(audioUrl);
             audioRef.current = audio;
             
+            // 設置播放速度
+            audio.playbackRate = rate || 1.0;
+            
             // 播放完成后清理引用
             audio.onended = () => {
               audioRef.current = null;
             };
             
             await audio.play();
-            console.log("從內存緩存的blob創建URL並播放成功");
+            console.log(`從內存緩存的blob創建URL並播放成功，速度: ${audio.playbackRate}x`);
             setState(prev => ({ ...prev, isLoading: false }));
             return { fromCache: true };
           }
@@ -347,6 +356,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           const audio = new Audio(fullAudioUrl);
           audioRef.current = audio;
           
+          // 設置播放速度
+          audio.playbackRate = rate || 1.0;
+          
           // 播放完成后清理
           audio.onended = () => {
             audioRef.current = null;
@@ -354,7 +366,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           
           // 嘗試播放
           await audio.play();
-          console.log("從localStorage緩存成功播放音頻");
+          console.log(`從localStorage緩存成功播放音頻，速度: ${audio.playbackRate}x`);
           
           // 同時加入內存緩存
           addToMemoryCache(text, voice, undefined, fullAudioUrl);
@@ -383,19 +395,22 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           const audio = new Audio(fullAudioUrl);
           audioRef.current = audio;
           
+          // 設置播放速度
+          audio.playbackRate = rate || 1.0;
+          
           // 播放完成后清理
           audio.onended = () => {
             audioRef.current = null;
           };
           
-          // 添加到localStorage緩存
+          // 新增到localStorage緩存
           addTTSCacheItem(text, voice, data.audioUrl);
           
-          // 同時添加到內存緩存
+          // 同時新增到內存緩存
           addToMemoryCache(text, voice, undefined, fullAudioUrl);
           
           await audio.play();
-          console.log("AI服務器新生成的語音播放中");
+          console.log(`AI服務器新生成的語音播放中，速度: ${audio.playbackRate}x`);
           setState(prev => ({ ...prev, isLoading: false }));
           return { fromCache: false };
         } catch (playError) {
@@ -418,7 +433,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
   // 使用AI服務器進行流式文本转语音
   const speakWithAIServerStream = async (
     text: string,
-    voice: string = "Puck"
+    voice: string = "Puck",
+    rate?: number
   ): Promise<{ audio: HTMLAudioElement }> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
@@ -433,12 +449,41 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         audio.src = cached.url || URL.createObjectURL(cached.blob);
         audio.preload = "auto";
         
-        audio.oncanplaythrough = async () => {
+        // 更積極的播放事件監聽
+        audio.onloadeddata = async () => {
+          // 設置播放速度
+          audio.playbackRate = rate || 1.0;
           try {
             await audio.play();
-            console.log("緩存音頻播放成功");
+            console.log(`緩存音頻loadeddata後播放成功，速度: ${audio.playbackRate}x`);
+          } catch (playError) {
+            console.log("緩存音頻loadeddata播放失敗，等待canplay");
+          }
+        };
+        
+        audio.oncanplay = async () => {
+          if (audio.paused) {
+            // 設置播放速度
+            audio.playbackRate = rate || 1.0;
+            try {
+              await audio.play();
+              console.log(`緩存音頻canplay後播放成功，速度: ${audio.playbackRate}x`);
+            } catch (playError) {
+              console.log("緩存音頻canplay播放失敗，等待canplaythrough");
+            }
+          }
+        };
+        
+        audio.oncanplaythrough = async () => {
+          if (audio.paused) {
+            // 設置播放速度
+            audio.playbackRate = rate || 1.0;
+          try {
+            await audio.play();
+              console.log(`緩存音頻播放成功，速度: ${audio.playbackRate}x`);
           } catch (playError) {
             console.error("緩存音頻播放失敗:", playError);
+            }
           }
         };
         
@@ -485,6 +530,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         const mediaSource = new MediaSource();
         const audio = new Audio();
         
+        // 設置播放速度
+        audio.playbackRate = rate || 1.0;
+        
         // console.log("創建MediaSource和Audio元素");
         
         // 將 MediaSource 綁定到 audio 元素
@@ -492,7 +540,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         // console.log("設置audio.src:", audio.src);
         
         return new Promise((resolve, reject) => {
-          // 添加超時保護
+          // 新增超時保護
           const timeoutId = setTimeout(() => {
             console.error("MediaSource初始化超時");
             reject(new Error("MediaSource初始化超時"));
@@ -539,7 +587,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                   sourceBuffer.addEventListener('error', errorHandler, { once: true });
                   
                   try {
-                    // console.log(`嘗試添加數據塊 ${chunkCount}，大小: ${chunk.length} 字節`);
+                    // console.log(`嘗試新增數據塊 ${chunkCount}，大小: ${chunk.length} 字節`);
                     sourceBuffer.appendBuffer(chunk);
                   } catch (e) {
                     console.error(`appendBuffer失敗 - 數據塊 ${chunkCount}:`, e);
@@ -622,8 +670,17 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                         // console.log("自動播放被阻止，等待用戶交互");
                       }
                     }
+                  } else if (bufferedEnd >= 0.5) {
+                    // console.log("緩衝時間達到0.5秒，也嘗試播放");
+                    try {
+                      await audio.play();
+                      hasStartedPlaying = true;
+                      // console.log("✅ 0.5秒緩衝模式播放成功");
+                    } catch (playError) {
+                      // console.log("0.5秒緩衝播放失敗，繼續等待");
+                    }
                   } else {
-                    // console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少1秒");
+                    // console.log("緩衝時間不足，當前:", bufferedEnd, "秒，需要至少0.5秒");
                   }
                 } else {
                   // console.log("音頻還沒準備好，readyState:", audio.readyState, "buffered:", audio.buffered.length);
@@ -636,14 +693,22 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                 if (!hasStartedPlaying) {
                   tryToPlay();
                 }
-              }, { once: true });
+              });
               
               audio.addEventListener('canplaythrough', () => {
                 // console.log('Audio canplaythrough 事件觸發');
                 if (!hasStartedPlaying) {
                   tryToPlay();
                 }
-              }, { once: true });
+              });
+              
+              // 新增loadeddata事件監聽，更早嘗試播放
+              audio.addEventListener('loadeddata', () => {
+                // console.log('Audio loadeddata 事件觸發');
+                if (!hasStartedPlaying) {
+                  tryToPlay();
+                }
+              });
               
               // 超積極處理：並行處理隊列數據，無等待
               while (true) {
@@ -686,12 +751,12 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     break;
                   }
                   
-                  // 添加數據到 buffer
+                  // 新增數據到 buffer
                   try {
                     await appendBuffer(value);
-                    // console.log(`成功添加數據塊 ${chunkCount}`);
+                    // console.log(`成功新增數據塊 ${chunkCount}`);
                     
-                    // 每次添加數據塊後都檢查是否可以開始播放和播放狀態
+                    // 每次新增數據塊後都檢查是否可以開始播放和播放狀態
                     const currentBufferedInfo = audio.buffered.length > 0 ? 
                       `start:${audio.buffered.start(0).toFixed(3)}, end:${audio.buffered.end(0).toFixed(3)}` : 
                       "無緩衝";
@@ -713,7 +778,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
                     }
                     
                   } catch (bufferError) {
-                    console.error(`添加數據塊 ${chunkCount} 失敗:`, bufferError);
+                    console.error(`新增數據塊 ${chunkCount} 失敗:`, bufferError);
                     throw bufferError;
                   }
                 }
@@ -809,7 +874,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               const blob = new Blob(chunks, { type: 'audio/webm; codecs="opus"' });
               const blobUrl = URL.createObjectURL(blob);
               addToMemoryCache(text, voice, blob, blobUrl);
-              // console.log("添加到內存緩存完成");
+              // console.log("新增到內存緩存完成");
               
               // 設置播放結束事件
               audio.onended = () => {
@@ -859,7 +924,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             reject(new Error('MediaSource錯誤'));
           });
           
-          // 添加其他事件監聽
+          // 新增其他事件監聽
           mediaSource.addEventListener('sourceended', () => {
             // console.log('MediaSource sourceended 事件');
           });
@@ -919,7 +984,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         const reader = response.body.getReader();
         const chunks: Uint8Array[] = [];
         
-        // 讀取所有數據塊，添加超時機制
+        // 讀取所有數據塊，新增超時機制
         let totalBytes = 0;
         const startTime = Date.now();
         let lastDataTime = Date.now();
@@ -987,6 +1052,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         const traditionalAudio = new Audio(audioUrl);
         audioRef.current = traditionalAudio;
         
+        // 設置播放速度
+        traditionalAudio.playbackRate = rate || 1.0;
+        
         // 預加載
         traditionalAudio.preload = "auto";
         
@@ -994,38 +1062,40 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         traditionalAudio.controls = false;
         traditionalAudio.crossOrigin = "anonymous";
         
-        // 添加到內存緩存
+        // 新增到內存緩存
         addToMemoryCache(text, voice, blob, audioUrl);
         
         // 獲取服務器返回的實際URL進行localStorage緩存
         const serverUrl = response.headers.get('x-audio-url') || '';
         if (serverUrl) {
           addTTSCacheItem(text, voice, serverUrl);
-          // console.log("將服務器WebM音頻URL添加到localStorage:", serverUrl);
+          // console.log("將服務器WebM音頻URL新增到localStorage:", serverUrl);
         } else {
           // 如果沒有服務器URL，使用blob URL（雖然會在頁面刷新後失效）
           addTTSCacheItem(text, voice, audioUrl);
         }
         
-        // 設置音頻就緒事件 - 加強緩衝檢查
+        // 設置音頻就緒事件 - 優化緩衝檢查
         traditionalAudio.oncanplaythrough = async () => {
           // console.log("WebM音頻數據就緒，準備播放");
           
-          // 額外等待確保音頻完全解碼
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // 減少等待時間，加快播放響應
+          await new Promise(resolve => setTimeout(resolve, 50));
           
-          // 檢查是否真的有完整緩衝
+          // 檢查是否有至少1秒的緩衝時間就開始播放
           if (traditionalAudio.buffered.length > 0) {
             const bufferedEnd = traditionalAudio.buffered.end(0);
             const duration = traditionalAudio.duration || 0;
-            // console.log(`緩衝檢查: buffered=${bufferedEnd.toFixed(3)}s, duration=${duration.toFixed(3)}s, 完整度=${((bufferedEnd/duration)*100).toFixed(1)}%`);
+            // console.log(`緩衝檢查: buffered=${bufferedEnd.toFixed(3)}s, duration=${duration.toFixed(3)}s`);
             
-            // 確保至少90%的音頻已緩衝
-            if (duration > 0 && bufferedEnd >= duration * 0.9) {
-              // console.log("音頻緩衝充足，開始播放");
+            // 只要有1秒的緩衝時間就立即開始播放
+            if (bufferedEnd >= 1.0) {
+              // console.log("音頻緩衝1秒就緒，立即開始播放");
+            } else if (duration > 0 && bufferedEnd >= duration * 0.5) {
+              // console.log("音頻緩衝50%以上，也可以開始播放");
             } else {
-              console.warn("音頻緩衝不足，等待更多數據");
-              await new Promise(resolve => setTimeout(resolve, 300));
+              console.log("音頻緩衝不足1秒，稍等片刻");
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
           }
           

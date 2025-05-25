@@ -52,7 +52,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
     storage.saveCardExpandState('shareData', newState);
   };
   
-  // 格式化分享鏈接，添加hash參數以支持直接導入
+  // 格式化分享鏈接，新增hash參數以支持直接導入
   const formatShareLink = (hash: string): string => {
     const baseUrl = window.location.origin + window.location.pathname;
     return `${baseUrl}?hash=${hash}`;
