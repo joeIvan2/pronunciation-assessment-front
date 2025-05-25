@@ -458,7 +458,7 @@ export const saveBottomActiveTab = (tab: BottomTabName): void => {
   setItem('bottomActiveTab', tab);
 };
 
-// 获取 AI 助手提示文字
+// 获取 AI 助理提示文字
 export const getAIPrompt = (): string => {
   // 首选获取新的键，如果不存在则检查旧的键
   const saved = localStorage.getItem('aiPrompt');
@@ -470,7 +470,7 @@ export const getAIPrompt = (): string => {
   return getItem<string>('AIPrompt', '');
 };
 
-// 保存 AI 助手提示文字
+// 保存 AI 助理提示文字
 export const saveAIPrompt = (prompt: string): void => {
   setItem('aiPrompt', prompt);
 };

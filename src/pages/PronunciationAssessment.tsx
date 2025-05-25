@@ -66,7 +66,7 @@ const PronunciationAssessment: React.FC = () => {
   const [topActiveTab, setTopActiveTab] = useState<storage.TopTabName>(() => storage.getTopActiveTab());
   const [bottomActiveTab, setBottomActiveTab] = useState<storage.BottomTabName>(() => storage.getBottomActiveTab());
   
-  // AI助手相关状态
+  // AI助理相关状态
   const [aiResponse, setAiResponse] = useState<string | null>(() => {
     try {
       return storage.getAIResponse();
@@ -843,7 +843,7 @@ const PronunciationAssessment: React.FC = () => {
               className={`tab-button ${topActiveTab === 'ai' ? 'active' : ''}`}
               onClick={() => handleTabChange('ai')}
             >
-              AI助手
+              AI助理
             </button>
           </div>
           
@@ -964,7 +964,7 @@ const PronunciationAssessment: React.FC = () => {
             </>
           )}
           
-          {/* AI助手 TAB */}
+          {/* AI助理 TAB */}
           {topActiveTab === 'ai' && (
             <AIDataProcessor
               favorites={favorites}

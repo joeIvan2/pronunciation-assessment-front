@@ -1,70 +1,191 @@
-# Getting Started with Create React App
+# 🎯 發音評估平台 (Pronunciation Assessment Platform)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+一個基於 Microsoft Azure 語音服務的智慧發音評估平台，提供專業的英語發音分析、學習管理和資料分享功能。
 
-## Available Scripts
+![Platform Logo](nicetone.webp)
 
-In the project directory, you can run:
+## ✨ 核心功能
 
-### `npm start`
+### 🎤 智慧發音評估
+- **即時錄音評估**：支援麥克風錄音，立即取得發音評分
+- **多維度評分**：提供準確度、流暢度、完整度和韻律評分
+- **詳細音素分析**：逐詞逐音素的錯誤偵測和改進建議
+- **嚴格模式**：可調整評估標準的嚴格程度
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 📝 文字輸入與管理
+- **多種輸入方式**：支援手動輸入、語音轉文字、圖片文字辨識
+- **智慧文字處理**：自動格式化和句子分割
+- **字體大小調節**：可調整文字顯示大小，適應不同需求
+- **歷史紀錄**：自動儲存評估歷史，支援快速重新載入
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🔊 語音合成與播放
+- **多語音選擇**：支援多種 AI 語音角色
+- **語速調節**：可調整播放語速
 
-### `npm test`
+### ⭐ 收藏與標籤系統
+- **智慧收藏**：一鍵收藏練習句子
+- **標籤管理**：建立、編輯、刪除自訂標籤
+- **分類篩選**：按標籤快速篩選收藏內容
+- **批次操作**：支援批次匯入和匯出收藏資料
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🤖 AI 智慧助理
+- **學習建議**：基於發音評估結果提供個人化學習建議
+- **錯誤分析**：深度分析發音錯誤模式
+- **練習推薦**：智慧推薦相關練習內容
+- **圖文輸入**：AI藉由分析圖片內容推薦相關練習內容
 
-### `npm run build`
+### 📊 資料分享與同步
+- **雲端分享**：將收藏和標籤資料分享到雲端
+- **跨裝置同步**：透過分享連結在不同裝置間同步資料
+- **版本控制**：支援資料更新和版本管理
+- **隱私保護**：使用加密雜湊保護資料安全
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 快速開始
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 環境需求
+- Node.js 16.0 或更高版本
+- npm 或 yarn 套件管理器
+- 現代瀏覽器（支援 Web Audio API）
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 安裝步驟
 
-### `npm run eject`
+1. **複製專案**
+```bash
+git clone https://github.com/your-username/pronunciation-assessment-front.git
+cd pronunciation-assessment-front
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. **安裝相依套件**
+```bash
+npm install
+# 或
+yarn install
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. **設定 Azure 語音服務**
+   - 在 Azure 入口網站建立語音服務資源
+   - 取得 API 金鑰和區域資訊
+   - 在應用程式中設定 Azure 設定
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. **啟動開發伺服器**
+```bash
+npm start
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+5. **存取應用程式**
+   - 開啟瀏覽器前往 `http://localhost:3000`
 
-## Learn More
+## 🛠️ 技術架構
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 前端技術堆疊
+- **React 18**：現代化的使用者介面框架
+- **TypeScript**：型別安全的 JavaScript 超集
+- **CSS3**：響應式設計和 iOS 風格介面
+- **Web Audio API**：音訊錄製和處理
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 核心相依套件
+- `microsoft-cognitiveservices-speech-sdk`：Azure 語音服務 SDK
+- `react-router-dom`：路由管理
+- `crypto-js`：資料加密
+- `tesseract.js`：OCR 文字辨識
+- `ffmpeg`：音訊格式轉換
 
-### Code Splitting
+### 專案結構
+```
+src/
+├── components/          # 可重複使用元件
+│   ├── FavoriteList.tsx    # 收藏清單管理
+│   ├── TagManager.tsx      # 標籤管理
+│   ├── ShareData.tsx       # 資料分享
+│   ├── AIDataProcessor.tsx # AI 助理
+│   └── ...
+├── hooks/              # 自訂 React Hooks
+│   ├── useRecorder.ts     # 錄音功能
+│   ├── useAzureSpeech.ts  # Azure 語音服務
+│   └── useBackendSpeech.ts # 後端 API
+├── pages/              # 頁面元件
+│   └── PronunciationAssessment.tsx
+├── utils/              # 工具函式
+│   └── storage.ts         # 本機儲存管理
+├── types/              # TypeScript 型別定義
+└── styles/             # 樣式檔案
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 📱 介面設計
 
-### Analyzing the Bundle Size
+### iOS 風格設計
+- **深色主題**：護眼的深色介面設計
+- **圓角卡片**：現代化的卡片式版面配置
+- **流暢動畫**：平滑的轉場效果和互動回饋
+- **響應式設計**：適配各種螢幕尺寸
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### 使用者體驗
+- **直覺操作**：簡潔明瞭的操作流程
+- **即時回饋**：即時的狀態提示和錯誤處理
+- **快捷功能**：鍵盤快速鍵和手勢支援
 
-### Making a Progressive Web App
+## 🔧 設定選項
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Azure 語音服務設定
+- **API 金鑰**：Azure 語音服務的訂閱金鑰
+- **服務區域**：選擇最近的服務區域以取得最佳效能
+- **語言設定**：支援多種語言的發音評估
 
-### Advanced Configuration
+### 評估參數
+- **嚴格模式**：調整評估的嚴格程度
+- **評分門檻**：自訂各項評分的及格標準
+- **音素分析**：啟用詳細的音素層級分析
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 📈 使用情境
 
-### Deployment
+### 個人學習
+- **發音練習**：日常英語發音練習和改進
+- **學習追蹤**：記錄學習進度和改進軌跡
+- **自主學習**：基於 AI 建議的個人化學習
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### 教育機構
+- **課堂教學**：輔助英語發音教學
+- **學生評估**：客觀的發音能力評估
+- **作業管理**：發音作業的指派和批改
 
-### `npm run build` fails to minify
+### 語言培訓
+- **專業培訓**：商務英語和專業術語發音
+- **考試準備**：雅思、托福等考試的口語準備
+- **企業培訓**：員工英語能力提升
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 🔒 隱私與安全
+
+### 資料保護
+- **本機儲存**：敏感資料優先儲存在本機
+- **加密傳輸**：所有網路傳輸使用 HTTPS 加密
+- **匿名分享**：資料分享使用匿名雜湊識別
+
+### 隱私政策
+- **最小化收集**：僅收集必要的功能資料
+- **使用者控制**：使用者完全控制資料的分享和刪除
+- **透明度**：清楚說明資料的使用方式
+
+
+
+## 🎯 發展藍圖
+
+### 即將推出的功能
+- [ ] 多語言介面支援
+- [ ] 語音對話練習
+- [ ] 社群學習功能
+- [ ] 遊戲成就激勵系統
+- [ ] AI判定遊戲難易度自動調整黏著度加強系統
+- [ ] 增加虛擬化身AVATAR，虛擬化身發音能夠增加真實性，增加使用者黏著度
+
+### 長期規劃
+- [ ] 更多語言支援(可學習除了英語之外的額外34種語言，從中文市場進階到全球市場)
+- [ ] 企業White Label服務(服務企業內訓或者學習組織)
+- [ ] AI客製化24小時PODCAST節目(藉由分析練習內容，得知使用者喜好的主題，由AI即時產製相關音訊內容供隨時聆聽)
+- [ ] VR英文學習環境，根據多個USER所添加的語句，藉由VEO3 SORA等AI影像生成服務做出完整的影片片段，讓使用者邊看影片邊學外文(可增加低年齡小朋友學習興趣)
+
+
+---
+
+**讓發音學習變得更簡單、更有效！** 🚀
+
+如果這個專案對您有幫助，請給我們一個 ⭐ Star！

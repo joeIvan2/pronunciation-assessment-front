@@ -369,7 +369,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           className="btn btn-primary"
           style={{ opacity: isLoading || !prompt.trim() ? 0.55 : 1, cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer" }}
         >
-          {isLoading ? "處理中..." : "發送給AI助手"}
+          {isLoading ? "處理中..." : "發送給AI助理"}
         </button>
       </div>
       
