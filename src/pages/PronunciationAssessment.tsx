@@ -993,10 +993,10 @@ const PronunciationAssessment: React.FC = () => {
               return (
                 <div className="card-section">
                   <h3 className="section-header special-title">總分</h3>
-                  <ScoreBar label="Accuracy" value={pa.AccuracyScore ?? pa.accuracyScore ?? 0} />
-                  <ScoreBar label="Fluency" value={pa.FluencyScore ?? pa.fluencyScore ?? 0} />
-                  <ScoreBar label="Completeness" value={pa.CompletenessScore ?? pa.completenessScore ?? 0} />
-                  <ScoreBar label="Pronunciation" value={pa.PronScore ?? pa.pronScore ?? result.pronunciationScore ?? 0} />
+                  <ScoreBar label="準確度" value={pa.AccuracyScore ?? pa.accuracyScore ?? 0} />
+                  <ScoreBar label="流暢度" value={pa.FluencyScore ?? pa.fluencyScore ?? 0} />
+                  <ScoreBar label="完整度" value={pa.CompletenessScore ?? pa.completenessScore ?? 0} />
+                  <ScoreBar label="發音" value={pa.PronScore ?? pa.pronScore ?? result.pronunciationScore ?? 0} />
                   <h3 className="section-header special-title">句子分析</h3>
                   {words.length > 0 ? (
                     <WordsDisplay words={words} />
@@ -1015,10 +1015,10 @@ const PronunciationAssessment: React.FC = () => {
             return (
               <div className="card-section">
                 <h3 className="section-header special-title">評分結果</h3>
-                <ScoreBar label="Accuracy" value={result.accuracyScore || 0} />
-                <ScoreBar label="Fluency" value={result.fluencyScore || 0} />
-                <ScoreBar label="Completeness" value={result.completenessScore || 0} />
-                <ScoreBar label="Pronunciation" value={result.pronunciationScore || 0} />
+                <ScoreBar label="準確度" value={result.accuracyScore || 0} />
+                <ScoreBar label="流暢度" value={result.fluencyScore || 0} />
+                <ScoreBar label="完整度" value={result.completenessScore || 0} />
+                <ScoreBar label="發音" value={result.pronunciationScore || 0} />
               </div>
             );
           } catch (err) {

@@ -286,7 +286,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           onChange={handlePromptChange}
           onPaste={(e) => {}}
           className="textarea-input"
-          placeholder="請輸入指導AI的提示，例如: '幫我整理我的最愛，將相似的內容分組，並創建新的標籤'"
+          placeholder="請描述你希望AI幫你創造的句子，或參考下方例句'"
           storageKey="aiPromptTextareaHeight"
           defaultHeight={100}
           onBlur={handlePromptBlur}
@@ -388,8 +388,8 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         fontSize: "14px",
         color: "var(--ios-text-secondary)"
       }}>
-        將你的歷史紀錄發送給AI，獲取智能建議和整理。還可以上傳相關圖片供AI分析。
-        <p>注意：資料來源僅為最新十次發音紀錄。</p>
+        我們除了會將您的指令發送給AI之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的發音紀錄發送給AI。
+        <p>注意：發音歷史為最新十次發音紀錄。</p>
       </div>
       
       {/* 範例提示區域放到最後 */}
