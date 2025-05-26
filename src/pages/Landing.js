@@ -179,9 +179,7 @@ export default function PronunciationPlatform() {
                   alt="nicetone.ai"
                   className="hero-logo"
                 />
-                <div className="hero-badge">
-                  <Zap />
-                </div>
+
               </div>
             </div>
 
@@ -750,7 +748,7 @@ export default function PronunciationPlatform() {
                 nicetone.ai - 基於 Microsoft Azure 語音服務的智慧發音評估平台，
                 提供專業的英語發音分析、學習管理和資料分享功能。
               </p>
-              <div className="footer-copyright">© 2024 宏煜國際貿易股份有限公司. All rights reserved.</div>
+              <div className="footer-copyright">© 2025 nicetone.ai. All rights reserved.</div>
             </div>
 
             <div>
@@ -767,7 +765,7 @@ export default function PronunciationPlatform() {
               <h3 className="footer-section-title">聯繫資訊</h3>
               <ul className="footer-list">
                 <li>台灣</li>
-                <li>宏煜國際貿易股份有限公司</li>
+                <li>ifanoski@gmail.com</li>
                 <li>創立於 2010 年</li>
               </ul>
             </div>
