@@ -2,7 +2,6 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import PronunciationAssessment from "./pages/PronunciationAssessment";
 import Landing from "./pages/Landing";
-import LandingSlides from "./pages/Landing-slides";
 import './App.css';
 
 function App() {
@@ -12,7 +11,6 @@ function App() {
         <Routes>
           <Route path="/" element={<PronunciationAssessment />} />
           <Route path="/intro" element={<Landing />} />
-          <Route path="/slides" element={<LandingSlides />} />
         </Routes>
       </div>
     </Router>
