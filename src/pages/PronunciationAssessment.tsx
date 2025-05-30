@@ -97,43 +97,85 @@ const PronunciationAssessment: React.FC = () => {
   // 控制評分按鈕CSS延遲變化的狀態
   const [buttonStyleDelayed, setButtonStyleDelayed] = useState<boolean>(false);
   
-  // 處理錄音評估
-  const processPronunciationAssessment = useCallback(async () => {
-    if (!recorder.audioData || processingRef.current) return;
-    processingRef.current = true;
-    
+  // 新增streaming相關狀態和refs
+  const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);
+  
+  // 處理streaming錄音評估
+  const handleStreamingAssessment = useCallback(async () => {
+    if (!useBackend) {
+      console.log('非後端模式，不支持streaming');
+      return;
+    }
+
     try {
-      setIsLoading(true); // 在處理錄音結果時設置isLoading為true
+      setError(null);
+      setResult(null);
       
-      if (useBackend) {
-        // 使用後端API
-        const result = await backendSpeech.assessWithBackend(
-          recorder.audioData,
-          referenceText,
-          strictMode
-        );
+      console.log('開始streaming評估...');
+      
+      // 啟動streaming評估
+      const chunkHandler = await backendSpeech.startStreamingAssessment(
+        referenceText,
+        strictMode,
+        (progress) => {
+          console.log(`Streaming進度: ${progress}%`);
+          // 可以在這裡更新UI進度條
+        },
+        (partialResult) => {
+          console.log('收到部分結果:', partialResult);
+          // 可以在這裡顯示實時結果
+        }
+      );
+      
+      streamingCallbackRef.current = chunkHandler;
+      
+      // 開始streaming錄音
+      await recorder.startStreamingRecording(chunkHandler);
+      
+    } catch (err) {
+      console.error('Streaming評估失敗:', err);
+      setError(`Streaming評估失敗: ${err instanceof Error ? err.message : String(err)}`);
+      setIsAssessing(false);
+      setButtonStyleDelayed(false);
+    }
+  }, [backendSpeech, referenceText, strictMode, useBackend, recorder]);
+
+  // 停止streaming評估並獲取結果
+  const stopStreamingAssessment = useCallback(async () => {
+    try {
+      console.log('停止streaming評估...');
+      
+      // 停止錄音
+      recorder.stopStreamingRecording();
+      
+      // 獲取最終評估結果
+      if (backendSpeech.isStreaming) {
+        const finalResult = await backendSpeech.stopStreamingAssessment();
         
-        if (result) {
-          setResult(result);
+        if (finalResult) {
+          setResult(finalResult);
+          console.log('獲取到最終streaming評估結果:', finalResult);
         }
       }
-    } catch (err) {
-      console.error('評估處理失敗:', err);
-      setError(`評估處理失敗: ${err instanceof Error ? err.message : String(err)}`);
       
-      // 如果後端失敗，嘗試回退到Azure
-      if (useBackend) {
-        setUseBackend(false);
-        storage.saveUseBackend(false);
-        alert('後端連接失敗，將使用直接連接Azure模式');
-      }
+      streamingCallbackRef.current = null;
+      
+    } catch (err) {
+      console.error('停止streaming評估失敗:', err);
+      setError(`停止streaming評估失敗: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
-      setIsLoading(false);
-      processingRef.current = false;
-      recorder.resetRecording();
-      setButtonStyleDelayed(false); // 重置按鈕樣式狀態
+      setIsAssessing(false);
+      setButtonStyleDelayed(false);
     }
-  }, [recorder, backendSpeech, referenceText, strictMode, useBackend, setIsLoading, setResult, setError, setUseBackend]);
+  }, [recorder, backendSpeech]);
+
+  // 處理錄音狀態變化 - 更新以支持streaming
+  useEffect(() => {
+    // 後端模式下不再需要處理傳統錄音完成事件，直接使用streaming
+    if (recorder.error) {
+      setError(recorder.error);
+    }
+  }, [recorder.error]);
 
   // 收藏夾相關函數
   const addToFavorites = (text: string | string[], tagIds: string[] = []) => {
@@ -387,17 +429,6 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
   
-  // 處理錄音狀態變化
-  useEffect(() => {
-    if (recorder.audioData && !recorder.recording && useBackend) {
-      processPronunciationAssessment();
-    }
-    
-    if (recorder.error) {
-      setError(recorder.error);
-    }
-  }, [recorder.audioData, recorder.recording, recorder.error, useBackend, processPronunciationAssessment]);
-
   // 保存 Azure key/region
   const saveAzureSettings = () => {
     storage.saveAzureSettings(azureSettings.key, azureSettings.region);
@@ -451,7 +482,7 @@ const PronunciationAssessment: React.FC = () => {
   useEffect(() => {
     if (result) {
       // 提取單詞評分數據
-      let words = [];
+      let words: any[] = [];
       let recognizedText = '';
       try {
         const nbestArray = result.NBest || result.nBest || result.nbest;
@@ -598,7 +629,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, []); // 只在組件首次載入時執行
 
-  // 統一的開始評估入口
+  // 統一的開始評估入口 - 更新以支持streaming
   const startAssessment = async () => {
     try {
       setError(null);
@@ -611,11 +642,10 @@ const PronunciationAssessment: React.FC = () => {
       }, 500);
       
       if (useBackend) {
-        // 使用後端API
-        await recorder.startRecording();
+        // 使用後端API - 直接使用streaming模式
+        await handleStreamingAssessment();
       } else {
         // 直接使用Azure
-        // 檢查API key和region是否已設置
         if (!azureSettings.key || !azureSettings.region) {
           setError('請先設置Azure API key和區域');
           setIsAssessing(false);
@@ -641,25 +671,24 @@ const PronunciationAssessment: React.FC = () => {
       if (!useBackend) {
         setIsAssessing(false);
         setIsLoading(false);
-        setButtonStyleDelayed(false); // 重置按鈕樣式狀態
+        setButtonStyleDelayed(false);
       }
     }
   };
   
-  // 停止評估
+  // 停止評估 - 更新以支持streaming
   const stopAssessment = () => {
-    if (recorder.recording) {
+    if (useBackend && (recorder.streamingActive || backendSpeech.isStreaming)) {
+      // Streaming模式
+      stopStreamingAssessment();
+    } else if (recorder.recording) {
+      // 傳統錄音模式 (僅用於Azure直連)
       recorder.stopRecording();
-      
-      // 如果有錄音數據並且使用後端API，則發送到後端
-      if (recorder.audioData && useBackend) {
-        processPronunciationAssessment();
-      }
     }
     
     azureSpeech.cancelAzureSpeech();
     setIsAssessing(false);
-    setButtonStyleDelayed(false); // 重置按鈕樣式狀態
+    setButtonStyleDelayed(false);
   };
   
   // 統一的文本轉語音入口
@@ -917,10 +946,10 @@ const PronunciationAssessment: React.FC = () => {
                 ? "停止錄音"
                 : isLoading
                 ? "處理中..."
-                      : "評分"}
+                      : `評分${useBackend ? ' (流式)' : ''}`}
             </button>
             
-                  {/* 發音按鈕 */}
+            {/* 發音按鈕 */}
             <button
               onClick={() => {
                 speakText();
@@ -956,6 +985,19 @@ const PronunciationAssessment: React.FC = () => {
             {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}
             
             {isLoading && <div className="loading-indicator">處理中...</div>}
+            
+            {/* 新增streaming進度指示器 */}
+            {useBackend && backendSpeech.isStreaming && (
+              <div className="streaming-indicator">
+                流式處理中... ({backendSpeech.streamProgress}%)
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${backendSpeech.streamProgress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
             
             {streamLoading && <div className="loading-indicator stream-loading">流式處理中...</div>}
             
@@ -1026,6 +1068,12 @@ const PronunciationAssessment: React.FC = () => {
             return null;
           }
         })()}
+        <div className="card-section" id="gameCenter">
+
+
+
+          
+        </div>
         
         {/* 標籤頁導航區域 */}
         <div className="card-section">
@@ -1162,6 +1210,32 @@ const PronunciationAssessment: React.FC = () => {
             .stream-loading {
               background-color: rgba(0, 122, 255, 0.2);
               color: rgba(0, 122, 255, 1);
+            }
+            
+            .streaming-indicator {
+              background-color: rgba(52, 199, 89, 0.1);
+              color: rgba(52, 199, 89, 1);
+              padding: 8px 12px;
+              border-radius: 8px;
+              margin: 8px 0;
+              font-size: 14px;
+              border: 1px solid rgba(52, 199, 89, 0.3);
+            }
+            
+            .progress-bar {
+              width: 100%;
+              height: 6px;
+              background-color: rgba(52, 199, 89, 0.2);
+              border-radius: 3px;
+              margin-top: 4px;
+              overflow: hidden;
+            }
+            
+            .progress-fill {
+              height: 100%;
+              background-color: rgba(52, 199, 89, 0.8);
+              border-radius: 3px;
+              transition: width 0.3s ease;
             }
             
             .cache-tip {

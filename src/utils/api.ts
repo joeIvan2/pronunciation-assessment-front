@@ -1,7 +1,11 @@
 // API 相關常量和工具函數
 
-// 後端API地址
-export const BACKEND_URL = "https://pronunciation-assessment-app-1.onrender.com";
+// 後端API基礎URL
+const BACKEND_URL = 'https://pronunciation-assessment-app-1.onrender.com';
+
+// 導出BACKEND_URL供其他模組使用
+export { BACKEND_URL };
+
 // 新增AI服務器API地址
 export const AI_SERVER_URL = "https://pronunciation-ai-server.onrender.com";
 
@@ -19,7 +23,18 @@ export const API_PATHS = {
     "/text-to-speech",
     "/api/tts",
     "/tts"
-  ]
+  ],
+  // 新增streaming相關API路徑 - 使用實際的後端API
+  STREAMING: {
+    // 主要streaming評估端點
+    ASSESSMENT: "/api/streaming-assessment",
+    // 批量處理端點
+    BATCH: "/api/streaming-assessment/batch",
+    // 統計端點
+    STATS: "/api/streaming-assessment/stats",
+    // 健康檢查端點
+    HEALTH: "/api/streaming-assessment/health"
+  }
 };
 
 // 發送評估請求到後端
