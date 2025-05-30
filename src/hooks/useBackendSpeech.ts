@@ -235,15 +235,42 @@ export const useBackendSpeech = (): BackendSpeechResult => {
               pronunciationScore: assessmentData.pronunciationScore || finalData.pronunciationScore || 0,
               DisplayText: assessmentData.text || finalData.text || '',
               text: assessmentData.text || finalData.text || '',
-              NBest: (assessmentData.wordAnalysis || finalData.wordAnalysis) ? [{
+              NBest: (assessmentData.wordAnalysis || finalData.wordAnalysis || finalData.phonemeAnalysis) ? [{
                 Display: assessmentData.text || finalData.text || '',
-                Words: (assessmentData.wordAnalysis || finalData.wordAnalysis).map((word: any) => ({
-                  Word: word.word,
-                  PronunciationAssessment: {
-                    AccuracyScore: word.accuracyScore,
-                    ErrorType: word.errorType
+                Words: (assessmentData.wordAnalysis || finalData.wordAnalysis || []).map((word: any) => {
+                  // 從rawResponse中提取詳細的音素數據
+                  let phonemes = undefined;
+                  if (finalData.rawResponse) {
+                    try {
+                      const parsedResponse = JSON.parse(finalData.rawResponse);
+                      const nbestData = parsedResponse.NBest?.[0];
+                      if (nbestData?.Words) {
+                        const matchedWord = nbestData.Words.find((w: any) => 
+                          w.Word?.toLowerCase() === word.word?.toLowerCase()
+                        );
+                        if (matchedWord?.Phonemes) {
+                          phonemes = matchedWord.Phonemes.map((p: any) => ({
+                            Phoneme: p.Phoneme,
+                            PronunciationAssessment: {
+                              AccuracyScore: p.PronunciationAssessment?.AccuracyScore
+                            }
+                          }));
+                        }
+                      }
+                    } catch (e) {
+                      console.warn('解析rawResponse音素數據失敗:', e);
+                    }
                   }
-                })),
+                  
+                  return {
+                    Word: word.word,
+                    PronunciationAssessment: {
+                      AccuracyScore: word.accuracyScore,
+                      ErrorType: word.errorType
+                    },
+                    Phonemes: phonemes
+                  };
+                }),
                 PronunciationAssessment: assessmentData || finalData.assessmentResults
               }] : undefined,
               json: finalData.json
@@ -307,13 +334,40 @@ export const useBackendSpeech = (): BackendSpeechResult => {
           text: data.text || '',
           NBest: data.wordAnalysis ? [{
             Display: data.text || '',
-            Words: data.wordAnalysis.map((word: any) => ({
-              Word: word.word,
-              PronunciationAssessment: {
-                AccuracyScore: word.accuracyScore,
-                ErrorType: word.errorType
+            Words: data.wordAnalysis.map((word: any) => {
+              // 從data.json中提取詳細的音素數據
+              let phonemes = undefined;
+              if (data.json) {
+                try {
+                  const parsedResponse = JSON.parse(data.json);
+                  const nbestData = parsedResponse.NBest?.[0];
+                  if (nbestData?.Words) {
+                    const matchedWord = nbestData.Words.find((w: any) => 
+                      w.Word?.toLowerCase() === word.word?.toLowerCase()
+                    );
+                    if (matchedWord?.Phonemes) {
+                      phonemes = matchedWord.Phonemes.map((p: any) => ({
+                        Phoneme: p.Phoneme,
+                        PronunciationAssessment: {
+                          AccuracyScore: p.PronunciationAssessment?.AccuracyScore
+                        }
+                      }));
+                    }
+                  }
+                } catch (e) {
+                  console.warn('解析json音素數據失敗:', e);
+                }
               }
-            })),
+              
+              return {
+                Word: word.word,
+                PronunciationAssessment: {
+                  AccuracyScore: word.accuracyScore,
+                  ErrorType: word.errorType
+                },
+                Phonemes: phonemes
+              };
+            }),
             PronunciationAssessment: data.assessmentResults || {
               AccuracyScore: data.accuracyScore || 0,
               FluencyScore: data.fluencyScore || 0,
