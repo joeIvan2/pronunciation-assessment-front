@@ -5,6 +5,30 @@ import { generateSpeech, generateSpeechStream, AI_SERVER_URL, generateSpeechWith
 import { getTTSCacheItem, addTTSCacheItem } from '../utils/storage';
 import { DEFAULT_VOICE } from '../config/voiceConfig';
 
+// 時間戳工具函數
+const getTimeStamp = (): string => {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
+  return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+};
+
+// 性能計時器
+const getPerformanceTime = (): number => {
+  return performance.now();
+};
+
+// 格式化耗時
+const formatDuration = (duration: number): string => {
+  if (duration < 1000) {
+    return `${duration.toFixed(1)}ms`;
+  } else {
+    return `${(duration / 1000).toFixed(2)}s`;
+  }
+};
+
 // 內存緩存 - 用於存儲音頻Blob和URL，在頁面刷新前保持有效
 interface MemoryCacheItem {
   text: string;
@@ -274,6 +298,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     voice: string = DEFAULT_VOICE,
     rate?: number
   ): Promise<{ fromCache: boolean }> => {
+    const startTime = getPerformanceTime();
+    console.log(`[${getTimeStamp()}] 開始TTS請求: "${text.substring(0, 30)}..." 語音:${voice} 語速:${rate || 1.0}`);
+    
     try {
       if (!text) {
         throw new Error("請先輸入要發音的文字！");
@@ -292,9 +319,11 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       
       // 首先檢查內存緩存（使用 voice + speed 作為緩存鍵）
       const cacheKey = `${voice}_${speed}`;
+      const cacheCheckTime = getPerformanceTime();
       const memoryCachedItem = getMemoryCacheItem(text, cacheKey);
       if (memoryCachedItem) {
-        console.log("使用內存緩存的音頻:", text.substring(0, 20) + "...", cacheKey);
+        const cacheHitTime = getPerformanceTime();
+        console.log(`[${getTimeStamp()}] 內存緩存命中 (檢查耗時: ${formatDuration(cacheHitTime - cacheCheckTime)}): ${text.substring(0, 20)}... ${cacheKey}`);
         
         try {
           if (memoryCachedItem.url) {
@@ -312,18 +341,20 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             
             // 錯誤處理：如果 URL 失效，嘗試重新創建
             audio.onerror = (error) => {
-              console.warn("緩存URL播放失敗，嘗試重新創建:", error);
+              console.warn(`[${getTimeStamp()}] 緩存URL播放失敗，嘗試重新創建:`, error);
               if (memoryCachedItem.blob) {
                 const newUrl = URL.createObjectURL(memoryCachedItem.blob);
                 memoryCachedItem.url = newUrl;
                 audio.src = newUrl;
                 audio.load();
-                audio.play().catch(e => console.error("重新播放失敗:", e));
+                audio.play().catch(e => console.error(`[${getTimeStamp()}] 重新播放失敗:`, e));
               }
             };
             
+            const playStartTime = getPerformanceTime();
             await audio.play();
-            console.log(`從內存緩存成功播放音頻，語速: ${speed}x`);
+            const totalTime = getPerformanceTime() - startTime;
+            console.log(`[${getTimeStamp()}] 內存緩存播放成功 (總耗時: ${formatDuration(totalTime)}) 語速: ${speed}x`);
             setState(prev => ({ ...prev, isLoading: false }));
             return { fromCache: true };
           } 
@@ -345,23 +376,27 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               audioRef.current = null;
             };
             
+            const playStartTime = getPerformanceTime();
             await audio.play();
-            console.log(`從內存緩存的blob創建URL並播放成功，語速: ${speed}x`);
+            const totalTime = getPerformanceTime() - startTime;
+            console.log(`[${getTimeStamp()}] 內存緩存blob播放成功 (總耗時: ${formatDuration(totalTime)}) 語速: ${speed}x`);
             setState(prev => ({ ...prev, isLoading: false }));
             return { fromCache: true };
           }
         } catch (playError) {
-          console.warn("播放內存緩存音頻失敗:", playError);
+          console.warn(`[${getTimeStamp()}] 播放內存緩存音頻失敗:`, playError);
           // 失敗後將嘗試其他方式
         }
       }
       
       // 檢查localStorage緩存（使用相同的緩存鍵）
+      const storageCacheTime = getPerformanceTime();
       const cachedItem = getTTSCacheItem(text, cacheKey);
       
       // 如果有localStorage緩存，嘗試使用
       if (cachedItem && cachedItem.audioUrl) {
-        console.log("嘗試使用localStorage緩存的音頻:", text.substring(0, 20) + "...", cacheKey);
+        const storageHitTime = getPerformanceTime();
+        console.log(`[${getTimeStamp()}] localStorage緩存命中 (檢查耗時: ${formatDuration(storageHitTime - storageCacheTime)}): ${text.substring(0, 20)}... ${cacheKey}`);
         
         try {
           // 播放缓存的音频
@@ -377,8 +412,10 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           };
           
           // 嘗試播放
+          const playStartTime = getPerformanceTime();
           await audio.play();
-          console.log(`從localStorage緩存成功播放音頻，語速: ${speed}x`);
+          const totalTime = getPerformanceTime() - startTime;
+          console.log(`[${getTimeStamp()}] localStorage緩存播放成功 (總耗時: ${formatDuration(totalTime)}) 語速: ${speed}x`);
           
           // 同時加入內存緩存
           addToMemoryCache(text, cacheKey, undefined, cachedItem.audioUrl);
@@ -386,23 +423,25 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           setState(prev => ({ ...prev, isLoading: false }));
           return { fromCache: true };
         } catch (error) {
-          console.warn("播放localStorage緩存的音頻失敗:", error);
+          console.warn(`[${getTimeStamp()}] 播放localStorage緩存的音頻失敗:`, error);
           // 失敗後繼續嘗試請求新音頻
         }
       }
       
       // 沒有緩存或緩存播放失敗，請求新音頻
-      console.log("請求新的 nicetone.ai TTS音頻:", text.substring(0, 20) + "...", voice, "語速:", speed);
+      const apiStartTime = getPerformanceTime();
+      console.log(`[${getTimeStamp()}] 發送 nicetone.ai API 請求: ${voice} 語速:${speed}`);
       
       // 使用 nicetone.ai API 生成語音
       const data = await generateSpeechWithNicetone(text, voice, speed);
+      const apiEndTime = getPerformanceTime();
+      console.log(`[${getTimeStamp()}] nicetone.ai API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)}): ${data.audioUrl}`);
       
       if (data.success && data.audioUrl) {
-        console.log("nicetone.ai API 成功返回音頻URL:", data.audioUrl);
-        
         try {
           // 優先嘗試直接流式播放（更快）
-          console.log("嘗試直接流式播放音頻");
+          const playStartTime = getPerformanceTime();
+          console.log(`[${getTimeStamp()}] 嘗試直接流式播放音頻`);
           const audio = new Audio(data.audioUrl);
           audioRef.current = audio;
           
@@ -416,7 +455,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           
           // 錯誤處理 - 如果直接播放失敗，下載後播放
           audio.onerror = async (error) => {
-            console.warn("直接播放失敗，改為下載後播放:", error);
+            const fallbackStartTime = getPerformanceTime();
+            console.warn(`[${getTimeStamp()}] 直接播放失敗，改為下載後播放:`, error);
             try {
               // 下載音頻文件為 Blob
               const audioBlob = await downloadAudioAsBlob(data.audioUrl);
@@ -432,16 +472,21 @@ export const useAzureSpeech = (): AzureSpeechResult => {
               addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
               
               await audio.play();
-              console.log(`下載後播放成功，語速: ${speed}x`);
+              const fallbackTime = getPerformanceTime() - fallbackStartTime;
+              const totalTime = getPerformanceTime() - startTime;
+              console.log(`[${getTimeStamp()}] 下載後播放成功 (降級耗時: ${formatDuration(fallbackTime)}, 總耗時: ${formatDuration(totalTime)}) 語速: ${speed}x`);
             } catch (downloadError) {
-              console.error("下載播放也失敗:", downloadError);
+              console.error(`[${getTimeStamp()}] 下載播放也失敗:`, downloadError);
               throw downloadError;
             }
           };
           
           // 嘗試直接播放
           await audio.play();
-          console.log(`nicetone.ai 直接流式播放成功，語速: ${speed}x`);
+          const playTime = getPerformanceTime();
+          const playSetupTime = playTime - playStartTime;
+          const totalTime = playTime - startTime;
+          console.log(`[${getTimeStamp()}] 直接流式播放成功 (播放設置: ${formatDuration(playSetupTime)}, 總耗時: ${formatDuration(totalTime)}) 語速: ${speed}x`);
           
           // 新增到localStorage緩存（使用原始的URL）
           addTTSCacheItem(text, cacheKey, data.audioUrl);
@@ -449,26 +494,30 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           // 後台下載用於本地緩存（不阻塞當前播放）
           setTimeout(async () => {
             try {
+              const cacheStartTime = getPerformanceTime();
               const audioBlob = await downloadAudioAsBlob(data.audioUrl);
               const localAudioUrl = URL.createObjectURL(audioBlob);
               addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
-              console.log("後台緩存完成");
+              const cacheTime = getPerformanceTime() - cacheStartTime;
+              console.log(`[${getTimeStamp()}] 後台緩存完成 (緩存耗時: ${formatDuration(cacheTime)}, 檔案大小: ${audioBlob.size} bytes)`);
             } catch (cacheError) {
-              console.warn("後台緩存失敗:", cacheError);
+              console.warn(`[${getTimeStamp()}] 後台緩存失敗:`, cacheError);
             }
           }, 100);
           
           setState(prev => ({ ...prev, isLoading: false }));
           return { fromCache: false };
         } catch (playError) {
-          console.error("播放 nicetone.ai 返回的音頻失敗:", playError);
+          console.error(`[${getTimeStamp()}] 播放 nicetone.ai 返回的音頻失敗:`, playError);
           throw playError;
         }
       } else {
         throw new Error(data.error || "nicetone.ai 生成語音失敗");
       }
     } catch (err) {
-      console.error('nicetone.ai 語音合成失敗:', err);
+      const errorTime = getPerformanceTime();
+      const totalTime = errorTime - startTime;
+      console.error(`[${getTimeStamp()}] nicetone.ai 語音合成失敗 (總耗時: ${formatDuration(totalTime)}):`, err);
       setState({ 
         isLoading: false, 
         error: `nicetone.ai 語音合成失敗: ${err instanceof Error ? err.message : String(err)}` 
@@ -483,6 +532,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     voice: string = DEFAULT_VOICE,
     rate?: number
   ): Promise<{ audio: HTMLAudioElement }> => {
+    const startTime = getPerformanceTime();
+    console.log(`[${getTimeStamp()}] 開始流式TTS請求: "${text.substring(0, 30)}..." 語音:${voice} 語速:${rate || 1.0}`);
+    
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     try {
@@ -491,9 +543,11 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       const cacheKey = `${voice}_${speed}`;
       
       // 檢查內存緩存
+      const cacheCheckTime = getPerformanceTime();
       const cached = getMemoryCacheItem(text, cacheKey);
       if (cached && cached.blob) {
-        console.log("從內存緩存播放（流式）");
+        const cacheHitTime = getPerformanceTime();
+        console.log(`[${getTimeStamp()}] 內存緩存命中 (檢查耗時: ${formatDuration(cacheHitTime - cacheCheckTime)})`);
         
         const audio = new Audio();
         audioRef.current = audio;
@@ -514,23 +568,25 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         // 設置播放事件
         audio.oncanplaythrough = async () => {
           try {
+            const playStartTime = getPerformanceTime();
             await audio.play();
-            console.log(`緩存音頻播放成功（流式），語速: ${speed}x`);
+            const totalTime = getPerformanceTime() - startTime;
+            console.log(`[${getTimeStamp()}] 緩存音頻播放成功 (總耗時: ${formatDuration(totalTime)}) 語速: ${speed}x`);
           } catch (playError) {
-            console.error("緩存音頻播放失敗:", playError);
+            console.error(`[${getTimeStamp()}] 緩存音頻播放失敗:`, playError);
           }
         };
         
         audio.onended = () => {
-          console.log("緩存音頻播放完成（流式）");
+          console.log(`[${getTimeStamp()}] 緩存音頻播放完成（流式）`);
           audioRef.current = null;
         };
         
         audio.onerror = (error) => {
-          console.error("緩存音頻播放錯誤:", error);
+          console.error(`[${getTimeStamp()}] 緩存音頻播放錯誤:`, error);
           // 如果播放失敗，可能是 blob URL 失效，嘗試重新創建
           if (cached.blob) {
-            console.log("嘗試重新創建 blob URL");
+            console.log(`[${getTimeStamp()}] 嘗試重新創建 blob URL`);
             const newUrl = URL.createObjectURL(cached.blob);
             cached.url = newUrl;
             audio.src = newUrl;
@@ -544,18 +600,22 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       }
       
       // 沒有緩存，使用 nicetone.ai API 獲取音頻
-      console.log("使用 nicetone.ai API 獲取音頻（流式模式）:", text.substring(0, 20) + "...", voice, "語速:", speed);
+      const apiStartTime = getPerformanceTime();
+      console.log(`[${getTimeStamp()}] 發送 nicetone.ai API 請求: ${voice} 語速:${speed}`);
       
       // 調用 nicetone.ai API
       const data = await generateSpeechWithNicetone(text, voice, speed);
+      const apiEndTime = getPerformanceTime();
+      console.log(`[${getTimeStamp()}] nicetone.ai API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
       
       if (!data.success || !data.audioUrl) {
         throw new Error(data.error || "nicetone.ai API 返回失敗");
       }
       
-      console.log("nicetone.ai API 成功，開始流式播放:", data.audioUrl);
+      console.log(`[${getTimeStamp()}] 音頻URL獲取成功，開始流式播放: ${data.audioUrl}`);
       
       // 創建 Audio 元素，直接使用遠端URL進行流式播放
+      const audioCreateTime = getPerformanceTime();
       const audio = new Audio();
       audioRef.current = audio;
       
@@ -566,39 +626,46 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       
       // 設置播放事件 - 儘快開始播放
       let hasStartedPlaying = false;
+      let firstPlayTime: number | null = null;
       
       const tryToPlay = async () => {
         if (hasStartedPlaying) return;
         try {
+          if (!firstPlayTime) firstPlayTime = getPerformanceTime();
           await audio.play();
           hasStartedPlaying = true;
-          console.log(`nicetone.ai 音頻開始流式播放（邊下載邊播放），語速: ${speed}x`);
+          const playTime = getPerformanceTime();
+          const setupTime = playTime - audioCreateTime;
+          const totalTime = playTime - startTime;
+          console.log(`[${getTimeStamp()}] 流式播放開始 (設置耗時: ${formatDuration(setupTime)}, 總耗時: ${formatDuration(totalTime)}) 語速: ${speed}x`);
         } catch (playError) {
-          console.warn("流式播放嘗試失敗，等待更多數據:", playError);
+          console.warn(`[${getTimeStamp()}] 流式播放嘗試失敗，等待更多數據:`, playError);
         }
       };
       
       // 多個事件監聽，確保儘快開始播放
       audio.onloadeddata = () => {
-        console.log("音頻數據開始載入，準備播放");
+        console.log(`[${getTimeStamp()}] 音頻數據開始載入，準備播放`);
         tryToPlay();
       };
       audio.oncanplay = () => {
-        console.log("音頻可以開始播放");
+        console.log(`[${getTimeStamp()}] 音頻可以開始播放`);
         tryToPlay();
       };
       audio.oncanplaythrough = () => {
-        console.log("音頻足夠播放到結束");
+        console.log(`[${getTimeStamp()}] 音頻足夠播放到結束`);
         tryToPlay();
       };
       
       audio.onended = () => {
-        console.log("nicetone.ai 音頻播放完成（流式）");
+        const endTime = getPerformanceTime();
+        const totalTime = endTime - startTime;
+        console.log(`[${getTimeStamp()}] 流式音頻播放完成 (總生命週期: ${formatDuration(totalTime)})`);
         audioRef.current = null;
       };
       
       audio.onerror = (error) => {
-        console.error("音頻流式播放錯誤:", error);
+        console.error(`[${getTimeStamp()}] 音頻流式播放錯誤:`, error);
         setState(prev => ({ 
           ...prev, 
           error: `音頻播放失敗: ${error}`,
@@ -613,18 +680,21 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           const duration = audio.duration || 0;
           if (duration > 0) {
             const bufferPercent = (bufferedEnd / duration * 100).toFixed(1);
-            console.log(`音頻緩衝進度: ${bufferPercent}%`);
+            console.log(`[${getTimeStamp()}] 音頻緩衝進度: ${bufferPercent}%`);
           }
         }
       };
       
       // 開始加載音頻 - 這會觸發流式下載
+      const loadStartTime = getPerformanceTime();
       audio.load();
+      console.log(`[${getTimeStamp()}] 音頻開始載入 (設置耗時: ${formatDuration(loadStartTime - audioCreateTime)})`);
       
       // 在後台並行下載完整文件用於緩存（不阻塞播放）
       setTimeout(async () => {
         try {
-          console.log("開始後台下載音頻用於緩存");
+          const cacheStartTime = getPerformanceTime();
+          console.log(`[${getTimeStamp()}] 開始後台下載音頻用於緩存`);
           const audioBlob = await downloadAudioAsBlob(data.audioUrl);
           
           // 加入緩存
@@ -632,9 +702,10 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
           addTTSCacheItem(text, cacheKey, data.audioUrl);
           
-          console.log("後台緩存完成");
+          const cacheEndTime = getPerformanceTime();
+          console.log(`[${getTimeStamp()}] 後台緩存完成 (緩存耗時: ${formatDuration(cacheEndTime - cacheStartTime)}, 檔案大小: ${audioBlob.size} bytes)`);
         } catch (cacheError) {
-          console.warn("後台緩存失敗，但不影響當前播放:", cacheError);
+          console.warn(`[${getTimeStamp()}] 後台緩存失敗，但不影響當前播放:`, cacheError);
         }
       }, 100); // 延遲100ms開始緩存，確保播放優先
       
@@ -642,7 +713,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       return { audio };
       
     } catch (err) {
-      console.error('nicetone.ai 流式語音生成失敗:', err);
+      const errorTime = getPerformanceTime();
+      const totalTime = errorTime - startTime;
+      console.error(`[${getTimeStamp()}] nicetone.ai 流式語音生成失敗 (總耗時: ${formatDuration(totalTime)}):`, err);
       setState(prev => ({ 
         ...prev, 
         error: `nicetone.ai 流式語音生成失敗: ${err instanceof Error ? err.message : String(err)}`,
