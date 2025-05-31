@@ -9,6 +9,9 @@ export { BACKEND_URL };
 // 新增AI服務器API地址
 export const AI_SERVER_URL = "https://pronunciation-ai-server.onrender.com";
 
+// 新增 nicetone.ai TTS API 地址
+export const NICETONE_API_URL = "https://tts.nicetone.ai";
+
 // 嘗試不同的API路徑
 export const API_PATHS = {
   ASSESSMENT: [
@@ -269,4 +272,88 @@ export const generateSpeechStream = async (
   
   // 開始請求（最多重試指定次數）
   return fetchWithRetry();
+}; 
+
+/**
+ * 使用 nicetone.ai API 生成語音（WebM格式）
+ * @param text - 要轉換為語音的文本
+ * @param character - 語音角色，支持的選項：heart, sky, bella, nicole, sarah (女性), adam, michael (男性)
+ * @param speed - 語速控制，默認為 1.0，範圍通常為 0.5 到 2.0
+ * @returns Promise<any> - 包含 audioUrl 等信息的 JSON 響應
+ */
+export const generateSpeechWithNicetone = async (
+  text: string, 
+  character: string = "female_english", 
+  speed: number = 1.0
+): Promise<any> => {
+  try {
+    const apiUrl = `${NICETONE_API_URL}/api/tts-webm`;
+    console.log(`嘗試連接 nicetone.ai TTS API: ${apiUrl}`);
+    
+    // 使用查詢參數的方式傳遞參數
+    const params = new URLSearchParams({
+      text: text,
+      character: character,
+      speed: speed.toString()
+    });
+    
+    const fullUrl = `${apiUrl}?${params.toString()}`;
+    console.log(`完整請求URL: ${fullUrl}`);
+    
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`成功連接到 nicetone.ai TTS API，返回數據:`, data);
+      
+      if (data.success && data.audioUrl) {
+        return data;
+      } else {
+        throw new Error(`nicetone.ai API 響應失敗: ${data.error || '未知錯誤'}`);
+      }
+    } else {
+      const errorText = await response.text();
+      console.warn(`nicetone.ai TTS API 失敗: ${response.status} ${response.statusText}`);
+      console.warn(`返回內容: ${errorText}`);
+      throw new Error(`nicetone.ai API 請求失敗: ${response.status} - ${errorText}`);
+    }
+  } catch (err) {
+    console.warn(`nicetone.ai TTS API 嘗試失敗: ${err instanceof Error ? err.message : String(err)}`);
+    throw err instanceof Error ? err : new Error(String(err));
+  }
+};
+
+/**
+ * 下載音頻文件並轉換為 Blob
+ * @param audioUrl - 音頻文件的 URL
+ * @returns Promise<Blob> - 音頻文件的 Blob 對象
+ */
+export const downloadAudioAsBlob = async (audioUrl: string): Promise<Blob> => {
+  try {
+    console.log(`下載音頻文件: ${audioUrl}`);
+    
+    const response = await fetch(audioUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'audio/webm, audio/*, */*',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`下載音頻失敗: ${response.status} ${response.statusText}`);
+    }
+    
+    const blob = await response.blob();
+    console.log(`音頻下載完成，大小: ${blob.size} 字節，類型: ${blob.type}`);
+    
+    return blob;
+  } catch (err) {
+    console.error(`下載音頻文件失敗: ${err instanceof Error ? err.message : String(err)}`);
+    throw err instanceof Error ? err : new Error(String(err));
+  }
 }; 

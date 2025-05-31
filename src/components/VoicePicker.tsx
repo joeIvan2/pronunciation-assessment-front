@@ -18,16 +18,17 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   selectedAIVoice,
   onSelectAIVoice
 }) => {
-  // AI服務器提供的聲音選項
+  // nicetone.ai 提供的個別聲音選項
   const aiVoiceOptions = [
-    { id: 'Puck', name: 'Puck (中性)', description: '默認中性聲音' },
-    { id: 'Charon', name: 'Charon (男聲)', description: '深邃神秘男聲' },
-    { id: 'Kore', name: 'Kore (女聲)', description: '清新純淨女聲' },
-    { id: 'Fenrir', name: 'Fenrir (男聲)', description: '強勁有力男聲' },
-    { id: 'Aoede', name: 'Aoede (女聲)', description: '優雅歌唱女聲' },
-    { id: 'Leda', name: 'Leda (女聲)', description: '溫柔親切女聲' },
-    { id: 'Orus', name: 'Orus (男聲)', description: '莊重威嚴男聲' },
-    { id: 'Zephyr', name: 'Zephyr (中性)', description: '輕柔清風聲音' }
+    // 女性聲音
+    { id: 'heart', name: 'Heart (女性)', description: 'Heart 女性聲音' },
+    { id: 'sky', name: 'Sky (女性)', description: 'Sky 女性聲音' },
+    { id: 'bella', name: 'Bella (女性)', description: 'Bella 女性聲音' },
+    { id: 'nicole', name: 'Nicole (女性)', description: 'Nicole 女性聲音' },
+    { id: 'sarah', name: 'Sarah (女性)', description: 'Sarah 女性聲音' },
+    // 男性聲音
+    { id: 'adam', name: 'Adam (男性)', description: 'Adam 男性聲音' },
+    { id: 'michael', name: 'Michael (男性)', description: 'Michael 男性聲音' }
   ];
   
   return (

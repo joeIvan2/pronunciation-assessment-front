@@ -755,7 +755,7 @@ export const deleteShareInfo = (hash: string): void => {
 
 // 获取AI语音设置
 export const getAIVoice = (): string => {
-  return getItem<string>('selectedAIVoice', 'Puck');
+  return getItem<string>('selectedAIVoice', 'heart');
 };
 
 // 保存AI语音设置
