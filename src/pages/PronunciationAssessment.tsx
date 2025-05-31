@@ -946,7 +946,7 @@ const PronunciationAssessment: React.FC = () => {
                 ? "停止錄音"
                 : isLoading
                 ? "處理中..."
-                      : `評分${useBackend ? ' (流式)' : ''}`}
+                      : `評分${useBackend ? ' ' : ''}`}
             </button>
             
             {/* 發音按鈕 */}

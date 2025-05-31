@@ -401,14 +401,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         console.log("nicetone.ai API 成功返回音頻URL:", data.audioUrl);
         
         try {
-          // 下載音頻文件為 Blob
-          const audioBlob = await downloadAudioAsBlob(data.audioUrl);
-          
-          // 創建本地 URL
-          const localAudioUrl = URL.createObjectURL(audioBlob);
-          
-          // 播放生成的音頻
-          const audio = new Audio(localAudioUrl);
+          // 優先嘗試直接流式播放（更快）
+          console.log("嘗試直接流式播放音頻");
+          const audio = new Audio(data.audioUrl);
           audioRef.current = audio;
           
           // 設置播放速度
@@ -419,14 +414,50 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             audioRef.current = null;
           };
           
+          // 錯誤處理 - 如果直接播放失敗，下載後播放
+          audio.onerror = async (error) => {
+            console.warn("直接播放失敗，改為下載後播放:", error);
+            try {
+              // 下載音頻文件為 Blob
+              const audioBlob = await downloadAudioAsBlob(data.audioUrl);
+              
+              // 創建本地 URL
+              const localAudioUrl = URL.createObjectURL(audioBlob);
+              
+              // 重新設置音頻源
+              audio.src = localAudioUrl;
+              audio.load();
+              
+              // 加入緩存
+              addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
+              
+              await audio.play();
+              console.log(`下載後播放成功，語速: ${speed}x`);
+            } catch (downloadError) {
+              console.error("下載播放也失敗:", downloadError);
+              throw downloadError;
+            }
+          };
+          
+          // 嘗試直接播放
+          await audio.play();
+          console.log(`nicetone.ai 直接流式播放成功，語速: ${speed}x`);
+          
           // 新增到localStorage緩存（使用原始的URL）
           addTTSCacheItem(text, cacheKey, data.audioUrl);
           
-          // 同時新增到內存緩存（使用本地URL和blob）
-          addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
+          // 後台下載用於本地緩存（不阻塞當前播放）
+          setTimeout(async () => {
+            try {
+              const audioBlob = await downloadAudioAsBlob(data.audioUrl);
+              const localAudioUrl = URL.createObjectURL(audioBlob);
+              addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
+              console.log("後台緩存完成");
+            } catch (cacheError) {
+              console.warn("後台緩存失敗:", cacheError);
+            }
+          }, 100);
           
-          await audio.play();
-          console.log(`nicetone.ai 新生成的語音播放中，語速: ${speed}x`);
           setState(prev => ({ ...prev, isLoading: false }));
           return { fromCache: false };
         } catch (playError) {
@@ -446,7 +477,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     }
   };
   
-  // 使用 nicetone.ai 進行流式文本转语音（實際上是快速下載並播放）
+  // 使用 nicetone.ai 進行流式文本转语音（邊下載邊播放）
   const speakWithAIServerStream = async (
     text: string,
     voice: string = DEFAULT_VOICE,
@@ -522,19 +553,18 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         throw new Error(data.error || "nicetone.ai API 返回失敗");
       }
       
-      console.log("nicetone.ai API 成功，開始下載音頻:", data.audioUrl);
+      console.log("nicetone.ai API 成功，開始流式播放:", data.audioUrl);
       
-      // 並行下載音頻文件並創建 Audio 元素
-      const audioBlob = await downloadAudioAsBlob(data.audioUrl);
-      const localAudioUrl = URL.createObjectURL(audioBlob);
-      
-      // 創建 Audio 元素
-      const audio = new Audio(localAudioUrl);
+      // 創建 Audio 元素，直接使用遠端URL進行流式播放
+      const audio = new Audio();
       audioRef.current = audio;
+      
+      // 直接使用遠端URL，實現邊下載邊播放
+      audio.src = data.audioUrl;
       audio.preload = "auto";
       audio.playbackRate = 1.0;
       
-      // 設置播放事件 - 積極播放策略
+      // 設置播放事件 - 儘快開始播放
       let hasStartedPlaying = false;
       
       const tryToPlay = async () => {
@@ -542,36 +572,71 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         try {
           await audio.play();
           hasStartedPlaying = true;
-          console.log(`nicetone.ai 音頻開始播放（流式），語速: ${speed}x`);
+          console.log(`nicetone.ai 音頻開始流式播放（邊下載邊播放），語速: ${speed}x`);
         } catch (playError) {
-          console.warn("播放嘗試失敗，等待音頻準備就緒:", playError);
+          console.warn("流式播放嘗試失敗，等待更多數據:", playError);
         }
       };
       
       // 多個事件監聽，確保儘快開始播放
-      audio.onloadeddata = () => tryToPlay();
-      audio.oncanplay = () => tryToPlay();
-      audio.oncanplaythrough = () => tryToPlay();
+      audio.onloadeddata = () => {
+        console.log("音頻數據開始載入，準備播放");
+        tryToPlay();
+      };
+      audio.oncanplay = () => {
+        console.log("音頻可以開始播放");
+        tryToPlay();
+      };
+      audio.oncanplaythrough = () => {
+        console.log("音頻足夠播放到結束");
+        tryToPlay();
+      };
       
       audio.onended = () => {
         console.log("nicetone.ai 音頻播放完成（流式）");
         audioRef.current = null;
-        // 清理本地URL
-        if (localAudioUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(localAudioUrl);
-        }
       };
       
       audio.onerror = (error) => {
-        console.error("音頻播放錯誤（流式）:", error);
+        console.error("音頻流式播放錯誤:", error);
+        setState(prev => ({ 
+          ...prev, 
+          error: `音頻播放失敗: ${error}`,
+          isLoading: false 
+        }));
       };
       
-      // 加入緩存
-      addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
-      addTTSCacheItem(text, cacheKey, data.audioUrl);
+      // 進度監聽 - 可選，用於調試
+      audio.onprogress = () => {
+        if (audio.buffered.length > 0) {
+          const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+          const duration = audio.duration || 0;
+          if (duration > 0) {
+            const bufferPercent = (bufferedEnd / duration * 100).toFixed(1);
+            console.log(`音頻緩衝進度: ${bufferPercent}%`);
+          }
+        }
+      };
       
-      // 開始加載音頻
+      // 開始加載音頻 - 這會觸發流式下載
       audio.load();
+      
+      // 在後台並行下載完整文件用於緩存（不阻塞播放）
+      setTimeout(async () => {
+        try {
+          console.log("開始後台下載音頻用於緩存");
+          const audioBlob = await downloadAudioAsBlob(data.audioUrl);
+          
+          // 加入緩存
+          const localAudioUrl = URL.createObjectURL(audioBlob);
+          addToMemoryCache(text, cacheKey, audioBlob, localAudioUrl);
+          addTTSCacheItem(text, cacheKey, data.audioUrl);
+          
+          console.log("後台緩存完成");
+        } catch (cacheError) {
+          console.warn("後台緩存失敗，但不影響當前播放:", cacheError);
+        }
+      }, 100); // 延遲100ms開始緩存，確保播放優先
       
       setState(prev => ({ ...prev, isLoading: false }));
       return { audio };
