@@ -1,5 +1,6 @@
 import React from 'react';
 import '../styles/VoicePicker.css';
+import { getVoiceOptions, SPEED_RANGE } from '../config/voiceConfig';
 
 interface VoicePickerProps {
   isExpanded: boolean;
@@ -18,18 +19,12 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   selectedAIVoice,
   onSelectAIVoice
 }) => {
-  // nicetone.ai 提供的個別聲音選項
-  const aiVoiceOptions = [
-    // 女性聲音
-    { id: 'heart', name: 'Heart (女性)', description: 'Heart 女性聲音' },
-    { id: 'sky', name: 'Sky (女性)', description: 'Sky 女性聲音' },
-    { id: 'bella', name: 'Bella (女性)', description: 'Bella 女性聲音' },
-    { id: 'nicole', name: 'Nicole (女性)', description: 'Nicole 女性聲音' },
-    { id: 'sarah', name: 'Sarah (女性)', description: 'Sarah 女性聲音' },
-    // 男性聲音
-    { id: 'adam', name: 'Adam (男性)', description: 'Adam 男性聲音' },
-    { id: 'michael', name: 'Michael (男性)', description: 'Michael 男性聲音' }
-  ];
+  // 使用集中配置的語音選項
+  const aiVoiceOptions = getVoiceOptions().map(voice => ({
+    id: voice.id,
+    name: `${voice.name} (${voice.gender === 'male' ? '男性' : '女性'})`,
+    description: voice.description
+  }));
   
   return (
     <div className="voice-picker-container card-section">
@@ -54,9 +49,9 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
             <input 
               type="range" 
               id="speechRate"
-              min="0.5" 
-              max="2" 
-              step="0.1" 
+              min={SPEED_RANGE.min} 
+              max={SPEED_RANGE.max} 
+              step={SPEED_RANGE.step} 
               value={rate} 
               onChange={(e) => onRateChange(parseFloat(e.target.value))}
             />

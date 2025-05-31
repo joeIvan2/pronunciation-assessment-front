@@ -3,6 +3,7 @@ import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { SpeechAssessmentResult } from '../types/speech';
 import { generateSpeech, generateSpeechStream, AI_SERVER_URL, generateSpeechWithNicetone, downloadAudioAsBlob } from '../utils/api';
 import { getTTSCacheItem, addTTSCacheItem } from '../utils/storage';
+import { DEFAULT_VOICE } from '../config/voiceConfig';
 
 // 內存緩存 - 用於存儲音頻Blob和URL，在頁面刷新前保持有效
 interface MemoryCacheItem {
@@ -270,7 +271,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
   // 使用 nicetone.ai 進行文本轉語音
   const speakWithAIServer = async (
     text: string,
-    voice: string = "heart",
+    voice: string = DEFAULT_VOICE,
     rate?: number
   ): Promise<{ fromCache: boolean }> => {
     try {
@@ -448,7 +449,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
   // 使用 nicetone.ai 進行流式文本转语音（實際上是快速下載並播放）
   const speakWithAIServerStream = async (
     text: string,
-    voice: string = "heart",
+    voice: string = DEFAULT_VOICE,
     rate?: number
   ): Promise<{ audio: HTMLAudioElement }> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));

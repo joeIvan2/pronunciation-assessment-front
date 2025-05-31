@@ -2,6 +2,7 @@
 
 import { Tag, Favorite } from '../types/speech';
 import { AI_SERVER_URL } from './api'; // 從api.ts導入常量
+import { DEFAULT_VOICE } from '../config/voiceConfig'; // 導入預設語音配置
 
 // 获取localStorage中的数据，返回默认值如果不存在
 export const getItem = <T>(key: string, defaultValue: T): T => {
@@ -755,7 +756,7 @@ export const deleteShareInfo = (hash: string): void => {
 
 // 获取AI语音设置
 export const getAIVoice = (): string => {
-  return getItem<string>('selectedAIVoice', 'heart');
+  return getItem<string>('selectedAIVoice', DEFAULT_VOICE);
 };
 
 // 保存AI语音设置

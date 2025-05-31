@@ -1,5 +1,8 @@
 // API 相關常量和工具函數
 
+// 導入語音配置
+import { getVoiceListString } from '../config/voiceConfig';
+
 // 後端API基礎URL
 const BACKEND_URL = 'https://pronunciation-assessment-app-1.onrender.com';
 
@@ -277,7 +280,7 @@ export const generateSpeechStream = async (
 /**
  * 使用 nicetone.ai API 生成語音（WebM格式）
  * @param text - 要轉換為語音的文本
- * @param character - 語音角色，支持的選項：heart, sky, bella, nicole, sarah (女性), adam, michael (男性)
+ * @param character - 語音角色，支持的選項：{getVoiceListString()}
  * @param speed - 語速控制，默認為 1.0，範圍通常為 0.5 到 2.0
  * @returns Promise<any> - 包含 audioUrl 等信息的 JSON 響應
  */
