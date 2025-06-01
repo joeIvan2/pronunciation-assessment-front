@@ -278,55 +278,61 @@ export const generateSpeechStream = async (
 }; 
 
 /**
- * 使用 nicetone.ai API 生成語音（WebM格式）
+ * 使用 nicetone.ai API 生成語音（WebM格式流式播放）
  * @param text - 要轉換為語音的文本
  * @param character - 語音角色，支持的選項：{getVoiceListString()}
  * @param speed - 語速控制，默認為 1.0，範圍通常為 0.5 到 2.0
- * @returns Promise<any> - 包含 audioUrl 等信息的 JSON 響應
+ * @returns Promise<any> - 包含 audioUrl（blob URL）的響應
  */
 export const generateSpeechWithNicetone = async (
   text: string, 
-  character: string = "female_english", 
+  character: string = "bella", 
   speed: number = 1.0
 ): Promise<any> => {
   try {
     const apiUrl = `${NICETONE_API_URL}/api/tts-webm`;
-    console.log(`嘗試連接 nicetone.ai TTS API: ${apiUrl}`);
+    console.log(`使用 nicetone.ai WebM流式TTS API: ${apiUrl}`);
     
-    // 使用查詢參數的方式傳遞參數
+    // 使用查詢參數的方式傳遞參數，添加file=true進行流式播放
     const params = new URLSearchParams({
       text: text,
       character: character,
-      speed: speed.toString()
+      file: 'true'  // 啟用WebM流式播放，直接返回二進制文件
     });
     
     const fullUrl = `${apiUrl}?${params.toString()}`;
-    console.log(`完整請求URL: ${fullUrl}`);
+    console.log(`WebM流式請求URL: ${fullUrl}`);
     
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        'Accept': 'audio/webm, audio/*, */*',  // 期望音頻文件而不是JSON
       },
     });
     
     if (response.ok) {
-      const data = await response.json();
-      console.log(`成功連接到 nicetone.ai TTS API，返回數據:`, data);
+      // file=true時，API直接返回WebM二進制文件，不是JSON
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
       
-      if (data.success && data.audioUrl) {
-        return data;
-      } else {
-        throw new Error(`nicetone.ai API 響應失敗: ${data.error || '未知錯誤'}`);
-      }
+      console.log(`nicetone.ai WebM流式TTS成功，生成blob URL:`, audioUrl);
+      console.log(`WebM文件大小: ${audioBlob.size} bytes，類型: ${audioBlob.type}`);
+      
+      return {
+        success: true,
+        audioUrl: audioUrl,
+        blob: audioBlob,
+        size: audioBlob.size,
+        type: audioBlob.type
+      };
     } else {
       const errorText = await response.text();
-      console.warn(`nicetone.ai TTS API 失敗: ${response.status} ${response.statusText}`);
+      console.warn(`nicetone.ai WebM TTS API 失敗: ${response.status} ${response.statusText}`);
       console.warn(`返回內容: ${errorText}`);
-      throw new Error(`nicetone.ai API 請求失敗: ${response.status} - ${errorText}`);
+      throw new Error(`nicetone.ai WebM API 請求失敗: ${response.status} - ${errorText}`);
     }
   } catch (err) {
-    console.warn(`nicetone.ai TTS API 嘗試失敗: ${err instanceof Error ? err.message : String(err)}`);
+    console.warn(`nicetone.ai WebM TTS API 嘗試失敗: ${err instanceof Error ? err.message : String(err)}`);
     throw err instanceof Error ? err : new Error(String(err));
   }
 };

@@ -691,7 +691,7 @@ const PronunciationAssessment: React.FC = () => {
     setButtonStyleDelayed(false);
   };
   
-  // 統一的文本轉語音入口
+  // 統一的文本轉語音入口 - 只使用流式TTS
   const speakText = async () => {
     try {
       if (!referenceText) {
@@ -700,32 +700,19 @@ const PronunciationAssessment: React.FC = () => {
       }
       
       setIsLoading(true);
+      setStreamLoading(true);
       setError(null);
       
-        try {
-        // 統一使用AI服務器語音合成，傳遞語音速度
-          setStreamLoading(true);
-        const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice, voiceSettings.rate)
-            .catch((err) => {
-              console.error('WebM流式TTS失敗，嘗試標準TTS:', err);
-              // 如果WebM流式失敗，嘗試標準TTS API
-            return azureSpeech.speakWithAIServer(referenceText, selectedAIVoice, voiceSettings.rate)
-                .then(res => ({ audio: new Audio(), fromCache: res.fromCache }));
-            });
-            
-          setStreamLoading(false);
-        console.log("AI TTS已完成", result);
-        } catch (err) {
-        console.error('AI語音合成失敗:', err);
-        setError(`AI語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
-        } finally {
-          setStreamLoading(false);
-      }
+      // 統一使用流式TTS
+      const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice, voiceSettings.rate);
+      console.log("流式TTS已完成", result);
+        
     } catch (err) {
-      console.error('語音合成失敗:', err);
-      setError(`語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('流式語音合成失敗:', err);
+      setError(`流式語音合成失敗: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsLoading(false);
+      setStreamLoading(false);
     }
   };
   
@@ -956,7 +943,7 @@ const PronunciationAssessment: React.FC = () => {
               }}
               disabled={isLoading || streamLoading || !referenceText}
                     className={`btn btn-success btn-flex-0-5 ${(isLoading || streamLoading || !referenceText) ? 'btn-disabled' : ''}`}
-                    title={!useBackend ? "使用AI語音播放" : "使用內建語音播放"}
+                    title="使用AI語音播放"
                   >
                     <i className={`fas ${!useBackend ? 'fa-broadcast-tower' : 'fa-volume-up'}`}></i>
                   </button>
