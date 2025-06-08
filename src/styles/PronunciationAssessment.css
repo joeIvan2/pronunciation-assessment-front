@@ -417,6 +417,13 @@
   padding: 12px;
 }
 
+/* 當前選中的收藏項目樣式 */
+.favorite-selected {
+  border-color: var(--ios-warning);
+  background: rgba(255, 159, 10, 0.15);
+  animation: highlightFavorite 0.6s;
+}
+
 /* Tag styling */
 .tag {
   border-radius: 16px;

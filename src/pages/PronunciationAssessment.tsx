@@ -99,6 +99,7 @@ const PronunciationAssessment: React.FC = () => {
 
   // 用於跟踪最新新增的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
+  const [highlightedFavoriteId, setHighlightedFavoriteId] = useState<string | null>(null);
   
   // TTS相關狀態 (只在Azure直連模式下使用流式TTS)
   const [streamLoading, setStreamLoading] = useState<boolean>(false);
@@ -309,6 +310,9 @@ const PronunciationAssessment: React.FC = () => {
       // 不再更新选中的标签
       // setSelectedTags(favorite.tagIds);
       storage.saveReferenceText(favorite.text);
+
+      // 設定當前高亮的收藏項目
+      setHighlightedFavoriteId(id);
       
       // 切換到發音評分標籤頁
       handleTabChange('input');
@@ -416,6 +420,7 @@ const PronunciationAssessment: React.FC = () => {
     if (target) {
       setReferenceText(target.text);
       storage.saveReferenceText(target.text);
+      setHighlightedFavoriteId(target.id);
     }
   };
   
@@ -443,6 +448,7 @@ const PronunciationAssessment: React.FC = () => {
     if (target) {
       setReferenceText(target.text);
       storage.saveReferenceText(target.text);
+      setHighlightedFavoriteId(target.id);
     }
   };
   
@@ -1131,6 +1137,7 @@ const PronunciationAssessment: React.FC = () => {
                   onManageTags={() => handleTabChange('tags')}
                   currentText={referenceText}
                   lastAddedFavoriteId={lastAddedFavoriteId}
+                  highlightedFavoriteId={highlightedFavoriteId}
                 />
               )}
               
