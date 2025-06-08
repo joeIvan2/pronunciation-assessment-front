@@ -7,6 +7,68 @@ import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
 // 後端API URL
 const API_URL = AI_SERVER_URL;
 
+// 圖片壓縮函數
+const compressImage = (file: File, maxSizeKB: number = 300): Promise<File> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // 計算壓縮後的尺寸
+      let { width, height } = img;
+      const maxDimension = 1200; // 最大邊長
+      
+      if (width > height && width > maxDimension) {
+        height = (height * maxDimension) / width;
+        width = maxDimension;
+      } else if (height > maxDimension) {
+        width = (width * maxDimension) / height;
+        height = maxDimension;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // 繪製圖片到canvas
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      // 嘗試不同的質量設置來達到目標大小
+      const tryCompress = (quality: number): void => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const sizeKB = blob.size / 1024;
+            console.log(`壓縮質量: ${quality}, 大小: ${sizeKB.toFixed(1)}KB`);
+            
+            if (sizeKB <= maxSizeKB || quality <= 0.1) {
+              // 達到目標大小或質量已經很低，創建新的File對象
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              });
+              resolve(compressedFile);
+            } else {
+              // 繼續降低質量
+              tryCompress(Math.max(0.1, quality - 0.1));
+            }
+          } else {
+            resolve(file); // 如果壓縮失敗，返回原文件
+          }
+        }, 'image/jpeg', quality);
+      };
+      
+      tryCompress(0.8); // 從80%質量開始
+    };
+    
+    img.onerror = () => {
+      console.error('圖片載入失敗');
+      resolve(file); // 如果載入失敗，返回原文件
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 interface AIDataProcessorProps {
   favorites: Favorite[];
   tags: Tag[];
@@ -41,6 +103,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isCompressing, setIsCompressing] = useState<boolean>(false);
   
   // 定義範例提示句
   const examplePrompts = [
@@ -113,14 +176,34 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   };
 
   // 處理圖片上傳
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newImages = Array.from(e.target.files);
-      setImages(prev => [...prev, ...newImages]);
+      setIsCompressing(true);
+      try {
+        const newImages = Array.from(e.target.files);
+        const compressedImages: File[] = [];
+        const newPreviewUrls: string[] = [];
 
-      // 生成預覽URL
-      const newPreviewUrls = newImages.map(file => URL.createObjectURL(file));
-      setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+        // 逐一壓縮圖片
+        for (const file of newImages) {
+          if (file.type.startsWith('image/')) {
+            console.log(`開始壓縮圖片: ${file.name}, 原始大小: ${(file.size / 1024).toFixed(1)}KB`);
+            const compressedFile = await compressImage(file, 300);
+            console.log(`壓縮完成: ${compressedFile.name}, 壓縮後大小: ${(compressedFile.size / 1024).toFixed(1)}KB`);
+            
+            compressedImages.push(compressedFile);
+            newPreviewUrls.push(URL.createObjectURL(compressedFile));
+          }
+        }
+
+        setImages(prev => [...prev, ...compressedImages]);
+        setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+      } catch (error) {
+        console.error('圖片壓縮失敗:', error);
+        setError('圖片壓縮失敗，請重試');
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
@@ -133,16 +216,39 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
+    
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-      if (files.length > 0) {
-        setImages(prev => [...prev, ...files]);
-        const urls = files.map(file => URL.createObjectURL(file));
-        setPreviewUrls(prev => [...prev, ...urls]);
+      setIsCompressing(true);
+      try {
+        const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+        
+        if (files.length > 0) {
+          const compressedImages: File[] = [];
+          const newPreviewUrls: string[] = [];
+
+          // 逐一壓縮圖片
+          for (const file of files) {
+            console.log(`開始壓縮拖拽圖片: ${file.name}, 原始大小: ${(file.size / 1024).toFixed(1)}KB`);
+            const compressedFile = await compressImage(file, 300);
+            console.log(`壓縮完成: ${compressedFile.name}, 壓縮後大小: ${(compressedFile.size / 1024).toFixed(1)}KB`);
+            
+            compressedImages.push(compressedFile);
+            newPreviewUrls.push(URL.createObjectURL(compressedFile));
+          }
+
+          setImages(prev => [...prev, ...compressedImages]);
+          setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+        }
+      } catch (error) {
+        console.error('拖拽圖片壓縮失敗:', error);
+        setError('圖片壓縮失敗，請重試');
+      } finally {
+        setIsCompressing(false);
       }
+      
       e.dataTransfer.clearData();
     }
   };
@@ -184,6 +290,10 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       }
       .drop-zone.dragging {
         background-color: rgba(0,0,0,0.05);
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(styleElement);
@@ -351,6 +461,31 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {isCompressing && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            marginBottom: "8px",
+            padding: "8px",
+            backgroundColor: "rgba(0, 122, 255, 0.1)",
+            borderRadius: "8px"
+          }}>
+            <div style={{
+              width: "16px",
+              height: "16px",
+              border: "2px solid var(--ios-primary)",
+              borderTop: "2px solid transparent",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite"
+            }}></div>
+            <span style={{ fontSize: "14px", color: "var(--ios-primary)" }}>
+              正在壓縮圖片...
+            </span>
+          </div>
+        )}
+        
         {previewUrls.length > 0 && (
           <div style={{
             display: "flex",
@@ -408,11 +543,11 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       <div className="button-controls" style={{ marginBottom: "16px" }}>
         <button
           onClick={processDataWithAI}
-          disabled={isLoading || !prompt.trim()}
+          disabled={isLoading || !prompt.trim() || isCompressing}
           className="btn btn-primary"
-          style={{ opacity: isLoading || !prompt.trim() ? 0.55 : 1, cursor: isLoading || !prompt.trim() ? "not-allowed" : "pointer" }}
+          style={{ opacity: isLoading || !prompt.trim() || isCompressing ? 0.55 : 1, cursor: isLoading || !prompt.trim() || isCompressing ? "not-allowed" : "pointer" }}
         >
-          {isLoading ? "處理中..." : "發送給AI助理"}
+          {isLoading ? "處理中..." : isCompressing ? "圖片壓縮中..." : "發送給AI助理"}
         </button>
       </div>
       
