@@ -40,6 +40,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   });
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   
   // 定義範例提示句
   const examplePrompts = [
@@ -116,10 +117,33 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     if (e.target.files && e.target.files.length > 0) {
       const newImages = Array.from(e.target.files);
       setImages(prev => [...prev, ...newImages]);
-      
+
       // 生成預覽URL
       const newPreviewUrls = newImages.map(file => URL.createObjectURL(file));
       setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+      if (files.length > 0) {
+        setImages(prev => [...prev, ...files]);
+        const urls = files.map(file => URL.createObjectURL(file));
+        setPreviewUrls(prev => [...prev, ...urls]);
+      }
+      e.dataTransfer.clearData();
     }
   };
 
@@ -149,6 +173,17 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       }
       .prompt-example:hover {
         background-color: rgba(0, 122, 255, 0.1);
+      }
+      .drop-zone {
+        border: 2px dashed var(--ios-border);
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+        margin-top: 8px;
+        margin-bottom: 16px;
+      }
+      .drop-zone.dragging {
+        background-color: rgba(0,0,0,0.05);
       }
     `;
     document.head.appendChild(styleElement);
@@ -303,21 +338,25 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           style={{ display: "none" }}
           id="image-upload"
         />
-        
+
           <label htmlFor="image-upload" className="control-button" title="新增圖片">
             <i className="fas fa-image"></i>
         </label>
         </div>
       </div>
-        
-        {/* 圖片預覽區域 */}
+
+      <div
+        className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {previewUrls.length > 0 && (
           <div style={{
             display: "flex",
             flexWrap: "wrap",
             gap: "8px",
-          marginTop: "8px",
-          marginBottom: "16px"
+            marginBottom: "8px"
           }}>
             {previewUrls.map((url, index) => (
               <div key={index} style={{
@@ -360,6 +399,10 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
             ))}
           </div>
         )}
+        <span style={{ fontSize: "14px", color: "var(--ios-text-secondary)" }}>
+          將圖片拖曳到此或點擊上方按鈕上傳
+        </span>
+      </div>
       
       {/* 將發送按鈕移到第二位 */}
       <div className="button-controls" style={{ marginBottom: "16px" }}>
