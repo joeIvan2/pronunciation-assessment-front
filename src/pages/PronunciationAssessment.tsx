@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import "../styles/PronunciationAssessment.css";
 
 // 組件導入
@@ -53,6 +53,16 @@ const PronunciationAssessment: React.FC = () => {
   const [favorites, setFavorites] = useState<Favorite[]>(() => storage.getFavorites());
   const [nextFavoriteId, setNextFavoriteId] = useState<number>(() => storage.getNextFavoriteId(favorites));
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // 根据当前選擇的標籤過濾收藏列表
+  const filteredFavorites = useMemo(() => {
+    if (selectedTags.length === 0) {
+      return favorites;
+    }
+    return favorites.filter(fav =>
+      selectedTags.some(tagId => fav.tagIds?.includes(tagId))
+    );
+  }, [favorites, selectedTags]);
   
   // 文本和界面設置
   const [referenceText, setReferenceText] = useState<string>(() => storage.getReferenceText());
@@ -89,6 +99,7 @@ const PronunciationAssessment: React.FC = () => {
 
   // 用於跟踪最新新增的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
+  const [highlightedFavoriteId, setHighlightedFavoriteId] = useState<string | null>(null);
   
   // TTS相關狀態 (只在Azure直連模式下使用流式TTS)
   const [streamLoading, setStreamLoading] = useState<boolean>(false);
@@ -283,6 +294,8 @@ const PronunciationAssessment: React.FC = () => {
     // 設置最後新增的收藏項目ID，用於聚焦
     if (firstNewFavoriteId) {
       setLastAddedFavoriteId(firstNewFavoriteId);
+      // 同時設置高亮，使新增的句子保持選中狀態
+      setHighlightedFavoriteId(firstNewFavoriteId);
     }
   };
   
@@ -299,6 +312,9 @@ const PronunciationAssessment: React.FC = () => {
       // 不再更新选中的标签
       // setSelectedTags(favorite.tagIds);
       storage.saveReferenceText(favorite.text);
+
+      // 設定當前高亮的收藏項目
+      setHighlightedFavoriteId(id);
       
       // 切換到發音評分標籤頁
       handleTabChange('input');
@@ -382,50 +398,59 @@ const PronunciationAssessment: React.FC = () => {
   
   // 前一條和下一條句子功能
   const goToPreviousSentence = () => {
-    // 尋找當前顯示文本在收藏夾中的位置
-    const currentIndex = favorites.findIndex(fav => fav.text === referenceText);
-    
-    if (favorites.length === 0) {
-      return; // 沒有收藏項目
+    // 尋找當前顯示文本在過濾後列表中的位置
+    const currentIndex = filteredFavorites.findIndex(
+      fav => fav.text === referenceText
+    );
+
+    if (filteredFavorites.length === 0) {
+      return; // 沒有可用的收藏項目
     }
-    
+
     let newIndex;
     if (currentIndex === -1) {
-      // 如果當前文本不在收藏夾中，加載最後一個
-      newIndex = favorites.length - 1;
+      // 如果當前文本不在列表中，載入最後一個
+      newIndex = filteredFavorites.length - 1;
     } else {
       // 循環到上一個
-      newIndex = (currentIndex - 1 + favorites.length) % favorites.length;
+      newIndex =
+        (currentIndex - 1 + filteredFavorites.length) % filteredFavorites.length;
     }
-    
+
     // 加載選中的句子
-    if (favorites[newIndex]) {
-      setReferenceText(favorites[newIndex].text);
-      storage.saveReferenceText(favorites[newIndex].text);
+    const target = filteredFavorites[newIndex];
+    if (target) {
+      setReferenceText(target.text);
+      storage.saveReferenceText(target.text);
+      setHighlightedFavoriteId(target.id);
     }
   };
   
   const goToNextSentence = () => {
-    // 尋找當前顯示文本在收藏夾中的位置
-    const currentIndex = favorites.findIndex(fav => fav.text === referenceText);
-    
-    if (favorites.length === 0) {
-      return; // 沒有收藏項目
+    // 尋找當前顯示文本在過濾後列表中的位置
+    const currentIndex = filteredFavorites.findIndex(
+      fav => fav.text === referenceText
+    );
+
+    if (filteredFavorites.length === 0) {
+      return; // 沒有可用的收藏項目
     }
-    
+
     let newIndex;
     if (currentIndex === -1) {
-      // 如果當前文本不在收藏夾中，加載第一個
+      // 如果當前文本不在列表中，載入第一個
       newIndex = 0;
     } else {
       // 循環到下一個
-      newIndex = (currentIndex + 1) % favorites.length;
+      newIndex = (currentIndex + 1) % filteredFavorites.length;
     }
-    
+
     // 加載選中的句子
-    if (favorites[newIndex]) {
-      setReferenceText(favorites[newIndex].text);
-      storage.saveReferenceText(favorites[newIndex].text);
+    const target = filteredFavorites[newIndex];
+    if (target) {
+      setReferenceText(target.text);
+      storage.saveReferenceText(target.text);
+      setHighlightedFavoriteId(target.id);
     }
   };
   
@@ -951,18 +976,18 @@ const PronunciationAssessment: React.FC = () => {
                   {/* 前一句按鈕 - 使用統一的按鈕寬度 */}
                   <button
                     onClick={goToPreviousSentence}
-                    disabled={favorites.length === 0}
-                    className={`btn btn-nav btn-flex-0-75 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                    disabled={filteredFavorites.length === 0}
+                    className={`btn btn-nav btn-flex-0-75 ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
                     title="上一個收藏句子"
-            >
+                  >
                     <i className="fas fa-chevron-left"></i>
                   </button>
                   
                   {/* 下一句按鈕 - 使用統一的按鈕寬度 */}
                   <button
                     onClick={goToNextSentence}
-                    disabled={favorites.length === 0}
-                    className={`btn btn-nav btn-flex-0-75 ${favorites.length === 0 ? 'btn-disabled' : ''}`}
+                    disabled={filteredFavorites.length === 0}
+                    className={`btn btn-nav btn-flex-0-75 ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
                     title="下一個收藏句子"
                   >
                     <i className="fas fa-chevron-right"></i>
@@ -1114,6 +1139,7 @@ const PronunciationAssessment: React.FC = () => {
                   onManageTags={() => handleTabChange('tags')}
                   currentText={referenceText}
                   lastAddedFavoriteId={lastAddedFavoriteId}
+                  highlightedFavoriteId={highlightedFavoriteId}
                 />
               )}
               

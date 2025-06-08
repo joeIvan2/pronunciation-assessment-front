@@ -16,6 +16,7 @@ interface FavoriteListProps {
   onManageTags: () => void;
   currentText: string;
   lastAddedFavoriteId?: string | null;
+  highlightedFavoriteId?: string | null;
 }
 
 const FavoriteList: React.FC<FavoriteListProps> = ({
@@ -30,7 +31,8 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onAddFavorite,
   onManageTags,
   currentText,
-  lastAddedFavoriteId
+  lastAddedFavoriteId,
+  highlightedFavoriteId
 }) => {
   // 數據規範化 - 確保每個收藏項目都有正確的數據結構
   const normalizedFavorites: Favorite[] = favorites.map((fav: any) => {
@@ -409,15 +411,16 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
           {normalizedFavorites.length > 0 ? (
             <ul style={{ listStyle: "none", padding: 0 }}>
               {filteredFavorites.map((fav) => (
-                <li 
-                  key={fav.id} 
+                <li
+                  key={fav.id}
                   id={`favorite-item-${fav.id}`}
+                  className={`favorite-item ${fav.id === highlightedFavoriteId ? 'favorite-selected' : ''}`}
                   style={{
-                    background: "rgba(44, 44, 48, 0.5)", 
-                    padding: "12px", 
-                    borderRadius: "12px", 
-                    marginBottom: "10px", 
-                    display: "flex", 
+                    background: "rgba(44, 44, 48, 0.5)",
+                    padding: "12px",
+                    borderRadius: "12px",
+                    marginBottom: "10px",
+                    display: "flex",
                     flexDirection: "column",
                     border: "1px solid var(--ios-border)"
                   }}
