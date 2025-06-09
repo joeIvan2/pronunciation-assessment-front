@@ -13,6 +13,9 @@ function App() {
           <Route path="/" element={<PronunciationAssessment />} />
           <Route path="/intro" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          {/* 處理Firebase認證iframe和其他路徑 */}
+          <Route path="/__/*" element={<div></div>} />
+          <Route path="*" element={<PronunciationAssessment />} />
         </Routes>
       </div>
     </Router>
