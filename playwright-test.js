@@ -108,10 +108,41 @@ async function runTests() {
     // 測試7: 側邊欄功能測試
     console.log('\n📋 測試7: 側邊欄功能');
     
-    // 我的最愛
+    // 我的最愛 - 測試Firebase權限
+    console.log('\n📋 測試7a: 登入Modal功能檢測');
+    
+    // 嘗試點擊收藏按鈕（應該觸發登入modal）
+    const favoriteButton = await page.locator('button.favorite-button-dynamic, button.control-button').filter({ hasText: /star|收藏/ }).first();
+    if (await favoriteButton.isVisible()) {
+      await favoriteButton.click();
+      await page.waitForTimeout(1000);
+      
+      // 檢查是否出現登入modal
+      const loginModal = await page.locator('.login-modal-overlay').isVisible();
+      if (loginModal) {
+        console.log('✅ 登入Modal成功觸發');
+        
+        // 檢查modal內容
+        const modalTitle = await page.locator('.login-modal-header h3').textContent();
+        const modalMessage = await page.locator('.login-modal-message').textContent();
+        
+        console.log(`✅ Modal標題: ${modalTitle}`);
+        console.log(`✅ Modal訊息包含登入提示: ${modalMessage?.includes('登入') ? '是' : '否'}`);
+        
+        // 關閉modal
+        await page.click('.login-modal-close');
+        await page.waitForTimeout(500);
+        
+        console.log('✅ 登入Modal關閉功能正常');
+      } else {
+        console.log('⚠️ 未檢測到登入Modal（可能已登入或功能未啟用）');
+      }
+    } else {
+      console.log('⚠️ 收藏按鈕未找到');
+    }
+    
     await page.click('button:has-text("我的最愛")');
-    await page.waitForTimeout(500);
-    console.log('✅ 我的最愛功能響應正常');
+    await page.waitForTimeout(1000);
     
     // 發音歷史
     await page.click('button:has-text("發音歷史")');
@@ -125,12 +156,32 @@ async function runTests() {
     
     // 測試8: 數據分享功能
     console.log('\n📋 測試8: 數據分享功能');
+    
+    // 檢查是否有modal阻擋，如果有則先關閉
+    let modalOverlay2 = await page.locator('.login-modal-overlay').isVisible();
+    if (modalOverlay2) {
+      await page.click('.login-modal-close');
+      await page.waitForTimeout(500);
+    }
+    
     await page.click('button:has-text("數據分享")');
     await page.waitForTimeout(500);
     
-    // 生成分享鏈接
+    // 生成分享鏈接 - 這可能會觸發登入modal
     await page.click('button:has-text("生成分享鏈接")');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
+    
+    // 檢查是否出現登入modal
+    const shareLoginModal = await page.locator('.login-modal-overlay').isVisible();
+    if (shareLoginModal) {
+      console.log('✅ 分享功能正確觸發登入Modal');
+      // 關閉modal
+      await page.click('.login-modal-close');
+      await page.waitForTimeout(500);
+    } else {
+      // 如果沒有modal，檢查分享結果
+      await page.waitForTimeout(1000);
+    }
     
     // 檢查是否生成了分享記錄
     const shareTable = await page.locator('table').isVisible();
@@ -142,6 +193,14 @@ async function runTests() {
     
     // 測試9: AI助理功能
     console.log('\n📋 測試9: AI助理功能');
+    
+    // 檢查是否有modal阻擋，如果有則先關閉
+    const modalOverlay = await page.locator('.login-modal-overlay').isVisible();
+    if (modalOverlay) {
+      await page.click('.login-modal-close');
+      await page.waitForTimeout(500);
+    }
+    
     await page.click('button:has-text("AI助理")');
     await page.waitForTimeout(2000);
     
@@ -188,6 +247,13 @@ async function runTests() {
     // 測試10: Firebase登入功能（不實際登入，只測試彈窗）
     console.log('\n📋 測試10: Firebase登入功能');
     
+    // 檢查是否有modal阻擋，如果有則先關閉
+    let modalOverlay3 = await page.locator('.login-modal-overlay').isVisible();
+    if (modalOverlay3) {
+      await page.click('.login-modal-close');
+      await page.waitForTimeout(500);
+    }
+    
     // 點擊登入按鈕
     await page.click('button:has-text("登入")');
     await page.waitForTimeout(2000);
@@ -202,6 +268,19 @@ async function runTests() {
       }
     } else {
       console.log('⚠️ Firebase登入可能使用重定向模式');
+    }
+    
+    // 測試10a: 使用者資料載入功能檢測
+    console.log('\n📋 測試10a: 使用者資料載入功能');
+    
+    // 檢查是否有顯示使用者相關的資料載入訊息
+    const userDataElements = await page.locator('text=/使用者資料|分享歷史|個人偏好|收藏載入/i').isVisible();
+    const profileElements = await page.locator('text=/profile|user|個人檔案/i').isVisible();
+    
+    if (userDataElements || profileElements) {
+      console.log('✅ 檢測到使用者資料相關元素');
+    } else {
+      console.log('ℹ️ 未檢測到使用者資料元素（可能需要登入後才會顯示）');
     }
     
     // 測試11: 響應式設計測試

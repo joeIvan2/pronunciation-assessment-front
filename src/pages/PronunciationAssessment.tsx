@@ -11,6 +11,7 @@ import HistoryRecord from "../components/HistoryRecord";
 import AIDataProcessor from "../components/AIDataProcessor";
 import ShareData from "../components/ShareData";
 import ResizableTextarea from "../components/ResizableTextarea";
+import LoginModal from "../components/LoginModal";
 
 // 鉤子導入
 import { useRecorder } from "../hooks/useRecorder";
@@ -49,6 +50,7 @@ const PronunciationAssessment: React.FC = () => {
   const [isTagExpanded, setIsTagExpanded] = useState<boolean>(() => storage.getCardExpandStates().tagManager);
   const [tags, setTags] = useState<Tag[]>(() => storage.getTags());
   const [nextTagId, setNextTagId] = useState<number>(() => storage.getNextTagId());
+  const [tagsLoaded, setTagsLoaded] = useState<boolean>(false);
   
   // 收藏系統
   const [favorites, setFavorites] = useState<Favorite[]>(() => storage.getFavorites());
@@ -111,6 +113,11 @@ const PronunciationAssessment: React.FC = () => {
   // 控制評分按鈕CSS延遲變化的狀態
   const [buttonStyleDelayed, setButtonStyleDelayed] = useState<boolean>(false);
 
+  // 登入 Modal 相關狀態
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [loginModalMessage, setLoginModalMessage] = useState<string>('');
+  const [loginModalAction, setLoginModalAction] = useState<string>('此功能');
+
   // 登入後載入 Firestore 收藏並在更新時同步
   useEffect(() => {
     if (user) {
@@ -137,6 +144,35 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [user]);
 
+  // 登入後載入 Firestore 標籤並在更新時同步
+  useEffect(() => {
+    if (user) {
+      setTagsLoaded(false);
+      (async () => {
+        try {
+          const { loadUserTags } = await import('../utils/firebaseStorage');
+          const userTags = await loadUserTags(user.uid);
+          if (userTags.length) {
+            setTags(userTags);
+            // 計算下一個標籤ID
+            const maxId = Math.max(...userTags.map(tag => parseInt(tag.tagId, 10) || 0), 0);
+            setNextTagId(maxId + 1);
+          } else {
+            // 如果雲端沒有標籤，保持本地標籤
+            setTags(storage.getTags());
+          }
+        } catch (err) {
+          console.error('載入使用者標籤失敗:', err);
+        } finally {
+          setTagsLoaded(true);
+        }
+      })();
+    } else {
+      setTags(storage.getTags());
+      setTagsLoaded(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user && favoritesLoaded) {
       (async () => {
@@ -149,6 +185,20 @@ const PronunciationAssessment: React.FC = () => {
       })();
     }
   }, [favorites, user, favoritesLoaded]);
+
+  // 同步標籤到雲端
+  useEffect(() => {
+    if (user && tagsLoaded) {
+      (async () => {
+        try {
+          const { saveUserTags } = await import('../utils/firebaseStorage');
+          await saveUserTags(user.uid, tags);
+        } catch (err) {
+          console.error('保存使用者標籤失敗:', err);
+        }
+      })();
+    }
+  }, [tags, user, tagsLoaded]);
   
   // 新增streaming相關狀態和refs
   const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);
@@ -230,8 +280,40 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [recorder.error]);
 
+  // 登入檢查輔助函式
+  const checkLoginAndShowModal = (actionName: string, customMessage?: string): boolean => {
+    if (!user) {
+      setLoginModalAction(actionName);
+      setLoginModalMessage(customMessage || '');
+      setShowLoginModal(true);
+      return false;
+    }
+    return true;
+  };
+
+  // 處理登入 Modal
+  const handleLoginModalClose = () => {
+    setShowLoginModal(false);
+  };
+
+  const handleLoginFromModal = async () => {
+    try {
+      await signInWithGoogle();
+      setShowLoginModal(false);
+    } catch (error) {
+      console.error('登入失敗:', error);
+    }
+  };
+
   // 收藏夾相關函數
   const addToFavorites = (text: string | string[], tagIds: string[] = []) => {
+    // 檢查登入狀態
+    if (!checkLoginAndShowModal(
+      '加入我的最愛',
+      '將句子加入我的最愛需要登入，這樣您就可以在不同裝置間同步您的收藏。'
+    )) {
+      return;
+    }
     // 處理空輸入
     if (!text || (Array.isArray(text) && text.length === 0)) {
       alert("請先輸入句子再加入我的最愛！");
@@ -837,6 +919,14 @@ const PronunciationAssessment: React.FC = () => {
   
   // 標籤相關函數
   const addTag = (name: string, color = '#' + Math.floor(Math.random()*16777215).toString(16)) => {
+    // 檢查登入狀態
+    if (!checkLoginAndShowModal(
+      '新增標籤',
+      '新增自訂標籤需要登入，這樣您的標籤就可以在不同裝置間同步。'
+    )) {
+      return;
+    }
+
     // 檢查ID是否存在，如果存在則遞增直到找到未使用的ID
     let currentNextId = nextTagId;
     let idStr = currentNextId.toString();
@@ -1269,6 +1359,12 @@ const PronunciationAssessment: React.FC = () => {
                 <ShareData 
                   tags={tags} 
                   favorites={favorites} 
+                  user={user}
+                  onLoginRequired={(actionName, message) => {
+                    setLoginModalAction(actionName);
+                    setLoginModalMessage(message || '');
+                    setShowLoginModal(true);
+                  }}
                 />
               )}
             </div>
@@ -1405,6 +1501,15 @@ const PronunciationAssessment: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* 登入提示 Modal */}
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={handleLoginModalClose}
+          onLogin={handleLoginFromModal}
+          message={loginModalMessage}
+          actionName={loginModalAction}
+        />
       </div>
     </div>
   );

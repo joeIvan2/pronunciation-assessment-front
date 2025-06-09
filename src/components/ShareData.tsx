@@ -6,9 +6,11 @@ import '../styles/PronunciationAssessment.css';
 interface ShareDataProps {
   tags: Tag[];
   favorites: Favorite[];
+  user?: any;
+  onLoginRequired?: (actionName: string, message?: string) => void;
 }
 
-const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
+const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginRequired }) => {
   // 分享狀態
   const [isExpanded, setIsExpanded] = useState<boolean>(true); // 默認展開
   const [isSharing, setIsSharing] = useState<boolean>(false);
@@ -60,6 +62,15 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
   
   // 分享數據
   const shareData = async () => {
+    // 檢查登入狀態
+    if (!user && onLoginRequired) {
+      onLoginRequired(
+        '數據分享',
+        '分享您的收藏和標籤需要登入，這樣可以記錄您的分享歷史並提供編輯功能。'
+      );
+      return;
+    }
+
     try {
       setIsSharing(true);
       setShareResult(null);
