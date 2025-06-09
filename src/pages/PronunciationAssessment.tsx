@@ -894,7 +894,14 @@ const PronunciationAssessment: React.FC = () => {
             </div>
           ) : (
             <button 
-              onClick={signInWithGoogle}
+              onClick={async () => {
+                try {
+                  await signInWithGoogle();
+                } catch (error: any) {
+                  console.error('登入失敗:', error);
+                  setError(`登入失敗: ${error.message || '請重試或檢查網路連接'}`);
+                }
+              }}
               className="btn btn-primary auth-btn"
               title="使用Google登入"
             >

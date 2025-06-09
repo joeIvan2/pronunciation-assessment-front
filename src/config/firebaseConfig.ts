@@ -19,12 +19,23 @@ const app = initializeApp(firebaseConfig);
 
 // 初始化服務
 export const auth = getAuth(app);
+
+// 設置 Auth 實例的配置
+auth.useDeviceLanguage(); // 使用設備語言
+
 export const googleProvider = new GoogleAuthProvider();
 
 // 配置 Google 登入提供者
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account',
+  // 添加更多參數以改善兼容性
+  'include_granted_scopes': 'true',
+  'access_type': 'online'
 });
+
+// 設置作用域
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
 
 // 初始化 Firestore，連接到 nicetone 資料庫
 export const db = getFirestore(app, 'nicetone');
