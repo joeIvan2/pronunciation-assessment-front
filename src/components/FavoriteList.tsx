@@ -414,16 +414,9 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                 <li
                   key={fav.id}
                   id={`favorite-item-${fav.id}`}
-                  className={`favorite-item ${fav.id === highlightedFavoriteId ? 'favorite-selected' : ''}`}
-                  style={{
-                    background: "rgba(44, 44, 48, 0.5)",
-                    padding: "12px",
-                    borderRadius: "12px",
-                    marginBottom: "10px",
-                    display: "flex",
-                    flexDirection: "column",
-                    border: "1px solid var(--ios-border)"
-                  }}
+                  className={`favorite-item ${
+                    fav.id === highlightedFavoriteId ? 'favorite-selected' : ''
+                  }`}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <span 
