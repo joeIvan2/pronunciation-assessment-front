@@ -450,7 +450,9 @@ const PronunciationAssessment: React.FC = () => {
     if (target) {
       setReferenceText(target.text);
       storage.saveReferenceText(target.text);
+
       setHighlightedFavoriteId(target.id);
+
     }
   };
   
