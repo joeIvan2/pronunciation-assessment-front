@@ -72,10 +72,11 @@ yarn install
    - 建立 Firebase 專案並在驗證頁啟用 Google Sign-In
    - 在 `.env` 檔案加入下列設定：
      ```
-     REACT_APP_FIREBASE_API_KEY=yourKey
-     REACT_APP_FIREBASE_AUTH_DOMAIN=yourApp.firebaseapp.com
-     REACT_APP_FIREBASE_PROJECT_ID=yourProjectId
-     REACT_APP_FIREBASE_APP_ID=yourAppId
+      REACT_APP_FIREBASE_API_KEY=yourKey
+      # authDomain 預設會使用當前網域，可視需要覆蓋
+      REACT_APP_FIREBASE_AUTH_DOMAIN=yourApp.firebaseapp.com
+      REACT_APP_FIREBASE_PROJECT_ID=yourProjectId
+      REACT_APP_FIREBASE_APP_ID=yourAppId
      ```
 
 5. **啟動開發伺服器**
