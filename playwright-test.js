@@ -32,15 +32,55 @@ async function runTests() {
     console.log('\n📋 測試4: 文字輸入功能');
     const textInput = await page.locator('textarea, input[type="text"]').first();
     if (await textInput.isVisible()) {
-      await textInput.fill('Testing pronunciation assessment');
+      await textInput.fill('Hello, I am a student. I like to read books.');
       const inputValue = await textInput.inputValue();
-      if (inputValue === 'Testing pronunciation assessment') {
+      if (inputValue === 'Hello, I am a student. I like to read books.') {
         console.log('✅ 文字輸入功能正常');
       } else {
         console.log('❌ 文字輸入功能異常');
       }
     } else {
       console.log('⚠️ 文字輸入框未找到');
+    }
+    
+    // 測試4a: 發音評分按鈕功能
+    console.log('\n📋 測試4a: 發音評分按鈕功能');
+    const pronunciationButton = await page.locator('button').filter({ hasText: /評分|錄音|開始/i }).first();
+    
+    if (await pronunciationButton.isVisible()) {
+      console.log('✅ 發音評分按鈕找到');
+      
+      // 點擊發音按鈕
+      await pronunciationButton.click();
+      await page.waitForTimeout(2000);
+      
+      // 檢查是否出現錯誤碼或錯誤訊息
+      const errorElements = await page.locator('text=/錯誤|error|Error|失敗|fail/i');
+      const consoleErrors = await page.evaluate(() => {
+        return window.console.error ? window.console.error.length : 0;
+      });
+      
+      // 檢查瀏覽器控制台錯誤
+      const logs = await page.evaluate(() => {
+        return window.console.logs || [];
+      });
+      
+      const hasVisibleError = await errorElements.first().isVisible().catch(() => false);
+      
+      if (hasVisibleError) {
+        console.log('❌ 發音功能出現錯誤訊息');
+      } else {
+        console.log('✅ 發音按鈕點擊成功，無明顯錯誤');
+      }
+      
+      // 檢查是否有錄音權限相關提示
+      const permissionAlert = await page.locator('text=/權限|permission|麥克風|microphone/i').first().isVisible().catch(() => false);
+      if (permissionAlert) {
+        console.log('ℹ️ 檢測到麥克風權限相關提示（正常現象）');
+      }
+      
+    } else {
+      console.log('⚠️ 發音評分按鈕未找到');
     }
     
     // 測試5: 句子庫選擇
@@ -104,9 +144,9 @@ async function runTests() {
     // 測試輸入功能
     const aiInput = await page.locator('textarea, input[type="text"]').first();
     if (await aiInput.isVisible()) {
-      await aiInput.fill('Test AI functionality');
+      await aiInput.fill('幫我創造5個小學生適合的英文句子');
       const aiInputValue = await aiInput.inputValue();
-      if (aiInputValue === 'Test AI functionality') {
+      if (aiInputValue === '幫我創造5個小學生適合的英文句子') {
         console.log('✅ AI助理輸入功能正常');
       } else {
         console.log('❌ AI助理輸入功能異常');
@@ -120,6 +160,23 @@ async function runTests() {
     const isEnabled = await sendButton.isEnabled();
     if (isEnabled) {
       console.log('✅ AI助理發送按鈕正確啟用');
+      
+      // 測試AI助理回應功能
+      console.log('\n📋 測試9a: AI助理創造句子功能');
+      await sendButton.click();
+      await page.waitForTimeout(3000); // 等待AI回應
+      
+      // 檢查是否有錯誤或成功回應
+      const errorMessage = await page.locator('text=/錯誤|error|Error/i').isVisible();
+      const responseArea = await page.locator('div, p, span').filter({ hasText: /句子|sentence/i }).first();
+      
+      if (errorMessage) {
+        console.log('❌ AI助理回應出現錯誤');
+      } else if (await responseArea.isVisible()) {
+        console.log('✅ AI助理成功回應，可能已創造句子');
+      } else {
+        console.log('⚠️ AI助理回應狀態不明，可能還在處理中');
+      }
     } else {
       console.log('❌ AI助理發送按鈕未啟用');
     }
