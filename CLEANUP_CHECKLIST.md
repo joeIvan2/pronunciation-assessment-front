@@ -35,7 +35,7 @@
 - [x] `getTextareaHeight` (src/utils/storage.ts) ⭐
 - [x] `saveTextareaHeight` (src/utils/storage.ts) ⭐
 - [x] `saveStrictMode` (src/utils/storage.ts) ⭐
-- [ ] `saveHistoryRecords` (src/utils/storage.ts) ⭐
+- [x] `saveHistoryRecords` (src/utils/storage.ts) ⭐
 - [x] `getTTSCache` (src/utils/storage.ts) ⭐
 - [x] `getTTSCacheItem` (src/utils/storage.ts) ⭐
 - [x] `addTTSCacheItem` (src/utils/storage.ts) ⭐
@@ -44,13 +44,13 @@
 
 
 ## Redundant Pages / Hooks
-- [ ] `src/pages/Login.tsx` - replaced by Firebase UI ⭐
+- [x] `src/pages/Login.tsx` - replaced by Firebase UI ⭐
 
 ## Outdated Configuration
-- [ ] `tsconfig.json:paths` - unused path mappings ⭐
+- [x] `tsconfig.json:paths` - unused path mappings ⭐
 - [ ] `package-lock.json` - remove if using yarn ⭐
-- [ ] `public/manifest.json` - unused icons and meta fields ⭐
-- [ ] `firestore.rules` - replaced by server security rules ⭐
+- [x] `public/manifest.json` - unused icons and meta fields ⭐
+- [x] `firestore.rules` - replaced by server security rules ⭐
 
 ## Temporary / Build Artifacts
 - [ ] `build/` - ensure compiled output is not committed ⭐
@@ -59,9 +59,9 @@
 
 ## Documentation Cleanup
 - [ ] `README.md` - update installation steps ⭐
-- [ ] `FIREBASE_SETUP.md` - integrate with README ⭐
-- [ ] `SLIDES_README.md` - move to wiki ⭐
-- [ ] `FIREBASE_AUTH_FIX.md` - condense into issue or note ⭐
+- [x] `FIREBASE_SETUP.md` - integrate with README ⭐
+- [x] `SLIDES_README.md` - move to wiki ⭐
+- [x] `FIREBASE_AUTH_FIX.md` - condense into issue or note ⭐
 
 ## Future Cleanup Steps
 1. Re-enable strict TypeScript checks

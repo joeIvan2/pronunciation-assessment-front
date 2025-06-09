@@ -392,9 +392,6 @@ export const getHistoryRecords = (): HistoryItem[] => {
 };
 
 // 保存历史记录
-export const saveHistoryRecords = (records: HistoryItem[]): void => {
-  setItem('historyRecords', records);
-};
 
 // 新增历史记录
 export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>): void => {
@@ -407,19 +404,19 @@ export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>):
   
   // 限制历史记录数量，只保留最近的20条
   const updatedRecords = [newRecord, ...records].slice(0, 20);
-  saveHistoryRecords(updatedRecords);
+  setItem('historyRecords', updatedRecords);
 };
 
 // 删除单个历史记录
 export const deleteHistoryRecord = (id: string): void => {
   const records = getHistoryRecords();
   const updatedRecords = records.filter(record => record.id !== id);
-  saveHistoryRecords(updatedRecords);
+  setItem('historyRecords', updatedRecords);
 };
 
 // 清空历史记录
 export const clearHistoryRecords = (): void => {
-  saveHistoryRecords([]);
+  setItem('historyRecords', []);
 };
 
 // 标签页相关类型和函数
