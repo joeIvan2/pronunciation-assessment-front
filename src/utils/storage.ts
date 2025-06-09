@@ -487,14 +487,19 @@ export const isValidURL = (url: string): boolean => {
 };
 
 // 分享當前的標籤和收藏數據
-export const shareTagsAndFavorites = async (): Promise<ShareResponse> => {
+export const shareTagsAndFavorites = async (
+  tags?: Tag[], 
+  favorites?: Favorite[], 
+  uid?: string, 
+  customShareId?: string
+): Promise<ShareResponse> => {
   try {
-    const tags = getTags();
-    const favorites = getFavorites();
+    const tagsToShare = tags || getTags();
+    const favoritesToShare = favorites || getFavorites();
     
     // 動態導入Firebase存儲服務
     const { shareTagsAndFavorites: firebaseShare } = await import('./firebaseStorage');
-    const result = await firebaseShare(tags, favorites);
+    const result = await firebaseShare(tagsToShare, favoritesToShare, uid, customShareId);
     
     // 生成分享URL
     const baseUrl = window.location.origin + window.location.pathname;

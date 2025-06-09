@@ -15,6 +15,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   const [isExpanded, setIsExpanded] = useState<boolean>(true); // 默認展開
   const [isSharing, setIsSharing] = useState<boolean>(false);
   const [shareResult, setShareResult] = useState<{success: boolean; url?: string; editPassword?: string; error?: string; directLink?: string} | null>(null);
+  const [customShareId, setCustomShareId] = useState<string>(''); // 自訂分享ID
   
   // 導入狀態
   const [isImporting, setIsImporting] = useState<boolean>(false);
@@ -75,7 +76,10 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       setIsSharing(true);
       setShareResult(null);
       
-      const result = await storage.shareTagsAndFavorites();
+      // 清理自訂分享ID（移除特殊字符，只保留字母數字和中文）
+      const cleanedCustomId = customShareId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]/g, '');
+      
+      const result = await storage.shareTagsAndFavorites(tags, favorites, user?.uid, cleanedCustomId || undefined);
       
       if (result.success && result.hash && result.editPassword && result.url) {
         // 創建直接導入鏈接但不再顯示
@@ -96,6 +100,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
         setTimeout(() => {
           setShowHistoryAnimation(false);
         }, 1500);
+        
+        // 清空自訂分享ID輸入框
+        setCustomShareId('');
         
         // 只設置結果狀態，但不顯示success-message
         setShareResult({
@@ -243,13 +250,27 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           <div className="card-section">
             <h4>分享我的數據</h4>
             <p>將您當前的標籤和收藏數據生成一個分享鏈接，可以與他人共享或備份。</p>
-            <button 
-              className="primary-button" 
-              onClick={shareData}
-              disabled={isSharing}
-            >
-              {isSharing ? '處理中...' : '生成分享鏈接'}
-            </button>
+            
+            <div className="input-group" style={{marginBottom: '15px'}}>
+              <input 
+                type="text" 
+                placeholder="自訂分享名稱（可選）- 留空將自動生成" 
+                value={customShareId}
+                onChange={(e) => setCustomShareId(e.target.value)}
+                style={{flex: 1, marginRight: '10px'}}
+              />
+              <button 
+                className="primary-button" 
+                onClick={shareData}
+                disabled={isSharing}
+              >
+                {isSharing ? '處理中...' : '生成分享鏈接'}
+              </button>
+            </div>
+            
+            <div style={{fontSize: '12px', color: 'var(--ios-text-secondary)', marginBottom: '10px'}}>
+              提示：您可以輸入有意義的名稱作為分享連結，例如：「我的英文學習」或「小明的收藏」
+            </div>
             
             {/* 刪除success-message區塊，只保留錯誤提示 */}
             {shareResult && !shareResult.success && (

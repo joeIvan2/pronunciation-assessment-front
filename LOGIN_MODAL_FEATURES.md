@@ -151,3 +151,28 @@ const checkLoginAndShowModal = (actionName: string, customMessage?: string): boo
 3. 檢查登入流程
 4. 確認資料同步
 5. 測試錯誤處理 
+
+## 最新更新：自訂分享名稱功能 ✨
+
+### 功能描述
+- **新增輸入框**: 在分享按鈕旁新增一個輸入框，讓使用者可以自訂分享連結的名稱
+- **智能檢查**: 系統會自動檢查輸入的名稱是否與其他使用者重複
+- **友善回饋**: 如果名稱已被使用，會顯示「此分享名稱已被他人使用，請重新命名」的錯誤訊息
+- **自動清理**: 系統會自動移除特殊字符，只保留字母、數字、中文和底線
+- **預設備援**: 如果不輸入自訂名稱，系統仍會自動生成隨機ID
+
+### 技術實作
+```typescript
+// 在 ShareData.tsx 中新增狀態
+const [customShareId, setCustomShareId] = useState<string>('');
+
+// 在分享函式中處理自訂名稱
+const cleanedCustomId = customShareId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]/g, '');
+const result = await storage.shareTagsAndFavorites(tags, favorites, user?.uid, cleanedCustomId || undefined);
+```
+
+### UI 設計
+- **輸入提示**: 「自訂分享名稱（可選）- 留空將自動生成」
+- **使用範例**: 「我的英文學習」或「小明的收藏」
+- **即時清理**: 輸入時自動過濾特殊字符
+- **成功清空**: 分享成功後自動清空輸入框 

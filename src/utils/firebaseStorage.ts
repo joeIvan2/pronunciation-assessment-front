@@ -59,13 +59,37 @@ const checkNetworkConnection = async (): Promise<void> => {
   }
 };
 
+// 檢查分享ID是否已存在
+const checkShareIdExists = async (shareId: string): Promise<boolean> => {
+  try {
+    const docRef = doc(db, 'sharedData', shareId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists();
+  } catch (error) {
+    return false; // 如果發生錯誤，假設不存在
+  }
+};
+
 // 分享標籤和收藏項目
 export const shareTagsAndFavorites = async (
   tags: Tag[], 
   favorites: Favorite[], 
-  uid?: string
+  uid?: string,
+  customShareId?: string
 ): Promise<{ shareId: string; editPassword: string }> => {
-  const shareId = generateId();
+  let shareId: string;
+  
+  // 如果提供了自訂分享ID，檢查是否已存在
+  if (customShareId && customShareId.trim()) {
+    const exists = await checkShareIdExists(customShareId);
+    if (exists) {
+      throw new Error('此分享名稱已被他人使用，請重新命名');
+    }
+    shareId = customShareId.trim();
+  } else {
+    shareId = generateId();
+  }
+  
   const editPassword = generatePassword();
   
   const shareData = {
