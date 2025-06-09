@@ -1,0 +1,43 @@
+{
+  "name": "pronunciation-assessment-tests",
+  "version": "1.0.0",
+  "description": "發音評估應用程式自動化測試套件",
+  "main": "playwright-test.js",
+  "scripts": {
+    "test": "node playwright-test.js",
+    "test:headless": "HEADLESS=true node playwright-test.js",
+    "test:install": "npx playwright install",
+    "test:setup": "npm install && npx playwright install",
+    "test:quick": "node playwright-test.js --quick",
+    "test:full": "node playwright-test.js --full",
+    "report": "start test-report.md && start test-results.png"
+  },
+  "keywords": [
+    "playwright",
+    "automation",
+    "testing",
+    "pronunciation",
+    "assessment"
+  ],
+  "author": "NiceTone Team",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "pronunciation-assessment-front"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/pronunciation-assessment-front/issues"
+  },
+  "homepage": "http://localhost:3000",
+  "config": {
+    "test_url": "http://localhost:3000",
+    "timeout": 30000,
+    "retries": 2
+  }
+} 
