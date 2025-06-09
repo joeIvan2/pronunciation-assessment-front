@@ -1,5 +1,9 @@
 const { chromium } = require('playwright');
 
+// TODO: 測試串流模式錄音評估
+// TODO: 測試OCR圖片上傳及辨識
+// TODO: 測試收藏匯出與匯入功能
+// TODO: 測試語音選擇與語速控制
 async function runTests() {
   const browser = await chromium.launch({ headless: false });
   const context = await browser.newContext();
@@ -297,3 +301,4 @@ if (require.main === module) {
 }
 
 module.exports = { runTests }; 
+// 上述測試覆蓋主要功能，後續可依需求擴充。

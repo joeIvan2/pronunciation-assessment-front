@@ -3,14 +3,20 @@
 import { Tag, Favorite } from '../types/speech';
 import { AI_SERVER_URL } from './api'; // 從api.ts導入常量
 import { DEFAULT_VOICE } from '../config/voiceConfig'; // 導入預設語音配置
+import { auth } from '../config/firebaseConfig';
+import { isUserLoggedIn } from './authStatus';
 
 // 获取localStorage中的数据，返回默认值如果不存在
 export const getItem = <T>(key: string, defaultValue: T): T => {
+  if (!isUserLoggedIn()) {
+    return defaultValue;
+  }
+
   const item = localStorage.getItem(key);
   if (item === null) {
     return defaultValue;
   }
-  
+
   try {
     return JSON.parse(item) as T;
   } catch (e) {
@@ -21,6 +27,10 @@ export const getItem = <T>(key: string, defaultValue: T): T => {
 
 // 设置localStorage中的数据
 export const setItem = <T>(key: string, value: T): void => {
+  if (!isUserLoggedIn()) {
+    return;
+  }
+
   if (typeof value === 'string') {
     localStorage.setItem(key, value);
   } else {
@@ -40,13 +50,12 @@ export const saveReferenceText = (text: string): void => {
 
 // 获取字体大小
 export const getFontSize = (): number => {
-  const saved = localStorage.getItem('fontSize');
-  return saved ? parseInt(saved, 10) : 16; // 默認值為16px
+  return getItem<number>('fontSize', 16);
 };
 
 // 保存字体大小
 export const saveFontSize = (size: number) => {
-  localStorage.setItem('fontSize', size.toString());
+  setItem('fontSize', size.toString());
 };
 
 // 获取textarea高度
@@ -227,8 +236,12 @@ export const getFavorites = (): Favorite[] => {
     }
   ];
 
+  if (!isUserLoggedIn()) {
+    return defaultFavorites;
+  }
+
   const savedFavorites = localStorage.getItem('favorites');
-  
+
   // 如果没有已保存的数据，返回默认值
   if (!savedFavorites) {
     return defaultFavorites;
@@ -447,9 +460,11 @@ export const saveBottomActiveTab = (tab: BottomTabName): void => {
 // 获取 AI 助理提示文字
 export const getAIPrompt = (): string => {
   // 首选获取新的键，如果不存在则检查旧的键
-  const saved = localStorage.getItem('aiPrompt');
-  if (saved !== null) {
-    return saved;
+  if (isUserLoggedIn()) {
+    const saved = localStorage.getItem('aiPrompt');
+    if (saved !== null) {
+      return saved;
+    }
   }
   
   // 旧版本的键名
@@ -464,6 +479,10 @@ export const saveAIPrompt = (prompt: string): void => {
 // 获取AI响应
 export const getAIResponse = (): string | null => {
   try {
+    if (!isUserLoggedIn()) {
+      return null;
+    }
+
     const item = localStorage.getItem('aiResponse');
     if (item === null) {
       return null;
@@ -480,6 +499,10 @@ export const getAIResponse = (): string | null => {
 // 保存AI响应
 export const saveAIResponse = (response: string | null): void => {
   try {
+    if (!isUserLoggedIn()) {
+      return;
+    }
+
     if (response === null) {
       localStorage.removeItem('aiResponse');
       return;
