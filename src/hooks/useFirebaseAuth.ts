@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth, googleProvider } from '../config/firebaseConfig';
+import { loadUserSettings, saveUserSettings } from '../utils/userSettings';
 import { 
   signInWithPopup, 
   signInWithRedirect, 
@@ -19,7 +20,12 @@ export const useFirebaseAuth = (): AuthResult => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        await loadUserSettings(u.uid);
+      }
+    });
     
     // 檢查重定向登入結果
     getRedirectResult(auth)
@@ -60,7 +66,14 @@ export const useFirebaseAuth = (): AuthResult => {
     }
   };
   
-  const signOutUser = () => signOut(auth);
+  const signOutUser = async () => {
+    if (user) {
+      await saveUserSettings(user.uid).catch((e) => {
+        console.error('保存用戶設定失敗:', e);
+      });
+    }
+    await signOut(auth);
+  };
 
   return { user, signInWithGoogle, signOutUser };
 };
