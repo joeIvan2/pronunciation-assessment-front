@@ -1,10 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getBaseUrl } from './baseUrl';
+import { getAuthDomain } from './authDomain';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || getBaseUrl(),
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || getAuthDomain(),
   projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };

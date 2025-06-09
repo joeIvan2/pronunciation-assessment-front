@@ -73,7 +73,7 @@ yarn install
    - 在 `.env` 檔案加入下列設定：
      ```
      REACT_APP_FIREBASE_API_KEY=yourKey
-      # authDomain 預設會使用當前網域 (window.location.origin)，可視需要覆蓋
+      # authDomain 預設會使用當前網域 (window.location.hostname)，可視需要覆蓋
       REACT_APP_FIREBASE_AUTH_DOMAIN=yourApp.firebaseapp.com
       REACT_APP_FIREBASE_PROJECT_ID=yourProjectId
       REACT_APP_FIREBASE_APP_ID=yourAppId
