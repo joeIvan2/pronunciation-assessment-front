@@ -50,15 +50,6 @@ export const saveFontSize = (size: number) => {
 };
 
 // 获取textarea高度
-export const getTextareaHeight = (): number => {
-  const saved = localStorage.getItem('textareaHeight');
-  return saved ? parseInt(saved, 10) : 140; // 默认高度为140px
-};
-
-// 保存textarea高度
-export const saveTextareaHeight = (height: number) => {
-  localStorage.setItem('textareaHeight', height.toString());
-};
 
 // 获取严格模式设置
 export const getStrictMode = (): boolean => {
@@ -66,9 +57,6 @@ export const getStrictMode = (): boolean => {
 };
 
 // 保存严格模式设置
-export const saveStrictMode = (isStrict: boolean): void => {
-  setItem('strictMode', isStrict);
-};
 
 // 获取API模式设置
 export const getUseBackend = (): boolean => {
@@ -726,54 +714,3 @@ export const saveAIVoice = (voice: string): void => {
 };
 
 // TTS缓存相关类型和函数
-export interface TTSCacheItem {
-  text: string;
-  voice: string;
-  audioUrl: string;
-  timestamp: number;
-}
-
-// 获取TTS缓存
-export const getTTSCache = (): TTSCacheItem[] => {
-  return getItem<TTSCacheItem[]>('ttsCache', []);
-};
-
-// 根据文本和语音获取缓存项
-export const getTTSCacheItem = (text: string, voice: string): TTSCacheItem | undefined => {
-  const cache = getTTSCache();
-  return cache.find(item => item.text === text && item.voice === voice);
-};
-
-// 新增TTS缓存项
-export const addTTSCacheItem = (text: string, voice: string, audioUrl: string): void => {
-  // 不緩存blob URL或空URL
-  if (!audioUrl || !isValidURL(audioUrl)) {
-    console.log(`跳過緩存無效URL: ${audioUrl}`);
-    return;
-  }
-  
-  const cache = getTTSCache();
-  
-  // 检查是否已存在相同文本和语音的缓存
-  const existingIndex = cache.findIndex(item => item.text === text && item.voice === voice);
-  
-  const newItem: TTSCacheItem = {
-    text,
-    voice,
-    audioUrl,
-    timestamp: Date.now()
-  };
-  
-  // 更新已存在项或新增新项
-  if (existingIndex !== -1) {
-    cache[existingIndex] = newItem;
-  } else {
-    cache.unshift(newItem); // 新增到开头
-  }
-  
-  // 仅保留最新的5个缓存项
-  const updatedCache = cache.slice(0, 5);
-  setItem('ttsCache', updatedCache);
-  
-  console.log(`成功新增TTS緩存: ${text.slice(0, 20)}... (${voice})`);
-}; 

@@ -3,42 +3,42 @@
 下列檔案與函式目前在專案中未被使用或可能重複，可考慮逐步移除或重構：
 
 ## Unused Components / Assets
-- [ ] `src/components/ScoreCard.tsx` - component not referenced by any page ⭐
-- [ ] `debug-horizontal-scroll.js` - debug script not imported anywhere ⭐
-- [ ] `quick-debug.js` - debug script not imported anywhere ⭐
-- [ ] `src/assets/logo.webp` - unused image ⭐
-- [ ] `src/logo.svg` - unused logo ⭐
-- [ ] `src/config/authDomain.ts` - function never imported ⭐
-- [ ] `.cursor/rules/pa-front-rules.mdc` - dev rules file ⭐
-- [ ] `FIRESTORE_RULES.md` - duplicate of `firestore.rules` ⭐
-- [ ] `FIREBASE_AUTH_FIX.md` - temporary troubleshooting notes ⭐
-- [ ] `src/docs/streaming-backend-example.md` - example documentation ⭐
-- [ ] `src/App.test.js` - default CRA test file ⭐
-- [ ] `src/setupTests.js` - Jest config not referenced ⭐
-- [ ] `FIREBASE_SETUP.md` - setup steps duplicate README ⭐
-- [ ] `SLIDES_README.md` - slide mode instructions ⭐
-- [ ] `src/utils/platform.ts` - platform helpers never used ⭐
-- [ ] `src/utils/api.ts:downloadAudioAsBlob` - function unused ⭐
-- [ ] `src/utils/firebaseStorage.ts:deleteSharedData` - unused removal helper ⭐
-- [ ] `src/utils/firebaseStorage.ts:testFirebaseConnection` - unused connection test ⭐
+- [x] `src/components/ScoreCard.tsx` - component not referenced by any page ⭐
+- [x] `debug-horizontal-scroll.js` - debug script not imported anywhere ⭐
+- [x] `quick-debug.js` - debug script not imported anywhere ⭐
+- [x] `src/assets/logo.webp` - unused image ⭐
+- [x] `src/logo.svg` - unused logo ⭐
+- [x] `src/config/authDomain.ts` - function never imported ⭐
+- [x] `.cursor/rules/pa-front-rules.mdc` - dev rules file ⭐
+- [x] `FIRESTORE_RULES.md` - duplicate of `firestore.rules` ⭐
+- [x] `FIREBASE_AUTH_FIX.md` - temporary troubleshooting notes ⭐
+- [x] `src/docs/streaming-backend-example.md` - example documentation ⭐
+- [x] `src/App.test.js` - default CRA test file ⭐
+- [x] `src/setupTests.js` - Jest config not referenced ⭐
+- [x] `FIREBASE_SETUP.md` - setup steps duplicate README ⭐
+- [x] `SLIDES_README.md` - slide mode instructions ⭐
+- [x] `src/utils/platform.ts` - platform helpers never used ⭐
+- [x] `src/utils/api.ts:downloadAudioAsBlob` - function unused ⭐
+- [x] `src/utils/firebaseStorage.ts:deleteSharedData` - unused removal helper ⭐
+- [x] `src/utils/firebaseStorage.ts:testFirebaseConnection` - unused connection test ⭐
 
 ## Unused Utility Functions
-- [ ] `generateSpeech` (src/utils/api.ts) ⭐
-- [ ] `generateSpeechStream` (src/utils/api.ts) ⭐
-- [ ] `getVoiceById` (src/config/voiceConfig.ts) ⭐
-- [ ] `getVoicesByGender` (src/config/voiceConfig.ts) ⭐
-- [ ] `getVoiceIds` (src/config/voiceConfig.ts) ⭐
-- [ ] `isValidVoice` (src/config/voiceConfig.ts) ⭐
-- [ ] `getVoiceListString` (src/config/voiceConfig.ts) ⭐
+- [x] `generateSpeech` (src/utils/api.ts) ⭐
+- [x] `generateSpeechStream` (src/utils/api.ts) ⭐
+- [x] `getVoiceById` (src/config/voiceConfig.ts) ⭐
+- [x] `getVoicesByGender` (src/config/voiceConfig.ts) ⭐
+- [x] `getVoiceIds` (src/config/voiceConfig.ts) ⭐
+- [x] `isValidVoice` (src/config/voiceConfig.ts) ⭐
+- [x] `getVoiceListString` (src/config/voiceConfig.ts) ⭐
 
 ## Unused Storage Helpers
-- [ ] `getTextareaHeight` (src/utils/storage.ts) ⭐
-- [ ] `saveTextareaHeight` (src/utils/storage.ts) ⭐
-- [ ] `saveStrictMode` (src/utils/storage.ts) ⭐
+- [x] `getTextareaHeight` (src/utils/storage.ts) ⭐
+- [x] `saveTextareaHeight` (src/utils/storage.ts) ⭐
+- [x] `saveStrictMode` (src/utils/storage.ts) ⭐
 - [ ] `saveHistoryRecords` (src/utils/storage.ts) ⭐
-- [ ] `getTTSCache` (src/utils/storage.ts) ⭐
-- [ ] `getTTSCacheItem` (src/utils/storage.ts) ⭐
-- [ ] `addTTSCacheItem` (src/utils/storage.ts) ⭐
+- [x] `getTTSCache` (src/utils/storage.ts) ⭐
+- [x] `getTTSCacheItem` (src/utils/storage.ts) ⭐
+- [x] `addTTSCacheItem` (src/utils/storage.ts) ⭐
 
 依照上述清單逐項檢查並刪除或整合程式碼，可使專案更加精簡易維護。
 

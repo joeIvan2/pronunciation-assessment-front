@@ -33,25 +33,3 @@ export const SPEED_RANGE = {
 // 獲取語音選項的輔助函數
 export const getVoiceOptions = () => VOICE_OPTIONS;
 
-export const getVoiceById = (id: string): VoiceOption | undefined => {
-  return VOICE_OPTIONS.find(voice => voice.id === id);
-};
-
-export const getVoicesByGender = (gender: 'male' | 'female'): VoiceOption[] => {
-  return VOICE_OPTIONS.filter(voice => voice.gender === gender);
-};
-
-export const getVoiceIds = (): string[] => {
-  return VOICE_OPTIONS.map(voice => voice.id);
-};
-
-export const isValidVoice = (voiceId: string): boolean => {
-  return VOICE_OPTIONS.some(voice => voice.id === voiceId);
-};
-
-// 用於註釋和文檔的語音列表字符串
-export const getVoiceListString = (): string => {
-  const femaleVoices = getVoicesByGender('female').map(v => v.id).join(', ');
-  const maleVoices = getVoicesByGender('male').map(v => v.id).join(', ');
-  return `${femaleVoices} (女性), ${maleVoices} (男性)`;
-}; 
