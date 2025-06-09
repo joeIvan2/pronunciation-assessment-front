@@ -156,8 +156,8 @@ src/
 
 ## ☁️ Firestore 資料庫設計
 - 參考 [FIRESTORE_DESIGN.md](FIRESTORE_DESIGN.md) 了解跨裝置同步與 token 設計
-- 已登入的使用者會將「我的最愛」同步到 Firestore，可在不同裝置存取
-- 未登入使用者僅會看到預設句子，所有設定與紀錄不會保存至 localStorage
+- 已登入的使用者會將「我的最愛」直接同步到 Firestore，可在不同裝置存取
+- 未登入使用者僅會看到預設句子，且不再使用 localStorage 儲存任何收藏
 
 
 ## 📈 使用情境

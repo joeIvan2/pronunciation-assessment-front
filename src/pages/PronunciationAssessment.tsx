@@ -121,7 +121,6 @@ const PronunciationAssessment: React.FC = () => {
           const favs = await loadUserFavorites(user.uid);
           if (favs.length) {
             setFavorites(favs);
-            storage.saveFavorites(favs);
             setNextFavoriteId(storage.getNextFavoriteId(favs));
           } else {
             setFavorites([]);
@@ -320,11 +319,9 @@ const PronunciationAssessment: React.FC = () => {
     
     // 設置狀態和保存
     setFavorites(sortedFavorites);
-    storage.saveFavorites(sortedFavorites);
     
     // 更新 nextFavoriteId
     setNextFavoriteId(currentNextId);
-    storage.saveNextFavoriteId(currentNextId);
     
     // 如果是批次新增，顯示新增成功的提示
     if (Array.isArray(text) && newFavorites.length > 0) {
@@ -345,7 +342,6 @@ const PronunciationAssessment: React.FC = () => {
   const removeFromFavorite = (id: string) => {
     const updatedFavorites = favorites.filter(fav => fav.id !== id);
     setFavorites(updatedFavorites);
-    storage.saveFavorites(updatedFavorites);
   };
   
   const loadFavorite = (id: string) => {
@@ -377,7 +373,6 @@ const PronunciationAssessment: React.FC = () => {
     );
     
     setFavorites(updatedFavorites);
-    storage.saveFavorites(updatedFavorites);
   };
   
   const toggleTagOnFavorite = (favoriteId: string, tagId: string) => {
@@ -396,7 +391,6 @@ const PronunciationAssessment: React.FC = () => {
     });
     
     setFavorites(updatedFavorites);
-    storage.saveFavorites(updatedFavorites);
   };
   
   // 標籤選擇相關
@@ -897,7 +891,6 @@ const PronunciationAssessment: React.FC = () => {
     }));
     
     setFavorites(updatedFavorites);
-    storage.saveFavorites(updatedFavorites);
   };
 
   // 處理AI語音選擇

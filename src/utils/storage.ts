@@ -240,73 +240,14 @@ export const getFavorites = (): Favorite[] => {
     return defaultFavorites;
   }
 
-  const savedFavorites = localStorage.getItem('favorites');
-
-  // 如果没有已保存的数据，返回默认值
-  if (!savedFavorites) {
-    return defaultFavorites;
-  }
-  
-  // 檢查是否是舊版數據結構(字符串數組)
-  try {
-    const parsed = JSON.parse(savedFavorites);
-    if (Array.isArray(parsed)) {
-      // 舊版字符串陣列
-      if (typeof parsed[0] === 'string') {
-        // 將舊版字符串數組轉換為新結構
-        return parsed.map((text, index) => ({
-          id: (index + 1).toString(),
-          text: text,
-          tagIds: [],
-          createdAt: Date.now() - (parsed.length - index) * 1000 // 按順序創建時間
-        }));
-      }
-      
-      // 如果是對象陣列但缺少 tagIds (可能字段名為 tags)
-      const normalized = parsed.map((fav: any) => {
-        // 標準化 tagIds/tags 欄位
-        if (!fav.tagIds) {
-          if (Array.isArray(fav.tags)) {
-            // 將 tags 轉換為 tagIds
-            return {
-              ...fav,
-              tagIds: fav.tags,
-            };
-          } else {
-            // 兩個欄位都不存在或不是陣列，設置默認值
-            return {
-              ...fav,
-              tagIds: [],
-            };
-          }
-        }
-        
-        // 確保 tagIds 是陣列
-        if (!Array.isArray(fav.tagIds)) {
-          return {
-            ...fav,
-            tagIds: [],
-          };
-        }
-        
-        return fav;
-      });
-      
-      // 移除自動排序，由addToFavorites手動控制排序時機
-      return normalized;
-    }
-  } catch (e) {
-    console.error('解析收藏夾數據出錯:', e);
-  }
-  
-  // 如果解析出错，返回默认值
-  return defaultFavorites;
+  // 登入使用者的收藏將從 Firestore 載入
+  return [];
 };
 
 // 保存收藏夹
-export const saveFavorites = (favorites: Favorite[]): void => {
-  // 直接保存傳入的數據，不進行自動排序
-  setItem('favorites', favorites);
+// 保存收藏夹（不再寫入 localStorage）
+export const saveFavorites = (_favorites: Favorite[]): void => {
+  // Firestore 同步在頁面中處理，這裡保留函式接口以維持兼容
 };
 
 // 获取下一个收藏ID
@@ -325,11 +266,12 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
     return max;
   }, -1); // 从-1开始，确保即使所有ID都是非数字，也会返回至少0
   
-  // 从本地存储获取下一个ID值，默认为最大ID+1或12（默认示例数量）
-  const storedNextId = getItem<number>('nextFavoriteId', Math.max(maxNumericId + 1, 12));
-  
-  // 确保生成的ID不会与任何现有ID冲突
-  let nextId = Math.max(maxNumericId + 1, storedNextId);
+  // 不再讀取 localStorage，直接根據現有收藏計算
+  let nextId = maxNumericId + 1;
+
+  if (nextId < 0) {
+    nextId = 0;
+  }
   
   // 检查ID是否已存在（作为字符串），如果存在则递增
   while (allIds.includes(nextId.toString())) {
@@ -340,23 +282,8 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
 };
 
 // 保存下一个收藏ID
-export const saveNextFavoriteId = (id: number): void => {
-  // 先获取当前所有收藏
-  const currentFavorites = getFavorites();
-  
-  // 查找当前最大的数字ID（包括0和正整数）
-  const maxNumericId = currentFavorites.reduce((max, favorite) => {
-    const favoriteId = parseInt(favorite.id, 10);
-    if (!isNaN(favoriteId) && favoriteId >= 0 && favoriteId > max) {
-      return favoriteId;
-    }
-    return max;
-  }, -1); // 从-1开始，确保即使所有ID都是非数字，也会返回至少0
-  
-  // 确保保存的ID至少比当前最大ID大1
-  const safeId = Math.max(id, maxNumericId + 1);
-  
-  setItem('nextFavoriteId', safeId);
+export const saveNextFavoriteId = (_id: number): void => {
+  // 不再保存到 localStorage
 };
 
 // 卡片展开状态相关函数
@@ -656,10 +583,6 @@ export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): v
       // 将新处理的收藏项合并到现有收藏
       const mergedFavorites = [...existingFavorites, ...processedFavorites];
       saveFavorites(mergedFavorites);
-      
-      // 确保nextFavoriteId更新为最新值
-      const maxId = getNextFavoriteId(mergedFavorites);
-      saveNextFavoriteId(maxId);
     }
   }
 };

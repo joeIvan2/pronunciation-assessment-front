@@ -30,7 +30,7 @@
 
 ## 3. 使用建議
 1. 以雲端資料取代 localStorage，使用 `getDoc` 與 `setDoc` 同步設定。
-2. 未登入時僅提供預設內容，不在 localStorage 儲存任何資料。
+2. 未登入時僅提供預設內容，不在 localStorage 儲存任何資料，收藏列表僅存在記憶體中。
 3. 在 AI 造句或其他服務消耗 token 時，更新 `tokens` 欄位。
 4. 對 `users/{uid}/favorites`、`users/{uid}/tags` 建立索引，以加速查詢。
 5. 透過 Firestore 安全規則，限制只有本人可讀寫 `users/{uid}` 下的資料。
