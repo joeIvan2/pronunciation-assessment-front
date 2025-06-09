@@ -16,6 +16,7 @@ import ResizableTextarea from "../components/ResizableTextarea";
 import { useRecorder } from "../hooks/useRecorder";
 import { useBackendSpeech } from "../hooks/useBackendSpeech";
 import { useAzureSpeech } from "../hooks/useAzureSpeech";
+import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 
 // 工具導入
 import * as storage from "../utils/storage";
@@ -96,6 +97,7 @@ const PronunciationAssessment: React.FC = () => {
   const recorder = useRecorder();
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
+  const { user, signInWithGoogle, signOutUser } = useFirebaseAuth();
 
   // 用於跟踪最新新增的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
@@ -861,6 +863,32 @@ const PronunciationAssessment: React.FC = () => {
           onClick={() => setShowAzureSettings(true)}
           style={{ cursor: 'pointer' }}
         />
+        
+        {/* 登入/登出按鈕 */}
+        <div className="auth-buttons">
+          {user ? (
+            <div className="user-info">
+              <span className="user-name">{user.displayName || user.email}</span>
+              <button 
+                onClick={signOutUser}
+                className="btn btn-outline auth-btn"
+                title="登出"
+              >
+                <i className="fas fa-sign-out-alt"></i>
+                <span>登出</span>
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={signInWithGoogle}
+              className="btn btn-primary auth-btn"
+              title="使用Google登入"
+            >
+              <i className="fab fa-google"></i>
+              <span>登入</span>
+            </button>
+          )}
+        </div>
       </div>
       
       {/* 錯誤提示 */}

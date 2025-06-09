@@ -557,22 +557,9 @@ export const shareTagsAndFavorites = async (): Promise<ShareResponse> => {
     const tags = getTags();
     const favorites = getFavorites();
     
-    const response = await fetch(`${API_BASE_URL}/api/store`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        favorites,
-        tags
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || '分享數據失敗');
-    }
-    
-    return data;
+    // 動態導入Firebase存儲服務
+    const { shareTagsAndFavorites: firebaseShare } = await import('./firebaseStorage');
+    return await firebaseShare(favorites, tags);
   } catch (error) {
     console.error('分享數據出錯:', error);
     return {
@@ -585,14 +572,9 @@ export const shareTagsAndFavorites = async (): Promise<ShareResponse> => {
 // 從哈希值加載數據
 export const loadFromHash = async (hash: string): Promise<LoadResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/load/${hash}`);
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || '加載數據失敗');
-    }
-    
-    return data;
+    // 動態導入Firebase存儲服務
+    const { loadFromHash: firebaseLoad } = await import('./firebaseStorage');
+    return await firebaseLoad(hash);
   } catch (error) {
     console.error('加載數據出錯:', error);
     return {
@@ -657,61 +639,12 @@ export const updateSharedData = async (
   password: string
 ): Promise<ShareResponse> => {
   try {
-    // 檢查輸入是否為完整URL，如果是則提取哈希值
-    let cleanHash = hash.trim();
-    
-    // 如果是URL格式，嘗試提取hash參數
-    if (cleanHash.includes('://') || cleanHash.startsWith('www.')) {
-      try {
-        const url = new URL(cleanHash.startsWith('www.') ? `https://${cleanHash}` : cleanHash);
-        const hashParam = url.searchParams.get('hash');
-        if (hashParam) {
-          cleanHash = hashParam;
-        } else {
-          // 如果URL中沒有hash參數，嘗試使用最後一個路徑段
-          const pathSegments = url.pathname.split('/').filter(Boolean);
-          if (pathSegments.length > 0) {
-            cleanHash = pathSegments[pathSegments.length - 1];
-          }
-        }
-      } catch (e) {
-        console.error('URL解析錯誤，將使用原始輸入', e);
-        // 繼續使用原始輸入
-      }
-    }
-    
-    // 確保哈希值不為空
-    if (!cleanHash) {
-      return {
-        success: false,
-        error: '無效的哈希值'
-      };
-    }
-    
     const tags = getTags();
     const favorites = getFavorites();
     
-    console.log(`準備更新數據，使用哈希值: ${cleanHash}`);
-    
-    const response = await fetch(`${API_BASE_URL}/api/update/${cleanHash}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        data: {
-          favorites,
-          tags
-        },
-        password
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || '更新數據失敗');
-    }
-    
-    return data;
+    // 動態導入Firebase存儲服務
+    const { updateSharedData: firebaseUpdate } = await import('./firebaseStorage');
+    return await firebaseUpdate(hash, password, favorites, tags);
   } catch (error) {
     console.error('更新數據出錯:', error);
     return {
