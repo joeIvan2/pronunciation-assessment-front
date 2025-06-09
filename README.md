@@ -68,12 +68,23 @@ yarn install
    - 取得 API 金鑰和區域資訊
    - 在應用程式中設定 Azure 設定
 
-4. **啟動開發伺服器**
+4. **設定 Firebase 並啟用 Google 登入**
+   - 建立 Firebase 專案並在驗證頁啟用 Google Sign-In
+   - 在 `.env` 檔案加入下列設定：
+     ```
+      REACT_APP_FIREBASE_API_KEY=yourKey
+      # authDomain 預設會使用當前網域，可視需要覆蓋
+      REACT_APP_FIREBASE_AUTH_DOMAIN=yourApp.firebaseapp.com
+      REACT_APP_FIREBASE_PROJECT_ID=yourProjectId
+      REACT_APP_FIREBASE_APP_ID=yourAppId
+     ```
+
+5. **啟動開發伺服器**
 ```bash
 npm start
 ```
 
-5. **存取應用程式**
+6. **存取應用程式**
    - 開啟瀏覽器前往 `http://localhost:3000`
 
 ## 🛠️ 技術架構
