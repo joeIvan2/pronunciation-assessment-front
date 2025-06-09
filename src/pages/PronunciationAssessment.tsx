@@ -54,6 +54,7 @@ const PronunciationAssessment: React.FC = () => {
   const [favorites, setFavorites] = useState<Favorite[]>(() => storage.getFavorites());
   const [nextFavoriteId, setNextFavoriteId] = useState<number>(() => storage.getNextFavoriteId(favorites));
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [favoritesLoaded, setFavoritesLoaded] = useState<boolean>(false);
 
   // 根据当前選擇的標籤過濾收藏列表
   const filteredFavorites = useMemo(() => {
@@ -113,6 +114,7 @@ const PronunciationAssessment: React.FC = () => {
   // 登入後載入 Firestore 收藏並在更新時同步
   useEffect(() => {
     if (user) {
+      setFavoritesLoaded(false);
       (async () => {
         try {
           const { loadUserFavorites } = await import('../utils/firebaseStorage');
@@ -121,18 +123,23 @@ const PronunciationAssessment: React.FC = () => {
             setFavorites(favs);
             storage.saveFavorites(favs);
             setNextFavoriteId(storage.getNextFavoriteId(favs));
+          } else {
+            setFavorites([]);
           }
         } catch (err) {
           console.error('載入使用者收藏失敗:', err);
+        } finally {
+          setFavoritesLoaded(true);
         }
       })();
     } else {
       setFavorites(storage.getFavorites());
+      setFavoritesLoaded(false);
     }
   }, [user]);
 
   useEffect(() => {
-    if (user) {
+    if (user && favoritesLoaded) {
       (async () => {
         try {
           const { saveUserFavorites } = await import('../utils/firebaseStorage');
@@ -142,7 +149,7 @@ const PronunciationAssessment: React.FC = () => {
         }
       })();
     }
-  }, [favorites, user]);
+  }, [favorites, user, favoritesLoaded]);
   
   // 新增streaming相關狀態和refs
   const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);
