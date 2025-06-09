@@ -25,3 +25,28 @@
 - 設置自動化指令或 CI 流程進行 Lint、型別檢查與效能測試，確保重構後品質。
 
 以上建議可依需求分階段導入，藉此強化專案架構及長期維護性。
+
+## 6. 狀態管理策略
+- 若程式日後規模擴大，可評估導入 Redux 或 Zustand 管理全域狀態。
+- 使用 React Context 僅處理跨多層的資料，避免過度渲染。
+- 將 Firebase 操作封裝為 Hooks，降低頁面耦合度。
+
+## 7. 相依與建置最佳化
+- 移除未使用的第三方套件並檢查套件版本。
+- 透過 `babel-plugin-lodash` 或 ESM 匯入減小 bundle 大小。
+- 建置腳本加入 bundle analyzer，比較重構前後效能差異。
+
+## 8. 加強測試覆蓋率
+- 目前僅保留 CRA 預設測試範例，可逐步撰寫單元測試。
+- 以 React Testing Library 搭配 Jest 撰寫 UI 測試。
+- CI 中加入 `npm run test -- --coverage` 追蹤覆蓋率。
+
+## 9. 網路與快取策略
+- 透過 service worker 搭配 Workbox 實現離線瀏覽與資源快取。
+- 對 API 請求使用 SWR 或 React Query 增加快取層。
+- 設定 `Cache-Control` 或 `ETag` 以減少重複下載。
+
+## 10. 開發流程自動化
+- 在 Git hooks 使用 lint-staged 確保提交前通過 Lint 檢查。
+- 建立 GitHub Actions 自動執行測試與建置流程。
+- 導入 commit lint 標準化提交訊息，利於產生 changelog。
