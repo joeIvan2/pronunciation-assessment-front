@@ -48,3 +48,38 @@
 - [ ] `addTTSCacheItem` (src/utils/storage.ts)
 
 依照上述清單逐項檢查並刪除或整合程式碼，可使專案更加精簡易維護。
+
+## Unused Stylesheets
+- [ ] `src/pages/styles/main.css` - basic layout now moved to global CSS
+- [ ] `src/styles/PronunciationAssessment.css` - contains legacy class names
+- [ ] `src/styles/VoicePicker.css` - replaced by CSS modules
+
+## Redundant Pages / Hooks
+- [ ] `src/pages/Login.tsx` - replaced by Firebase UI
+- [ ] `src/hooks/useBackendSpeech.ts` - replaced by `useAzureSpeech`
+- [ ] `src/hooks/useRecorder.ts:blobToBase64` - helper moved to `utils/api.ts`
+- [ ] `src/hooks/useAzureSpeech.ts:speechConfig` - duplicate constants
+
+## Outdated Configuration
+- [ ] `tsconfig.json:paths` - unused path mappings
+- [ ] `package-lock.json` - remove if using yarn
+- [ ] `public/manifest.json` - unused icons and meta fields
+- [ ] `firestore.rules` - replaced by server security rules
+
+## Temporary / Build Artifacts
+- [ ] `build/` - ensure compiled output is not committed
+- [ ] `coverage/` - remove Jest coverage reports
+- [ ] `.env*` - verify sensitive configs remain local
+
+## Documentation Cleanup
+- [ ] `README.md` - update installation steps
+- [ ] `FIREBASE_SETUP.md` - integrate with README
+- [ ] `SLIDES_README.md` - move to wiki
+- [ ] `FIREBASE_AUTH_FIX.md` - condense into issue or note
+
+## Future Cleanup Steps
+1. Re-enable strict TypeScript checks
+2. Consolidate `storage.ts` functions into single service
+3. Remove inline styles from components
+4. Add ESLint/Prettier rules to enforce consistent style
+5. Record progress by referencing commits next to each item
