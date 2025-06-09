@@ -559,7 +559,18 @@ export const shareTagsAndFavorites = async (): Promise<ShareResponse> => {
     
     // 動態導入Firebase存儲服務
     const { shareTagsAndFavorites: firebaseShare } = await import('./firebaseStorage');
-    return await firebaseShare(favorites, tags);
+    const result = await firebaseShare(tags, favorites);
+    
+    // 生成分享URL
+    const baseUrl = window.location.origin + window.location.pathname;
+    const url = `${baseUrl}?hash=${result.shareId}`;
+    
+    return {
+      success: true,
+      hash: result.shareId,
+      editPassword: result.editPassword,
+      url
+    };
   } catch (error) {
     console.error('分享數據出錯:', error);
     return {
@@ -574,7 +585,19 @@ export const loadFromHash = async (hash: string): Promise<LoadResponse> => {
   try {
     // 動態導入Firebase存儲服務
     const { loadFromHash: firebaseLoad } = await import('./firebaseStorage');
-    return await firebaseLoad(hash);
+    const result = await firebaseLoad(hash);
+    
+    if (result) {
+      return {
+        success: true,
+        data: result
+      };
+    } else {
+      return {
+        success: false,
+        error: '找不到指定的分享數據'
+      };
+    }
   } catch (error) {
     console.error('加載數據出錯:', error);
     return {
@@ -644,7 +667,12 @@ export const updateSharedData = async (
     
     // 動態導入Firebase存儲服務
     const { updateSharedData: firebaseUpdate } = await import('./firebaseStorage');
-    return await firebaseUpdate(hash, password, favorites, tags);
+    await firebaseUpdate(hash, password, tags, favorites);
+    
+    return {
+      success: true,
+      hash
+    };
   } catch (error) {
     console.error('更新數據出錯:', error);
     return {

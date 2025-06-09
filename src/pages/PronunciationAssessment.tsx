@@ -616,6 +616,15 @@ const PronunciationAssessment: React.FC = () => {
     const hash = urlParams.get('hash');
     
     if (hash) {
+      // 檢查是否已經處理過這個hash，避免重複處理
+      const processedHash = sessionStorage.getItem('processedHash');
+      if (processedHash === hash) {
+        return; // 已經處理過，跳過
+      }
+      
+      // 標記為已處理
+      sessionStorage.setItem('processedHash', hash);
+      
       // 顯示正在加載的提示
       setIsLoading(true);
       setError(null);
@@ -643,12 +652,17 @@ const PronunciationAssessment: React.FC = () => {
             // 從URL中移除hash參數
             const newUrl = window.location.pathname;
             window.history.replaceState({}, document.title, newUrl);
+            
+            // 清除已處理標記
+            sessionStorage.removeItem('processedHash');
           } else {
             setError(`無法加載分享數據: ${result.error || '未知錯誤'}`);
+            sessionStorage.removeItem('processedHash');
           }
         } catch (err) {
           console.error('加載分享數據出錯:', err);
           setError(`加載分享數據失敗: ${err instanceof Error ? err.message : String(err)}`);
+          sessionStorage.removeItem('processedHash');
         } finally {
           setIsLoading(false);
         }

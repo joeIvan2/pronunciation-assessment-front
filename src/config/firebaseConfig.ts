@@ -20,11 +20,26 @@ const app = initializeApp(firebaseConfig);
 // 初始化服務
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
 
-// 只在瀏覽器環境中初始化Analytics
+// 配置 Google 登入提供者
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
+// 初始化 Firestore，連接到 nicetone 資料庫
+export const db = getFirestore(app, 'nicetone');
+
+// 初始化 Analytics（僅在生產環境）
 let analytics;
-if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn('Analytics 初始化失敗:', error);
+  }
 }
+
+console.log('Firebase 配置完成，連接到 nicetone 資料庫');
+
 export { analytics };
+export default app;

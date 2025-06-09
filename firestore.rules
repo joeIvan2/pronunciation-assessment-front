@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 允許對 sharedData 集合的讀寫操作
+    match /sharedData/{document} {
+      // 允許任何人讀取分享的數據
+      allow read: if true;
+      
+      // 允許任何人創建新的分享數據
+      allow create: if true;
+      
+      // 只允許有正確編輯密碼的用戶更新數據
+      allow update: if request.auth != null || 
+                       (resource.data.editPassword == request.data.editPassword);
+      
+      // 只允許有正確編輯密碼的用戶刪除數據
+      allow delete: if request.auth != null || 
+                       (resource.data.editPassword == request.data.editPassword);
+    }
+    
+    // 其他集合的預設規則（拒絕所有操作）
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 
