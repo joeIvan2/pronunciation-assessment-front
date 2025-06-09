@@ -109,6 +109,40 @@ const PronunciationAssessment: React.FC = () => {
   
   // 控制評分按鈕CSS延遲變化的狀態
   const [buttonStyleDelayed, setButtonStyleDelayed] = useState<boolean>(false);
+
+  // 登入後載入 Firestore 收藏並在更新時同步
+  useEffect(() => {
+    if (user) {
+      (async () => {
+        try {
+          const { loadUserFavorites } = await import('../utils/firebaseStorage');
+          const favs = await loadUserFavorites(user.uid);
+          if (favs.length) {
+            setFavorites(favs);
+            storage.saveFavorites(favs);
+            setNextFavoriteId(storage.getNextFavoriteId(favs));
+          }
+        } catch (err) {
+          console.error('載入使用者收藏失敗:', err);
+        }
+      })();
+    } else {
+      setFavorites(storage.getFavorites());
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      (async () => {
+        try {
+          const { saveUserFavorites } = await import('../utils/firebaseStorage');
+          await saveUserFavorites(user.uid, favorites);
+        } catch (err) {
+          console.error('保存使用者收藏失敗:', err);
+        }
+      })();
+    }
+  }, [favorites, user]);
   
   // 新增streaming相關狀態和refs
   const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);

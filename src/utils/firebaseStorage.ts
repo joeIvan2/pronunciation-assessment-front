@@ -122,9 +122,9 @@ export const loadFromHash = async (shareId: string): Promise<{ tags: Tag[]; favo
 
 // 更新分享的數據
 export const updateSharedData = async (
-  shareId: string, 
-  editPassword: string, 
-  tags: Tag[], 
+  shareId: string,
+  editPassword: string,
+  tags: Tag[],
   favorites: Favorite[]
 ): Promise<void> => {
   if (!shareId || !editPassword) {
@@ -160,8 +160,61 @@ export const updateSharedData = async (
     console.log('分享數據更新成功:', shareId);
   } catch (error) {
     console.error('更新分享數據失敗:', error);
-    throw new Error(`更新失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+  throw new Error(`更新失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
   }
 };
 
 // 刪除分享的數據
+
+// 讀取使用者收藏
+export const loadUserFavorites = async (uid: string): Promise<Favorite[]> => {
+  if (!uid) return [];
+
+  await checkNetworkConnection();
+
+  const { collection, getDocs } = await import('firebase/firestore');
+
+  const colRef = collection(db, 'users', uid, 'favorites');
+  const snap = await retryOperation(() => getDocs(colRef));
+
+  return snap.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      text: data.text as string,
+      tagIds: Array.isArray(data.tagIds) ? data.tagIds : [],
+      createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
+    } as Favorite;
+  });
+};
+
+// 儲存使用者收藏
+export const saveUserFavorites = async (
+  uid: string,
+  favorites: Favorite[]
+): Promise<void> => {
+  if (!uid) return;
+
+  await checkNetworkConnection();
+
+  const { collection, doc, getDocs, writeBatch } = await import('firebase/firestore');
+
+  const colRef = collection(db, 'users', uid, 'favorites');
+  const existing = await retryOperation(() => getDocs(colRef));
+
+  const batch = writeBatch(db);
+  const newIds = favorites.map(f => f.id);
+
+  favorites.forEach(f => {
+    const docRef = doc(db, 'users', uid, 'favorites', f.id);
+    batch.set(docRef, f);
+  });
+
+  existing.docs.forEach(d => {
+    if (!newIds.includes(d.id)) {
+      batch.delete(d.ref);
+    }
+  });
+
+  await retryOperation(() => batch.commit());
+};
