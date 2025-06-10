@@ -1455,12 +1455,7 @@ const PronunciationAssessment: React.FC = () => {
             return null;
           }
         })()}
-        <div className="card-section" id="gameCenter">
-
-
-
-          
-        </div>
+        
         
         {/* 標籤頁導航區域 */}
         <div className="card-section">
@@ -1490,12 +1485,6 @@ const PronunciationAssessment: React.FC = () => {
               >
                 選擇語音
               </button>
-              <button 
-                className={`tab-button ${bottomActiveTab === 'share' ? 'active' : ''}`}
-                onClick={() => handleTabChange('share')}
-              >
-                數據分享
-              </button>
             </div>
             
             <div className="tab-content">
@@ -1515,6 +1504,12 @@ const PronunciationAssessment: React.FC = () => {
                   currentText={referenceText}
                   lastAddedFavoriteId={lastAddedFavoriteId}
                   highlightedFavoriteId={highlightedFavoriteId}
+                  user={user}
+                  onLoginRequired={(actionName, message) => {
+                    setLoginModalAction(actionName);
+                    setLoginModalMessage(message || '');
+                    setShowLoginModal(true);
+                  }}
                 />
               )}
               
@@ -1552,19 +1547,7 @@ const PronunciationAssessment: React.FC = () => {
                 />
               )}
               
-              {/* 數據分享標籤頁 */}
-              {bottomActiveTab === 'share' && (
-                <ShareData 
-                  tags={tags} 
-                  favorites={favorites} 
-                  user={user}
-                  onLoginRequired={(actionName, message) => {
-                    setLoginModalAction(actionName);
-                    setLoginModalMessage(message || '');
-                    setShowLoginModal(true);
-                  }}
-                />
-              )}
+
             </div>
           </div>
         </div>

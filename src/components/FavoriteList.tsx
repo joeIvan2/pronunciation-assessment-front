@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Favorite, Tag } from '../types/speech';
 import '../styles/PronunciationAssessment.css';
 import * as storage from '../utils/storage';
+import ShareData from './ShareData';
 
 interface FavoriteListProps {
   favorites: Favorite[];
@@ -17,6 +18,8 @@ interface FavoriteListProps {
   currentText: string;
   lastAddedFavoriteId?: string | null;
   highlightedFavoriteId?: string | null;
+  user?: any;
+  onLoginRequired?: (actionName: string, message?: string) => void;
 }
 
 const FavoriteList: React.FC<FavoriteListProps> = ({
@@ -32,7 +35,9 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onManageTags,
   currentText,
   lastAddedFavoriteId,
-  highlightedFavoriteId
+  highlightedFavoriteId,
+  user,
+  onLoginRequired
 }) => {
   // 數據規範化 - 確保每個收藏項目都有正確的數據結構
   const normalizedFavorites: Favorite[] = favorites.map((fav: any) => {
@@ -689,6 +694,16 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                 </div>
               </div>
             )}
+          </div>
+          
+          {/* 數據分享區域 */}
+          <div style={{ marginTop: "20px" }}>
+            <ShareData 
+              tags={tags} 
+              favorites={favorites} 
+              user={user}
+              onLoginRequired={onLoginRequired}
+            />
           </div>
         </>
       )}
