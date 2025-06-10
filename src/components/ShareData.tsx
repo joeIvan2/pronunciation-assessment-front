@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Tag, Favorite } from '../types/speech';
 import * as storage from '../utils/storage';
 import '../styles/PronunciationAssessment.css';
+import InfoTooltip from './InfoTooltip';
 
 interface ShareDataProps {
   tags: Tag[];
@@ -529,24 +530,23 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             </div>
             
             <div className="input-group" style={{marginBottom: '15px'}}>
-              <input 
-                type="text" 
-                placeholder="自訂分享名稱（可選）- 留空將自動生成" 
+              <input
+                type="text"
+                placeholder="自訂分享名稱（可選）- 留空將自動生成"
                 value={customShareId}
                 onChange={(e) => setCustomShareId(e.target.value)}
                 style={{flex: 1, marginRight: '10px'}}
               />
-              <button 
-                className="primary-button" 
+              <button
+                className="primary-button"
                 onClick={shareData}
                 disabled={isSharing || selectedFavorites.length === 0}
               >
                 {isSharing ? '處理中...' : '生成分享鏈接'}
               </button>
-            </div>
-            
-            <div style={{fontSize: '12px', color: 'var(--ios-text-secondary)', marginBottom: '10px'}}>
-              提示：您可以輸入有意義的名稱作為分享連結，例如：「我的英文學習」或「小明的收藏」
+              <InfoTooltip
+                message={'您可以輸入有意義的名稱作為分享連結，例如：「我的英文學習」或「小明的收藏」'}
+              />
             </div>
             
             {/* 刪除success-message區塊，只保留錯誤提示 */}
@@ -653,16 +653,16 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                 value={updatePassword}
                 onChange={(e) => setUpdatePassword(e.target.value)}
               />
-              <button 
-                className="secondary-button" 
+              <button
+                className="secondary-button"
                 onClick={updateData}
                 disabled={isUpdating}
               >
                 {isUpdating ? '更新中...' : '更新數據'}
               </button>
-            </div>
-            <div style={{marginTop: '4px', fontSize: '12px', color: 'var(--ios-text-secondary)'}}>
-              注意：請輸入哈希值而非完整URL。如需從歷史記錄中更新，請點擊"複製"按鈕獲取編輯密碼。
+              <InfoTooltip
+                message={'請輸入哈希值而非完整URL。如需從歷史記錄中更新，請點擊"複製"按鈕獲取編輯密碼。'}
+              />
             </div>
             
             {updateResult && (
@@ -675,7 +675,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           {/* 匯出數據表區塊 */}
           <div className="card-section">
             <h4>匯出數據表</h4>
-            <p>導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移。</p>
             
             <div style={{ 
               display: "flex",
@@ -824,20 +823,12 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                 >
                   匯入JSON
                 </button>
+                <InfoTooltip
+                  message={
+                    '匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移。\n匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據。'
+                  }
+                />
               </div>
-            </div>
-            
-            {/* 匯出說明 */}
-            <div style={{
-              padding: "8px",
-              backgroundColor: "rgba(40, 40, 50, 0.7)",
-              borderRadius: "4px",
-              marginBottom: "8px",
-              fontSize: "12px",
-              color: "var(--ios-text-secondary)"
-            }}>
-              <p>匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移</p>
-              <p>匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據</p>
             </div>
             
             <div style={{ 

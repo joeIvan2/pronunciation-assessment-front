@@ -29,15 +29,6 @@
   color: white;
 }
 
-.voice-mode-info {
-  padding: 8px 12px;
-  margin-bottom: 16px;
-  background: rgba(0, 123, 255, 0.1);
-  border-left: 4px solid var(--ios-primary);
-  border-radius: 4px;
-  font-size: 14px;
-  color: var(--ios-text);
-}
 
 .rate-control {
   margin-bottom: 16px;
