@@ -372,9 +372,43 @@ export const deleteHistoryRecord = (id: string): void => {
   setItem('historyRecords', updatedRecords);
 };
 
+// 刪除歷史記錄（支援Firebase同步）
+export const deleteHistoryRecordWithSync = async (id: string, uid?: string): Promise<void> => {
+  const records = getHistoryRecords();
+  const updatedRecords = records.filter(record => record.id !== id);
+  setItem('historyRecords', updatedRecords);
+  
+  // 如果用戶已登入，同步到Firebase
+  if (uid) {
+    try {
+      const { saveUserHistoryRecords } = await import('./firebaseStorage');
+      await saveUserHistoryRecords(uid, updatedRecords);
+      console.log('歷史記錄刪除已同步到Firebase');
+    } catch (error) {
+      console.error('同步歷史記錄刪除失敗:', error);
+    }
+  }
+};
+
 // 清空历史记录
 export const clearHistoryRecords = (): void => {
   setItem('historyRecords', []);
+};
+
+// 清空歷史記錄（支援Firebase同步）
+export const clearHistoryRecordsWithSync = async (uid?: string): Promise<void> => {
+  setItem('historyRecords', []);
+  
+  // 如果用戶已登入，同步到Firebase
+  if (uid) {
+    try {
+      const { saveUserHistoryRecords } = await import('./firebaseStorage');
+      await saveUserHistoryRecords(uid, []);
+      console.log('歷史記錄清空已同步到Firebase');
+    } catch (error) {
+      console.error('同步歷史記錄清空失敗:', error);
+    }
+  }
 };
 
 // 标签页相关类型和函数
@@ -662,11 +696,113 @@ export const saveShareInfo = (info: Omit<ShareInfo, 'timestamp'>): void => {
   setItem('savedShareInfo', updatedInfos);
 };
 
+// 從Firebase同步分享歷史到本地存儲
+export const syncShareHistoryFromFirebase = async (uid: string): Promise<void> => {
+  if (!uid) return;
+  
+  try {
+    // 動態導入Firebase函數
+    const { loadUserProfile } = await import('./firebaseStorage');
+    const userProfile = await loadUserProfile(uid);
+    
+    if (userProfile && userProfile.shareHistory) {
+      // 轉換Firebase格式到本地格式
+      const localShareHistory: ShareInfo[] = userProfile.shareHistory.map((item: any) => ({
+        hash: item.shareId,
+        editPassword: item.editPassword,
+        url: `${window.location.origin}/practice/${item.shareId}`, // 使用新的URL格式
+        timestamp: typeof item.createdAt === 'number' ? item.createdAt : Date.now()
+      }));
+      
+      // 更新本地存儲
+      setItem('savedShareInfo', localShareHistory);
+      console.log('分享歷史已從Firebase同步到本地:', localShareHistory.length);
+    }
+  } catch (error) {
+    console.error('同步分享歷史失敗:', error);
+  }
+};
+
+// 將本地分享歷史同步到Firebase
+export const syncShareHistoryToFirebase = async (uid: string): Promise<void> => {
+  if (!uid) return;
+  
+  try {
+    const localShareHistory = getSavedShareInfo();
+    if (localShareHistory.length === 0) return;
+    
+    // 動態導入Firebase函數
+    const { loadUserProfile, saveShareToUserHistory } = await import('./firebaseStorage');
+    
+    // 先載入Firebase中現有的分享歷史
+    const userProfile = await loadUserProfile(uid);
+    const existingShareIds = new Set(
+      (userProfile?.shareHistory || []).map((item: any) => item.shareId)
+    );
+    
+    // 只同步Firebase中不存在的記錄
+    const newShareHistory = localShareHistory.filter(
+      shareInfo => !existingShareIds.has(shareInfo.hash)
+    );
+    
+    // 將新的分享歷史同步到Firebase
+    for (const shareInfo of newShareHistory) {
+      try {
+        await saveShareToUserHistory(uid, shareInfo.hash, shareInfo.editPassword);
+      } catch (error) {
+        console.warn(`同步分享記錄失敗: ${shareInfo.hash}`, error);
+      }
+    }
+    
+    console.log(`分享歷史已同步到Firebase: ${newShareHistory.length}/${localShareHistory.length} 筆新記錄`);
+  } catch (error) {
+    console.error('同步分享歷史到Firebase失敗:', error);
+  }
+};
+
 // 刪除已保存的分享信息
 export const deleteShareInfo = (hash: string): void => {
   const shareInfos = getSavedShareInfo();
   const updatedInfos = shareInfos.filter(info => info.hash !== hash);
   setItem('savedShareInfo', updatedInfos);
+};
+
+// 刪除分享信息（支援Firebase同步）
+export const deleteShareInfoWithSync = async (hash: string, uid?: string): Promise<void> => {
+  const shareInfos = getSavedShareInfo();
+  const updatedInfos = shareInfos.filter(info => info.hash !== hash);
+  setItem('savedShareInfo', updatedInfos);
+  
+  // 如果用戶已登入，需要更新Firebase中的分享歷史
+  if (uid) {
+    try {
+      // 先載入用戶資料
+      const { loadUserProfile } = await import('./firebaseStorage');
+      const userProfile = await loadUserProfile(uid);
+      
+      if (userProfile && userProfile.shareHistory) {
+        // 從Firebase分享歷史中移除指定的記錄
+        const updatedFirebaseHistory = userProfile.shareHistory.filter(
+          (item: any) => item.shareId !== hash
+        );
+        
+        // 更新用戶資料
+        const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
+        const { db } = await import('../config/firebaseConfig');
+        
+        const userDocRef = doc(db, 'users', uid);
+        await setDoc(userDocRef, {
+          ...userProfile,
+          shareHistory: updatedFirebaseHistory,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        
+        console.log('分享歷史刪除已同步到Firebase:', hash);
+      }
+    } catch (error) {
+      console.error('同步分享歷史刪除失敗:', error);
+    }
+  }
 };
 
 // 获取AI语音设置（不受登入狀態限制）

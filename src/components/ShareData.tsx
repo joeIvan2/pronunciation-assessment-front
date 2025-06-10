@@ -254,9 +254,21 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   };
   
   // 刪除分享歷史記錄
-  const deleteShareHistoryItem = (hash: string) => {
-    storage.deleteShareInfo(hash);
-    setShareHistory(storage.getSavedShareInfo());
+  const deleteShareHistoryItem = async (hash: string) => {
+    try {
+      if (user) {
+        // 使用支援Firebase同步的刪除函數
+        await storage.deleteShareInfoWithSync(hash, user.uid);
+      } else {
+        // 未登入用戶只更新本地存儲
+        storage.deleteShareInfo(hash);
+      }
+      setShareHistory(storage.getSavedShareInfo());
+    } catch (error) {
+      console.error('刪除分享歷史失敗:', error);
+      // 即使同步失敗，仍更新本地顯示
+      setShareHistory(storage.getSavedShareInfo());
+    }
   };
   
   // 複製文本到剪貼板

@@ -236,25 +236,103 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  // 登入後載入使用者歷史記錄
+  // 登入後載入使用者歷史記錄和分享歷史
   useEffect(() => {
-    if (user) {
-      (async () => {
-        try {
-          const { loadUserProfile } = await import('../utils/firebaseStorage');
-          const profile = await loadUserProfile(user.uid);
+    if (!user) return;
+    
+    let isCancelled = false;
+    
+    // 添加延遲以避免多個操作同時執行
+    const timeoutId = setTimeout(async () => {
+      if (isCancelled) return;
+      
+      try {
+        const { loadUserProfile } = await import('../utils/firebaseStorage');
+        const profile = await loadUserProfile(user.uid);
+        
+        if (isCancelled) return;
+        
+        // 載入並合併歷史記錄
+        if (profile?.historyRecords) {
+          const firebaseRecords = profile.historyRecords;
+          const localRecords = storage.getHistoryRecords();
           
-          // 只載入歷史記錄，字型、語音設定改為使用 localStorage
-          if (profile?.historyRecords) {
-            setHistoryRecords(profile.historyRecords);
+          // 合併本地和Firebase的歷史記錄，避免重複
+          const mergedRecords = [...firebaseRecords];
+          const firebaseIds = new Set(firebaseRecords.map((record: any) => record.id));
+          
+          // 添加本地獨有的記錄
+          localRecords.forEach(localRecord => {
+            if (!firebaseIds.has(localRecord.id)) {
+              mergedRecords.push(localRecord);
+            }
+          });
+          
+          // 按時間戳排序（最新的在前）
+          mergedRecords.sort((a: any, b: any) => b.timestamp - a.timestamp);
+          
+          setHistoryRecords(mergedRecords);
+          
+          // 如果有新增的本地記錄，同步到Firebase
+          if (mergedRecords.length > firebaseRecords.length) {
+            try {
+              const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
+              await saveUserHistoryRecords(user.uid, mergedRecords);
+              console.log('本地歷史記錄已合併並同步到Firebase');
+            } catch (err) {
+              console.warn('同步合併的歷史記錄失敗:', err);
+            }
           }
-          
-          console.log('使用者歷史記錄載入成功');
-        } catch (err) {
+        } else {
+          // 如果Firebase中沒有歷史記錄，使用本地記錄並同步到Firebase
+          const localRecords = storage.getHistoryRecords();
+          if (localRecords.length > 0) {
+            setHistoryRecords(localRecords);
+            try {
+              const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
+              await saveUserHistoryRecords(user.uid, localRecords);
+              console.log('本地歷史記錄已上傳到Firebase');
+            } catch (err) {
+              console.warn('上傳本地歷史記錄失敗:', err);
+            }
+          }
+        }
+        
+        console.log('使用者歷史記錄載入成功');
+      } catch (err) {
+        if (!isCancelled) {
           console.error('載入使用者歷史記錄失敗:', err);
         }
-      })();
-    }
+      }
+      
+      // 同步分享歷史 - 稍後執行以避免衝突
+      if (!isCancelled) {
+        try {
+          const { syncShareHistoryFromFirebase, syncShareHistoryToFirebase } = await import('../utils/storage');
+          
+          // 先將本地未同步的分享歷史同步到Firebase
+          await syncShareHistoryToFirebase(user.uid);
+          
+          // 等待一小段時間再執行下一步
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          if (!isCancelled) {
+            // 再從Firebase載入完整的分享歷史到本地
+            await syncShareHistoryFromFirebase(user.uid);
+            console.log('分享歷史同步完成');
+          }
+        } catch (err) {
+          if (!isCancelled) {
+            console.error('同步分享歷史失敗:', err);
+          }
+        }
+      }
+    }, 500); // 延遲500毫秒執行
+    
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [user]);
 
   // 字型大小變更時儲存到 localStorage
@@ -272,23 +350,23 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveAIVoice(selectedAIVoice);
   }, [selectedAIVoice]);
 
-  // 暫時禁用歷史記錄同步以避免 Firestore 錯誤
-  // useEffect(() => {
-  //   if (!user) return;
+  // 歷史記錄同步（當用戶登入且歷史記錄變化時）
+  useEffect(() => {
+    if (!user) return;
 
-  //   const timeoutId = setTimeout(async () => {
-  //     try {
-  //       const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
-  //       await saveUserHistoryRecords(user.uid, historyRecords);
-  //       console.log('歷史記錄已同步');
-  //     } catch (err) {
-  //       console.error('保存歷史記錄失敗:', err);
-  //       // 不要拋出錯誤，只記錄
-  //     }
-  //   }, 1000); // 1秒防抖，因為歷史記錄更新較少
+    const timeoutId = setTimeout(async () => {
+      try {
+        const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
+        await saveUserHistoryRecords(user.uid, historyRecords);
+        console.log('歷史記錄已同步到Firebase');
+      } catch (err) {
+        console.error('保存歷史記錄失敗:', err);
+        // 不要拋出錯誤，只記錄
+      }
+    }, 1000); // 1秒防抖，因為歷史記錄更新較少
 
-  //   return () => clearTimeout(timeoutId);
-  // }, [historyRecords, user]);
+    return () => clearTimeout(timeoutId);
+  }, [historyRecords, user]);
 
   // 新增streaming相關狀態和refs
   const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);
@@ -684,14 +762,38 @@ const PronunciationAssessment: React.FC = () => {
 
 
   // 歷史記錄相關函數
-  const handleDeleteHistoryRecord = (id: string) => {
-    storage.deleteHistoryRecord(id);
-    setHistoryRecords(storage.getHistoryRecords());
+    const handleDeleteHistoryRecord = async (id: string) => {
+    try {
+      if (user) {
+        // 使用支援Firebase同步的刪除函數
+        await storage.deleteHistoryRecordWithSync(id, user.uid);
+      } else {
+        // 未登入用戶只更新本地存儲
+        storage.deleteHistoryRecord(id);
+      }
+      setHistoryRecords(storage.getHistoryRecords());
+    } catch (error) {
+      console.error('刪除歷史記錄失敗:', error);
+      // 即使同步失敗，仍更新本地顯示
+      setHistoryRecords(storage.getHistoryRecords());
+    }
   };
-  
-  const handleClearHistoryRecords = () => {
-    storage.clearHistoryRecords();
-    setHistoryRecords([]);
+
+  const handleClearHistoryRecords = async () => {
+    try {
+      if (user) {
+        // 使用支援Firebase同步的清空函數
+        await storage.clearHistoryRecordsWithSync(user.uid);
+      } else {
+        // 未登入用戶只更新本地存儲
+        storage.clearHistoryRecords();
+      }
+      setHistoryRecords([]);
+    } catch (error) {
+      console.error('清空歷史記錄失敗:', error);
+      // 即使同步失敗，仍更新本地顯示
+      setHistoryRecords([]);
+    }
   };
   
   const handleHistoryExpandToggle = () => {

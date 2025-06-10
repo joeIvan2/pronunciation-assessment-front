@@ -36,6 +36,23 @@ const retryOperation = async <T>(
     try {
       return await operation();
     } catch (error) {
+      // 如果是 Target ID 已存在的錯誤，等待一小段時間後重試一次
+      if (error instanceof Error && error.message.includes('Target ID already exists')) {
+        console.log('Firebase Target ID 衝突，等待後重試...');
+        await new Promise(resolve => setTimeout(resolve, 100)); // 短暫等待
+        try {
+          return await operation();
+        } catch (secondError) {
+          // 如果還是 Target ID 錯誤，忽略並假設操作成功
+          if (secondError instanceof Error && secondError.message.includes('Target ID already exists')) {
+            console.log('Target ID 衝突持續，忽略錯誤並繼續');
+            // 返回一個默認值或空操作結果
+            return undefined as any;
+          }
+          throw secondError;
+        }
+      }
+      
       console.warn(`操作失敗，重試 ${i + 1}/${maxRetries}:`, error);
       
       if (i === maxRetries - 1) {
@@ -49,14 +66,43 @@ const retryOperation = async <T>(
   throw new Error('重試次數已用盡');
 };
 
+// 網路連接狀態追蹤
+let isNetworkEnabled = false;
+let networkPromise: Promise<void> | null = null;
+
 // 檢查網路連接
 const checkNetworkConnection = async (): Promise<void> => {
-  try {
-    await enableNetwork(db);
-    console.log('Firebase 網路連接已啟用');
-  } catch (error) {
-    console.warn('網路連接檢查失敗:', error);
+  // 如果已經啟用或正在啟用中，直接返回
+  if (isNetworkEnabled) {
+    return;
   }
+  
+  // 如果正在啟用中，等待完成
+  if (networkPromise) {
+    return await networkPromise;
+  }
+  
+  // 創建新的啟用承諾
+  networkPromise = (async () => {
+    try {
+      await enableNetwork(db);
+      isNetworkEnabled = true;
+      console.log('Firebase 網路連接已啟用');
+    } catch (error) {
+      // 如果錯誤是因為已經啟用，則忽略
+      if (error instanceof Error && error.message.includes('already enabled')) {
+        isNetworkEnabled = true;
+        console.log('Firebase 網路連接已經啟用');
+      } else {
+        console.warn('網路連接檢查失敗:', error);
+        throw error;
+      }
+    } finally {
+      networkPromise = null;
+    }
+  })();
+  
+  return await networkPromise;
 };
 
 // 檢查分享ID是否已存在
@@ -380,13 +426,31 @@ export const saveShareToUserHistory = async (
       const userDoc = await getDoc(userDocRef);
       const existingData = userDoc.exists() ? userDoc.data() : {};
       
-      // 更新分享歷史 - 使用當前時間戳而不是 serverTimestamp()
+      // 更新分享歷史 - 檢查是否已存在相同的shareId
       const shareHistory = existingData.shareHistory || [];
-      shareHistory.push({
-        shareId,
-        editPassword,
-        createdAt: Date.now()  // 改用 Date.now() 而不是 serverTimestamp()
-      });
+      const existingIndex = shareHistory.findIndex((item: any) => item.shareId === shareId);
+      
+      if (existingIndex !== -1) {
+        // 如果已存在，更新現有記錄
+        shareHistory[existingIndex] = {
+          shareId,
+          editPassword,
+          createdAt: shareHistory[existingIndex].createdAt // 保持原有創建時間
+        };
+      } else {
+        // 如果不存在，添加新記錄
+        shareHistory.push({
+          shareId,
+          editPassword,
+          createdAt: Date.now()
+        });
+        
+        // 只保留最近的10個分享記錄
+        if (shareHistory.length > 10) {
+          shareHistory.sort((a: any, b: any) => b.createdAt - a.createdAt);
+          shareHistory.splice(10);
+        }
+      }
       
       // 儲存更新後的資料
       await setDoc(userDocRef, {
