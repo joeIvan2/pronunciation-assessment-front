@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as storage from '../utils/storage';
 import { Tag, Favorite, Word } from '../types/speech';
 import ResizableTextarea from './ResizableTextarea';
+import InfoTooltip from './InfoTooltip';
 import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
 
 // 後端API URL
@@ -549,6 +550,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         >
           {isLoading ? "處理中..." : isCompressing ? "圖片壓縮中..." : "發送給AI助理"}
         </button>
+        <InfoTooltip
+          message={'我們除了會將您的指令發送給AI之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的發音紀錄發送給AI。\n注意：發音歷史為最新十次發音紀錄。'}
+        />
       </div>
       
       {error && (
@@ -557,18 +561,6 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         </div>
       )}
       
-      {/* 解釋文本區域移到後面 */}
-      <div style={{ 
-        background: "var(--ios-card)", 
-        padding: "12px", 
-        borderRadius: "12px",
-        marginBottom: "16px",
-        fontSize: "14px",
-        color: "var(--ios-text-secondary)"
-      }}>
-        我們除了會將您的指令發送給AI之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的發音紀錄發送給AI。
-        <p>注意：發音歷史為最新十次發音紀錄。</p>
-      </div>
       
       {/* 範例提示區域放到最後 */}
       <div style={{ marginBottom: "16px" }}>

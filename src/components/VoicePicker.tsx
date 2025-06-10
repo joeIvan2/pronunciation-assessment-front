@@ -1,6 +1,7 @@
 import React from 'react';
 import '../styles/VoicePicker.css';
 import { getVoiceOptions, SPEED_RANGE } from '../config/voiceConfig';
+import InfoTooltip from './InfoTooltip';
 
 interface VoicePickerProps {
   rate: number;
@@ -26,13 +27,10 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
     <div className="voice-picker-container card-section">
       <h3 className="card-header">
         AI語音設置
+        <InfoTooltip message="使用AI合成語音進行朗讀" />
       </h3>
-      
+
       <div className="voice-picker-content">
-          {/* 模式說明 */}
-          <div className="voice-mode-info ai-mode">
-            <p className="mode-info-text">使用AI合成語音進行朗讀</p>
-            </div>
           
           {/* 語音速率設置 */}
           <div className="rate-control">

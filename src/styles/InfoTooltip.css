@@ -1,0 +1,5 @@
+.info-tooltip {
+  color: var(--ios-text-secondary);
+  margin-left: 4px;
+  cursor: pointer;
+}
