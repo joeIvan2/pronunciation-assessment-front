@@ -6,13 +6,20 @@ import '../styles/PronunciationAssessment.css';
 interface ShareDataProps {
   tags: Tag[];
   favorites: Favorite[];
+  user?: any;
+  onLoginRequired?: (actionName: string, message?: string) => void;
 }
 
-const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
+const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginRequired }) => {
   // 分享狀態
   const [isExpanded, setIsExpanded] = useState<boolean>(true); // 默認展開
   const [isSharing, setIsSharing] = useState<boolean>(false);
   const [shareResult, setShareResult] = useState<{success: boolean; url?: string; editPassword?: string; error?: string; directLink?: string} | null>(null);
+  const [customShareId, setCustomShareId] = useState<string>(''); // 自訂分享ID
+  
+  // 句子選擇狀態
+  const [selectedFavorites, setSelectedFavorites] = useState<string[]>([]); // 存儲選中的favorite ID
+  const [isSelectionExpanded, setIsSelectionExpanded] = useState<boolean>(false); // 句子選擇器是否展開
   
   // 導入狀態
   const [isImporting, setIsImporting] = useState<boolean>(false);
@@ -42,6 +49,11 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
     }
   }, []);
   
+  // 當favorites變化時，預設全選
+  useEffect(() => {
+    setSelectedFavorites(favorites.map(fav => fav.id));
+  }, [favorites]);
+  
   // 處理展開/收起
   const handleExpandToggle = () => {
     const newState = !isExpanded;
@@ -52,19 +64,66 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
     storage.saveCardExpandState('shareData', newState);
   };
   
+  // 處理句子選擇器展開/收起
+  const handleSelectionToggle = () => {
+    setIsSelectionExpanded(!isSelectionExpanded);
+  };
+  
+  // 處理全選/取消全選
+  const handleSelectAll = () => {
+    if (selectedFavorites.length === favorites.length) {
+      setSelectedFavorites([]); // 全部取消選擇
+    } else {
+      setSelectedFavorites(favorites.map(fav => fav.id)); // 全部選擇
+    }
+  };
+  
+  // 處理單個句子選擇
+  const handleFavoriteToggle = (favoriteId: string) => {
+    setSelectedFavorites(prev => {
+      if (prev.includes(favoriteId)) {
+        return prev.filter(id => id !== favoriteId);
+      } else {
+        return [...prev, favoriteId];
+      }
+    });
+  };
+  
   // 格式化分享鏈接，新增hash參數以支持直接導入
   const formatShareLink = (hash: string): string => {
     const baseUrl = window.location.origin + window.location.pathname;
     return `${baseUrl}?hash=${hash}`;
   };
   
-  // 分享數據
+  // 分享數據（只分享選中的句子，不分享標籤）
   const shareData = async () => {
+    // 檢查登入狀態
+    if (!user && onLoginRequired) {
+      onLoginRequired(
+        '數據分享',
+        '分享您的收藏需要登入，這樣可以記錄您的分享歷史並提供編輯功能。'
+      );
+      return;
+    }
+
+    // 檢查是否有選中的句子
+    if (selectedFavorites.length === 0) {
+      alert('請至少選擇一個句子進行分享！');
+      return;
+    }
+
     try {
       setIsSharing(true);
       setShareResult(null);
       
-      const result = await storage.shareTagsAndFavorites();
+      // 過濾出選中的收藏句子
+      const selectedFavoritesData = favorites.filter(fav => selectedFavorites.includes(fav.id));
+      
+      // 清理自訂分享ID（移除特殊字符，只保留字母數字和中文）
+      const cleanedCustomId = customShareId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]/g, '');
+      
+      // 只分享選中的句子，不分享標籤
+      const result = await storage.shareTagsAndFavorites([], selectedFavoritesData, user?.uid, cleanedCustomId || undefined);
       
       if (result.success && result.hash && result.editPassword && result.url) {
         // 創建直接導入鏈接但不再顯示
@@ -85,6 +144,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
         setTimeout(() => {
           setShowHistoryAnimation(false);
         }, 1500);
+        
+        // 清空自訂分享ID輸入框
+        setCustomShareId('');
         
         // 只設置結果狀態，但不顯示success-message
         setShareResult({
@@ -225,20 +287,112 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites }) => {
   
   return (
     <div>
-
+      <div className="card-header" onClick={handleExpandToggle}>
+        <h3>🔗 數據分享</h3>
+        <span className={`expand-arrow ${isExpanded ? 'expanded' : ''}`}>
+          {isExpanded ? '▲' : '▼'}
+        </span>
+      </div>
       
       {isExpanded && (
         <div>
           <div className="card-section">
-            <h4>分享我的數據</h4>
-            <p>將您當前的標籤和收藏數據生成一個分享鏈接，可以與他人共享或備份。</p>
-            <button 
-              className="primary-button" 
-              onClick={shareData}
-              disabled={isSharing}
-            >
-              {isSharing ? '處理中...' : '生成分享鏈接'}
-            </button>
+            <h4>分享我的句子</h4>
+            <p>選擇您想要分享的句子並生成分享鏈接，與他人共享或備份。</p>
+            
+            {/* 句子選擇器 */}
+            <div className="sentence-selector" style={{marginBottom: '15px'}}>
+              <div className="selector-header" onClick={handleSelectionToggle} style={{
+                cursor: 'pointer', 
+                padding: '10px', 
+                backgroundColor: 'var(--ios-background-secondary)', 
+                borderRadius: '8px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <span>
+                  📝 已選擇 {selectedFavorites.length} / {favorites.length} 個句子
+                  {selectedFavorites.length > 0 && (
+                    <span style={{color: 'var(--ios-text-secondary)', fontSize: '14px', marginLeft: '10px'}}>
+                      (點擊展開查看詳情)
+                    </span>
+                  )}
+                </span>
+                <span className={`expand-arrow ${isSelectionExpanded ? 'expanded' : ''}`}>
+                  {isSelectionExpanded ? '▲' : '▼'}
+                </span>
+              </div>
+              
+              {isSelectionExpanded && (
+                <div className="selector-content" style={{
+                  border: '1px solid var(--ios-border)',
+                  borderTop: 'none',
+                  borderRadius: '0 0 8px 8px',
+                  padding: '15px',
+                  backgroundColor: 'var(--ios-background)'
+                }}>
+                  <div style={{marginBottom: '10px'}}>
+                    <button 
+                      className="secondary-button"
+                      onClick={handleSelectAll}
+                      style={{fontSize: '14px', padding: '5px 10px'}}
+                    >
+                      {selectedFavorites.length === favorites.length ? '取消全選' : '全選'}
+                    </button>
+                  </div>
+                  
+                  <div style={{maxHeight: '200px', overflowY: 'auto'}}>
+                    {favorites.map((favorite) => (
+                      <div key={favorite.id} style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        marginBottom: '8px',
+                        padding: '8px',
+                        backgroundColor: selectedFavorites.includes(favorite.id) ? 'var(--ios-background-secondary)' : 'transparent',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }} onClick={() => handleFavoriteToggle(favorite.id)}>
+                        <input 
+                          type="checkbox"
+                          checked={selectedFavorites.includes(favorite.id)}
+                          onChange={() => handleFavoriteToggle(favorite.id)}
+                          style={{marginRight: '10px', marginTop: '2px'}}
+                        />
+                        <span style={{
+                          flex: 1,
+                          fontSize: '14px',
+                          lineHeight: '1.4'
+                        }}>
+                          {favorite.text.length > 100 ? `${favorite.text.substring(0, 100)}...` : favorite.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="input-group" style={{marginBottom: '15px'}}>
+              <input 
+                type="text" 
+                placeholder="自訂分享名稱（可選）- 留空將自動生成" 
+                value={customShareId}
+                onChange={(e) => setCustomShareId(e.target.value)}
+                style={{flex: 1, marginRight: '10px'}}
+              />
+              <button 
+                className="primary-button" 
+                onClick={shareData}
+                disabled={isSharing || selectedFavorites.length === 0}
+              >
+                {isSharing ? '處理中...' : '生成分享鏈接'}
+              </button>
+            </div>
+            
+            <div style={{fontSize: '12px', color: 'var(--ios-text-secondary)', marginBottom: '10px'}}>
+              提示：您可以輸入有意義的名稱作為分享連結，例如：「我的英文學習」或「小明的收藏」
+            </div>
             
             {/* 刪除success-message區塊，只保留錯誤提示 */}
             {shareResult && !shareResult.success && (

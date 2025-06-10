@@ -3,14 +3,20 @@
 import { Tag, Favorite } from '../types/speech';
 import { AI_SERVER_URL } from './api'; // 從api.ts導入常量
 import { DEFAULT_VOICE } from '../config/voiceConfig'; // 導入預設語音配置
+import { auth } from '../config/firebaseConfig';
+import { isUserLoggedIn } from './authStatus';
 
 // 获取localStorage中的数据，返回默认值如果不存在
 export const getItem = <T>(key: string, defaultValue: T): T => {
+  if (!isUserLoggedIn()) {
+    return defaultValue;
+  }
+
   const item = localStorage.getItem(key);
   if (item === null) {
     return defaultValue;
   }
-  
+
   try {
     return JSON.parse(item) as T;
   } catch (e) {
@@ -21,6 +27,10 @@ export const getItem = <T>(key: string, defaultValue: T): T => {
 
 // 设置localStorage中的数据
 export const setItem = <T>(key: string, value: T): void => {
+  if (!isUserLoggedIn()) {
+    return;
+  }
+
   if (typeof value === 'string') {
     localStorage.setItem(key, value);
   } else {
@@ -38,27 +48,25 @@ export const saveReferenceText = (text: string): void => {
   setItem('referenceText', text);
 };
 
-// 获取字体大小
+// 获取字体大小（不受登入狀態限制）
 export const getFontSize = (): number => {
-  const saved = localStorage.getItem('fontSize');
-  return saved ? parseInt(saved, 10) : 16; // 默認值為16px
+  const item = localStorage.getItem('fontSize');
+  if (item === null) {
+    return 16; // 預設值
+  }
+  try {
+    return JSON.parse(item) as number;
+  } catch {
+    return 16;
+  }
 };
 
-// 保存字体大小
+// 保存字体大小（不受登入狀態限制）
 export const saveFontSize = (size: number) => {
-  localStorage.setItem('fontSize', size.toString());
+  localStorage.setItem('fontSize', JSON.stringify(size));
 };
 
 // 获取textarea高度
-export const getTextareaHeight = (): number => {
-  const saved = localStorage.getItem('textareaHeight');
-  return saved ? parseInt(saved, 10) : 140; // 默认高度为140px
-};
-
-// 保存textarea高度
-export const saveTextareaHeight = (height: number) => {
-  localStorage.setItem('textareaHeight', height.toString());
-};
 
 // 获取严格模式设置
 export const getStrictMode = (): boolean => {
@@ -66,9 +74,6 @@ export const getStrictMode = (): boolean => {
 };
 
 // 保存严格模式设置
-export const saveStrictMode = (isStrict: boolean): void => {
-  setItem('strictMode', isStrict);
-};
 
 // 获取API模式设置
 export const getUseBackend = (): boolean => {
@@ -94,22 +99,32 @@ export const saveAzureSettings = (key: string, region: string): void => {
   setItem('azureRegion', region);
 };
 
-// 获取语音设置
+// 获取语音设置（不受登入狀態限制）
 export const getVoiceSettings = (): { 
   searchTerm: string; 
   rate: number;
   voiceName?: string;
   voiceLang?: string;
 } => {
+  const getLocalItem = (key: string, defaultValue: any) => {
+    const item = localStorage.getItem(key);
+    if (item === null) return defaultValue;
+    try {
+      return JSON.parse(item);
+    } catch {
+      return item; // 如果解析失敗，返回字串
+    }
+  };
+
   return {
-    searchTerm: getItem<string>('voiceSearchTerm', 'english'),
-    rate: getItem<number>('speechRate', 1.0),
-    voiceName: getItem<string>('selectedVoiceName', ''),
-    voiceLang: getItem<string>('selectedVoiceLang', '')
+    searchTerm: getLocalItem('voiceSearchTerm', 'english'),
+    rate: getLocalItem('speechRate', 1.0),
+    voiceName: getLocalItem('selectedVoiceName', ''),
+    voiceLang: getLocalItem('selectedVoiceLang', '')
   };
 };
 
-// 保存语音设置
+// 保存语音设置（不受登入狀態限制）
 export const saveVoiceSettings = (
   settings: { 
     searchTerm?: string; 
@@ -119,16 +134,16 @@ export const saveVoiceSettings = (
   }
 ): void => {
   if (settings.searchTerm !== undefined) {
-    setItem('voiceSearchTerm', settings.searchTerm);
+    localStorage.setItem('voiceSearchTerm', JSON.stringify(settings.searchTerm));
   }
   if (settings.rate !== undefined) {
-    setItem('speechRate', settings.rate);
+    localStorage.setItem('speechRate', JSON.stringify(settings.rate));
   }
   if (settings.voiceName !== undefined) {
-    setItem('selectedVoiceName', settings.voiceName);
+    localStorage.setItem('selectedVoiceName', JSON.stringify(settings.voiceName));
   }
   if (settings.voiceLang !== undefined) {
-    setItem('selectedVoiceLang', settings.voiceLang);
+    localStorage.setItem('selectedVoiceLang', JSON.stringify(settings.voiceLang));
   }
 };
 
@@ -239,73 +254,18 @@ export const getFavorites = (): Favorite[] => {
     }
   ];
 
-  const savedFavorites = localStorage.getItem('favorites');
-  
-  // 如果没有已保存的数据，返回默认值
-  if (!savedFavorites) {
+  if (!isUserLoggedIn()) {
     return defaultFavorites;
   }
-  
-  // 檢查是否是舊版數據結構(字符串數組)
-  try {
-    const parsed = JSON.parse(savedFavorites);
-    if (Array.isArray(parsed)) {
-      // 舊版字符串陣列
-      if (typeof parsed[0] === 'string') {
-        // 將舊版字符串數組轉換為新結構
-        return parsed.map((text, index) => ({
-          id: (index + 1).toString(),
-          text: text,
-          tagIds: [],
-          createdAt: Date.now() - (parsed.length - index) * 1000 // 按順序創建時間
-        }));
-      }
-      
-      // 如果是對象陣列但缺少 tagIds (可能字段名為 tags)
-      const normalized = parsed.map((fav: any) => {
-        // 標準化 tagIds/tags 欄位
-        if (!fav.tagIds) {
-          if (Array.isArray(fav.tags)) {
-            // 將 tags 轉換為 tagIds
-            return {
-              ...fav,
-              tagIds: fav.tags,
-            };
-          } else {
-            // 兩個欄位都不存在或不是陣列，設置默認值
-            return {
-              ...fav,
-              tagIds: [],
-            };
-          }
-        }
-        
-        // 確保 tagIds 是陣列
-        if (!Array.isArray(fav.tagIds)) {
-          return {
-            ...fav,
-            tagIds: [],
-          };
-        }
-        
-        return fav;
-      });
-      
-      // 移除自動排序，由addToFavorites手動控制排序時機
-      return normalized;
-    }
-  } catch (e) {
-    console.error('解析收藏夾數據出錯:', e);
-  }
-  
-  // 如果解析出错，返回默认值
-  return defaultFavorites;
+
+  // 登入使用者的收藏將從 Firestore 載入
+  return [];
 };
 
 // 保存收藏夹
-export const saveFavorites = (favorites: Favorite[]): void => {
-  // 直接保存傳入的數據，不進行自動排序
-  setItem('favorites', favorites);
+// 保存收藏夹（不再寫入 localStorage）
+export const saveFavorites = (_favorites: Favorite[]): void => {
+  // Firestore 同步在頁面中處理，這裡保留函式接口以維持兼容
 };
 
 // 获取下一个收藏ID
@@ -324,11 +284,12 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
     return max;
   }, -1); // 从-1开始，确保即使所有ID都是非数字，也会返回至少0
   
-  // 从本地存储获取下一个ID值，默认为最大ID+1或12（默认示例数量）
-  const storedNextId = getItem<number>('nextFavoriteId', Math.max(maxNumericId + 1, 12));
-  
-  // 确保生成的ID不会与任何现有ID冲突
-  let nextId = Math.max(maxNumericId + 1, storedNextId);
+  // 不再讀取 localStorage，直接根據現有收藏計算
+  let nextId = maxNumericId + 1;
+
+  if (nextId < 0) {
+    nextId = 0;
+  }
   
   // 检查ID是否已存在（作为字符串），如果存在则递增
   while (allIds.includes(nextId.toString())) {
@@ -339,23 +300,8 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
 };
 
 // 保存下一个收藏ID
-export const saveNextFavoriteId = (id: number): void => {
-  // 先获取当前所有收藏
-  const currentFavorites = getFavorites();
-  
-  // 查找当前最大的数字ID（包括0和正整数）
-  const maxNumericId = currentFavorites.reduce((max, favorite) => {
-    const favoriteId = parseInt(favorite.id, 10);
-    if (!isNaN(favoriteId) && favoriteId >= 0 && favoriteId > max) {
-      return favoriteId;
-    }
-    return max;
-  }, -1); // 从-1开始，确保即使所有ID都是非数字，也会返回至少0
-  
-  // 确保保存的ID至少比当前最大ID大1
-  const safeId = Math.max(id, maxNumericId + 1);
-  
-  setItem('nextFavoriteId', safeId);
+export const saveNextFavoriteId = (_id: number): void => {
+  // 不再保存到 localStorage
 };
 
 // 卡片展开状态相关函数
@@ -404,9 +350,6 @@ export const getHistoryRecords = (): HistoryItem[] => {
 };
 
 // 保存历史记录
-export const saveHistoryRecords = (records: HistoryItem[]): void => {
-  setItem('historyRecords', records);
-};
 
 // 新增历史记录
 export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>): void => {
@@ -419,19 +362,19 @@ export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>):
   
   // 限制历史记录数量，只保留最近的20条
   const updatedRecords = [newRecord, ...records].slice(0, 20);
-  saveHistoryRecords(updatedRecords);
+  setItem('historyRecords', updatedRecords);
 };
 
 // 删除单个历史记录
 export const deleteHistoryRecord = (id: string): void => {
   const records = getHistoryRecords();
   const updatedRecords = records.filter(record => record.id !== id);
-  saveHistoryRecords(updatedRecords);
+  setItem('historyRecords', updatedRecords);
 };
 
 // 清空历史记录
 export const clearHistoryRecords = (): void => {
-  saveHistoryRecords([]);
+  setItem('historyRecords', []);
 };
 
 // 标签页相关类型和函数
@@ -462,9 +405,11 @@ export const saveBottomActiveTab = (tab: BottomTabName): void => {
 // 获取 AI 助理提示文字
 export const getAIPrompt = (): string => {
   // 首选获取新的键，如果不存在则检查旧的键
-  const saved = localStorage.getItem('aiPrompt');
-  if (saved !== null) {
-    return saved;
+  if (isUserLoggedIn()) {
+    const saved = localStorage.getItem('aiPrompt');
+    if (saved !== null) {
+      return saved;
+    }
   }
   
   // 旧版本的键名
@@ -479,6 +424,10 @@ export const saveAIPrompt = (prompt: string): void => {
 // 获取AI响应
 export const getAIResponse = (): string | null => {
   try {
+    if (!isUserLoggedIn()) {
+      return null;
+    }
+
     const item = localStorage.getItem('aiResponse');
     if (item === null) {
       return null;
@@ -495,6 +444,10 @@ export const getAIResponse = (): string | null => {
 // 保存AI响应
 export const saveAIResponse = (response: string | null): void => {
   try {
+    if (!isUserLoggedIn()) {
+      return;
+    }
+
     if (response === null) {
       localStorage.removeItem('aiResponse');
       return;
@@ -552,14 +505,19 @@ export const isValidURL = (url: string): boolean => {
 };
 
 // 分享當前的標籤和收藏數據
-export const shareTagsAndFavorites = async (): Promise<ShareResponse> => {
+export const shareTagsAndFavorites = async (
+  tags?: Tag[], 
+  favorites?: Favorite[], 
+  uid?: string, 
+  customShareId?: string
+): Promise<ShareResponse> => {
   try {
-    const tags = getTags();
-    const favorites = getFavorites();
+    const tagsToShare = tags || getTags();
+    const favoritesToShare = favorites || getFavorites();
     
     // 動態導入Firebase存儲服務
     const { shareTagsAndFavorites: firebaseShare } = await import('./firebaseStorage');
-    const result = await firebaseShare(tags, favorites);
+    const result = await firebaseShare(tagsToShare, favoritesToShare, uid, customShareId);
     
     // 生成分享URL
     const baseUrl = window.location.origin + window.location.pathname;
@@ -648,10 +606,6 @@ export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): v
       // 将新处理的收藏项合并到现有收藏
       const mergedFavorites = [...existingFavorites, ...processedFavorites];
       saveFavorites(mergedFavorites);
-      
-      // 确保nextFavoriteId更新为最新值
-      const maxId = getNextFavoriteId(mergedFavorites);
-      saveNextFavoriteId(maxId);
     }
   }
 };
@@ -715,65 +669,22 @@ export const deleteShareInfo = (hash: string): void => {
   setItem('savedShareInfo', updatedInfos);
 };
 
-// 获取AI语音设置
+// 获取AI语音设置（不受登入狀態限制）
 export const getAIVoice = (): string => {
-  return getItem<string>('selectedAIVoice', DEFAULT_VOICE);
+  const item = localStorage.getItem('selectedAIVoice');
+  if (item === null) {
+    return DEFAULT_VOICE; // 預設值
+  }
+  try {
+    return JSON.parse(item) as string;
+  } catch {
+    return item; // 如果解析失敗，返回字串
+  }
 };
 
-// 保存AI语音设置
+// 保存AI语音设置（不受登入狀態限制）
 export const saveAIVoice = (voice: string): void => {
-  setItem('selectedAIVoice', voice);
+  localStorage.setItem('selectedAIVoice', JSON.stringify(voice));
 };
 
 // TTS缓存相关类型和函数
-export interface TTSCacheItem {
-  text: string;
-  voice: string;
-  audioUrl: string;
-  timestamp: number;
-}
-
-// 获取TTS缓存
-export const getTTSCache = (): TTSCacheItem[] => {
-  return getItem<TTSCacheItem[]>('ttsCache', []);
-};
-
-// 根据文本和语音获取缓存项
-export const getTTSCacheItem = (text: string, voice: string): TTSCacheItem | undefined => {
-  const cache = getTTSCache();
-  return cache.find(item => item.text === text && item.voice === voice);
-};
-
-// 新增TTS缓存项
-export const addTTSCacheItem = (text: string, voice: string, audioUrl: string): void => {
-  // 不緩存blob URL或空URL
-  if (!audioUrl || !isValidURL(audioUrl)) {
-    console.log(`跳過緩存無效URL: ${audioUrl}`);
-    return;
-  }
-  
-  const cache = getTTSCache();
-  
-  // 检查是否已存在相同文本和语音的缓存
-  const existingIndex = cache.findIndex(item => item.text === text && item.voice === voice);
-  
-  const newItem: TTSCacheItem = {
-    text,
-    voice,
-    audioUrl,
-    timestamp: Date.now()
-  };
-  
-  // 更新已存在项或新增新项
-  if (existingIndex !== -1) {
-    cache[existingIndex] = newItem;
-  } else {
-    cache.unshift(newItem); // 新增到开头
-  }
-  
-  // 仅保留最新的5个缓存项
-  const updatedCache = cache.slice(0, 5);
-  setItem('ttsCache', updatedCache);
-  
-  console.log(`成功新增TTS緩存: ${text.slice(0, 20)}... (${voice})`);
-}; 
