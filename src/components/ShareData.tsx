@@ -75,10 +75,10 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
     });
   };
   
-  // 格式化分享鏈接，新增hash參數以支持直接導入
+  // 格式化分享鏈接，使用新的路徑格式
   const formatShareLink = (hash: string): string => {
-    const baseUrl = window.location.origin + window.location.pathname;
-    return `${baseUrl}?hash=${hash}`;
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/practice/${hash}`;
   };
   
   // 分享數據（只分享選中的句子，不分享標籤）
@@ -468,7 +468,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             <div className="input-group">
               <input 
                 type="text" 
-                placeholder="例如：https://pronunciation-assessment-front.vercel.app/?hash=ooxx" 
+                placeholder="例如：https://nicetone.ai/practice/ooxx" 
                 value={updateHash}
                 onChange={(e) => setUpdateHash(e.target.value)}
               />

@@ -519,15 +519,15 @@ export const shareTagsAndFavorites = async (
     const { shareTagsAndFavorites: firebaseShare } = await import('./firebaseStorage');
     const result = await firebaseShare(tagsToShare, favoritesToShare, uid, customShareId);
     
-    // 生成分享URL
-    const baseUrl = window.location.origin + window.location.pathname;
-    const url = `${baseUrl}?hash=${result.shareId}`;
+    // 生成分享URL - 使用新的路徑格式
+    const { generateShareUrls } = await import('./urlUtils');
+    const { modern } = generateShareUrls(result.shareId);
     
     return {
       success: true,
       hash: result.shareId,
       editPassword: result.editPassword,
-      url
+      url: modern
     };
   } catch (error) {
     console.error('分享數據出錯:', error);

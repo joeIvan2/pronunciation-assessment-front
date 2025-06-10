@@ -24,6 +24,8 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 // 工具導入
 import * as storage from "../utils/storage";
 import { seoOptimizer } from "../utils/seoOptimizer";
+import { getPracticeIdFromUrl, redirectToNewFormat, isPracticePage } from "../utils/urlUtils";
+import { useParams } from "react-router-dom";
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
@@ -31,6 +33,9 @@ import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
 // 我們在storage.ts中已經更新了TabName類型，所以這裡不需要再定義
 
 const PronunciationAssessment: React.FC = () => {
+  // 路由參數
+  const { slug } = useParams<{ slug: string }>();
+  
   // 狀態定義
   const [result, setResult] = useState<SpeechAssessmentResult | null>(null);
   const [strictMode, setStrictMode] = useState<boolean>(() => storage.getStrictMode());
@@ -802,23 +807,25 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [aiResponse]);
 
-  // 檢查URL參數並自動加載分享數據
-  // 檢查URL hash參數，用於顯示分享導入 modal
+  // 檢查URL參數並自動加載分享數據（支持新舊格式）
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hash = urlParams.get('hash');
+    // 處理舊格式URL的重定向
+    redirectToNewFormat();
     
-    if (hash && hash.trim() !== '') {
-      console.log('檢測到分享hash:', hash);
+    // 獲取練習ID（支持新舊格式）
+    const practiceId = slug || getPracticeIdFromUrl();
+    
+    if (practiceId && practiceId.trim() !== '') {
+      console.log('檢測到練習ID:', practiceId);
       
       // 設置分享導入數據
-      setShareImportId(hash);
+      setShareImportId(practiceId);
       
       // 預載入分享數據用於預覽
       const loadSharePreview = async () => {
         try {
           setShareImportLoading(true);
-          const result = await storage.loadFromHash(hash);
+          const result = await storage.loadFromHash(practiceId);
           
           if (result.success && result.data) {
             setShareImportData(result.data);
@@ -828,7 +835,7 @@ const PronunciationAssessment: React.FC = () => {
               seoOptimizer.optimizeForSharePage(
                 result.data.favorites,
                 result.data.tags,
-                hash
+                practiceId
               );
               
               // 預載入內容供SEO優化（對所有用戶）
@@ -853,16 +860,15 @@ const PronunciationAssessment: React.FC = () => {
       
       loadSharePreview();
     }
-  }, []); // 只在組件首次載入時執行
+  }, [slug]); // 依賴於slug參數的變化
 
-  // 監聽URL變化，如果不再有hash參數則重置SEO
+  // 監聽URL變化，如果不再有練習ID則重置SEO
   useEffect(() => {
     const handleUrlChange = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const hash = urlParams.get('hash');
+      const practiceId = getPracticeIdFromUrl();
       
-      if (!hash) {
-        // 沒有hash參數時重置SEO為默認設置
+      if (!practiceId) {
+        // 沒有練習ID時重置SEO為默認設置
         seoOptimizer.resetToDefault();
       }
     };
