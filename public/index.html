@@ -64,21 +64,18 @@
     <title>發音評估 - NiceTone</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
-    <!-- 預渲染檢測腳本 -->
+    <!-- SEO 增強腳本 - 避免 cloaking，對所有用戶提供相同內容 -->
     <script>
-      // 檢測是否為搜索引擎爬蟲或預渲染請求
+      // 為所有用戶（包括搜索引擎）提供相同的SEO增強內容
       (function() {
-        const userAgent = navigator.userAgent.toLowerCase();
-        const isBot = /bot|crawler|spider|crawling|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegram/i.test(userAgent);
         const hasHashParam = window.location.search.includes('hash=');
         
-        if (isBot && hasHashParam) {
-          // 為搜索引擎爬蟲提供靜態內容
+        if (hasHashParam) {
           const urlParams = new URLSearchParams(window.location.search);
           const hashId = urlParams.get('hash');
           
           if (hashId) {
-            // 更新頁面標題
+            // 為所有用戶更新頁面標題（不區分bot）
             document.title = `英語發音練習集 (${hashId}) - NiceTone`;
             
             // 更新meta描述
@@ -87,11 +84,20 @@
               metaDesc.content = `這個英語發音練習集 (${hashId}) 包含多個英語句子，使用AI技術進行發音評估，幫助您提升英語口語能力。`;
             }
             
-            // 添加靜態內容供爬蟲抓取
-            const staticContent = document.createElement('div');
-            staticContent.id = 'seo-static-content';
-            staticContent.style.cssText = 'position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;';
-            staticContent.innerHTML = `
+            // 添加SEO內容（對所有用戶可見，但樣式隱藏）
+            const seoContent = document.createElement('div');
+            seoContent.id = 'seo-enhanced-content';
+            seoContent.setAttribute('aria-hidden', 'true'); // 對屏幕閱讀器隱藏
+            seoContent.style.cssText = `
+              position: absolute; 
+              left: -9999px; 
+              width: 1px; 
+              height: 1px; 
+              overflow: hidden;
+              clip: rect(1px, 1px, 1px, 1px);
+              white-space: nowrap;
+            `;
+            seoContent.innerHTML = `
               <h1>英語發音練習集 - ${hashId}</h1>
               <h2>AI 驅動的英語發音評估</h2>
               <p>這個練習集包含多個精選的英語句子，適合不同程度的學習者。使用先進的AI技術進行發音評估，提供即時反饋和改進建議。</p>
@@ -116,10 +122,10 @@
             // 在頁面載入後添加內容
             if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', function() {
-                document.body.appendChild(staticContent);
+                document.body.appendChild(seoContent);
               });
             } else {
-              document.body.appendChild(staticContent);
+              document.body.appendChild(seoContent);
             }
           }
         }
@@ -127,7 +133,31 @@
     </script>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <div style="max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+        <h1>NiceTone - AI 英語發音評估工具</h1>
+        <p>您需要啟用 JavaScript 來運行此應用程式。</p>
+        <h2>功能介紹</h2>
+        <p>NiceTone 是一個先進的AI驅動英語發音評估工具，幫助用戶改善英語發音和口語能力。</p>
+        <h3>主要功能</h3>
+        <ul>
+          <li>實時語音識別和發音評估</li>
+          <li>AI智能評分系統</li>
+          <li>個性化學習建議</li>
+          <li>豐富的練習內容庫</li>
+          <li>學習進度追蹤</li>
+          <li>社交分享功能</li>
+        </ul>
+        <h3>適用場景</h3>
+        <ul>
+          <li>日常英語學習</li>
+          <li>考試準備 (IELTS, TOEFL, PTE等)</li>
+          <li>商務英語訓練</li>
+          <li>學術英語提升</li>
+        </ul>
+        <p>請啟用JavaScript以體驗完整功能。</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <!--
       This HTML file is a template.

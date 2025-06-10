@@ -831,8 +831,8 @@ const PronunciationAssessment: React.FC = () => {
                 hash
               );
               
-              // 預載入內容供搜索引擎抓取
-              seoOptimizer.preloadContentForCrawlers(
+              // 預載入內容供SEO優化（對所有用戶）
+              seoOptimizer.preloadContentForSEO(
                 result.data.favorites,
                 result.data.tags
               );

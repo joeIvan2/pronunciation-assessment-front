@@ -215,14 +215,15 @@ class SEOOptimizer {
     console.log('[SEO] 已重置為默認設置');
   }
 
-  // 為搜索引擎預載入內容
-  preloadContentForCrawlers(favorites: Favorite[], tags: Tag[]): void {
-    // 在頁面不可見的地方添加內容，供搜索引擎抓取
+  // 為所有用戶（包括搜索引擎）預載入內容
+  preloadContentForSEO(favorites: Favorite[], tags: Tag[]): void {
+    // 在頁面不可見的地方添加內容，對所有用戶提供相同體驗
     let hiddenContent = document.querySelector('#seo-content') as HTMLElement;
     
     if (!hiddenContent) {
       hiddenContent = document.createElement('div') as HTMLElement;
       hiddenContent.id = 'seo-content';
+      hiddenContent.setAttribute('aria-hidden', 'true'); // 對屏幕閱讀器隱藏
       hiddenContent.style.cssText = `
         position: absolute;
         left: -9999px;
