@@ -3,6 +3,7 @@ import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 import { SpeechAssessmentResult } from '../types/speech';
 import { generateSpeechWithNicetone } from '../utils/api';
 import { DEFAULT_VOICE } from '../config/voiceConfig';
+import { audioCache } from '../utils/audioCache';
 
 // 時間戳工具函數
 const getTimeStamp = (): string => {
@@ -249,34 +250,51 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         audioRef.current = null;
       }
       
-      // 調用 nicetone.ai WebM API
-      const apiStartTime = getPerformanceTime();
-      console.log(`[${getTimeStamp()}] 發送 nicetone.ai WebM API 請求: ${voice}`);
+      // 先檢查緩存
+      const cachedUrl = audioCache.get(text, voice, rate);
+      let audioUrl: string;
+      let fileInfo = '';
       
-      const data = await generateSpeechWithNicetone(text, voice);
-      const apiEndTime = getPerformanceTime();
-      console.log(`[${getTimeStamp()}] nicetone.ai WebM API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
-      
-      if (!data.success || !data.audioUrl) {
-        throw new Error(data.error || "nicetone.ai WebM API 返回失敗");
+      if (cachedUrl) {
+        // 使用緩存的音頻
+        console.log(`[${getTimeStamp()}] 使用緩存音頻: ${cachedUrl}`);
+        audioUrl = cachedUrl;
+        fileInfo = '(緩存音頻)';
+      } else {
+        // 調用 nicetone.ai WebM API
+        const apiStartTime = getPerformanceTime();
+        console.log(`[${getTimeStamp()}] 發送 nicetone.ai WebM API 請求: ${voice}`);
+        
+        const data = await generateSpeechWithNicetone(text, voice);
+        const apiEndTime = getPerformanceTime();
+        console.log(`[${getTimeStamp()}] nicetone.ai WebM API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
+        
+        if (!data.success || !data.audioUrl) {
+          throw new Error(data.error || "nicetone.ai WebM API 返回失敗");
+        }
+        
+        audioUrl = data.audioUrl;
+        fileInfo = `大小=${data.size} bytes, 類型=${data.type}`;
+        
+        // 緩存音頻 URL（1天）
+        audioCache.set(text, voice, audioUrl, rate);
+        
+        console.log(`[${getTimeStamp()}] WebM音頻blob URL創建成功，開始播放: ${audioUrl}`);
+        console.log(`[${getTimeStamp()}] WebM文件信息: ${fileInfo}`);
       }
-      
-      console.log(`[${getTimeStamp()}] WebM音頻blob URL創建成功，開始播放: ${data.audioUrl}`);
-      console.log(`[${getTimeStamp()}] WebM文件信息: 大小=${data.size} bytes, 類型=${data.type}`);
       
       // 創建 Audio 元素，使用blob URL進行播放
       const audioCreateTime = getPerformanceTime();
       const audio = new Audio();
       audioRef.current = audio;
       
-      // 使用blob URL，實現快速播放
-      audio.src = data.audioUrl;
+      // 使用已獲取的 audioUrl，實現快速播放
+      audio.src = audioUrl;
       audio.preload = "auto";
       audio.playbackRate = 1.0;
       
       // 設置播放事件 - 儘快開始播放
       let hasStartedPlaying = false;
-      let blobUrlToCleanup = data.audioUrl; // 保存需要清理的blob URL
       
       const tryToPlay = async () => {
         if (hasStartedPlaying) return;
@@ -304,32 +322,14 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       audio.onended = () => {
         const endTime = getPerformanceTime();
         const totalTime = endTime - startTime;
-        console.log(`[${getTimeStamp()}] WebM播放完成 (總耗時: ${formatDuration(totalTime)})`);
+        console.log(`[${getTimeStamp()}] WebM播放完成 (總耗時: ${formatDuration(totalTime)}) - 音頻已緩存1天`);
         
-        // 清理blob URL以釋放內存
-        if (blobUrlToCleanup) {
-          try {
-            URL.revokeObjectURL(blobUrlToCleanup);
-            console.log(`[${getTimeStamp()}] blob URL已清理: ${blobUrlToCleanup}`);
-          } catch (e) {
-            console.warn(`[${getTimeStamp()}] blob URL清理失敗:`, e);
-          }
-        }
+        // 不再立即清理 blob URL，而是讓緩存系統在1天後自動清理
         audioRef.current = null;
       };
       
       audio.onerror = (error) => {
         console.error(`[${getTimeStamp()}] WebM音頻播放錯誤:`, error);
-        
-        // 出錯時也要清理blob URL
-        if (blobUrlToCleanup) {
-          try {
-            URL.revokeObjectURL(blobUrlToCleanup);
-            console.log(`[${getTimeStamp()}] blob URL已清理（出錯時）: ${blobUrlToCleanup}`);
-          } catch (e) {
-            console.warn(`[${getTimeStamp()}] blob URL清理失敗（出錯時）:`, e);
-          }
-        }
         
         setState(prev => ({ 
           ...prev, 
@@ -372,19 +372,9 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       synthesizerRef.current = null;
     }
     
-    // 停止音频播放並清理blob URL
+    // 停止音频播放但不清理 blob URL（讓緩存系統管理）
     if (audioRef.current) {
-      // 嘗試清理blob URL
-      const currentSrc = audioRef.current.src;
-      if (currentSrc && currentSrc.startsWith('blob:')) {
-        try {
-          URL.revokeObjectURL(currentSrc);
-          console.log(`[${getTimeStamp()}] blob URL已清理（取消時）: ${currentSrc}`);
-        } catch (e) {
-          console.warn(`[${getTimeStamp()}] blob URL清理失敗（取消時）:`, e);
-        }
-      }
-      
+      console.log(`[${getTimeStamp()}] 停止音頻播放（保留緩存）`);
       audioRef.current.pause();
       audioRef.current = null;
     }
