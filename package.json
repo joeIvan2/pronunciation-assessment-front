@@ -25,6 +25,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.6.0",
     "react-scripts": "5.0.1",
+    "react-tooltip": "^5.28.1",
     "temp": "^0.9.4",
     "tesseract.js": "^5.0.4",
     "web-vitals": "^2.1.4"

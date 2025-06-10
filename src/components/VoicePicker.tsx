@@ -1,7 +1,7 @@
 import React from 'react';
 import '../styles/VoicePicker.css';
 import { getVoiceOptions, SPEED_RANGE } from '../config/voiceConfig';
-import InfoTooltip from './InfoTooltip';
+import { Tooltip } from 'react-tooltip';
 
 interface VoicePickerProps {
   rate: number;
@@ -27,8 +27,27 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
     <div className="voice-picker-container card-section">
       <h3 className="card-header">
         AI語音設置
-        <InfoTooltip message="使用AI合成語音進行朗讀" />
+        <span 
+          data-tooltip-id="ai-voice-tooltip"
+          data-tooltip-content="使用AI合成語音進行朗讀"
+          style={{
+            color: 'var(--ios-text-secondary)',
+            marginLeft: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          <i className="fas fa-question-circle" />
+        </span>
       </h3>
+      <Tooltip 
+        id="ai-voice-tooltip" 
+        style={{
+          maxWidth: '300px',
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          lineHeight: '1.4'
+        }}
+      />
 
       <div className="voice-picker-content">
           

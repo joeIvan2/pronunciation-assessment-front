@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as storage from '../utils/storage';
 import { Tag, Favorite, Word } from '../types/speech';
 import ResizableTextarea from './ResizableTextarea';
-import InfoTooltip from './InfoTooltip';
+import { Tooltip } from 'react-tooltip';
 import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
 
 // 後端API URL
@@ -432,7 +432,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           onChange={handlePromptChange}
           onPaste={(e) => {}}
           className="textarea-input"
-          placeholder="請描述你希望AI幫你創造的句子，或參考下方例句'"
+          placeholder="請描述你希望AI幫你創造的句子，或參考下方範例提示'"
           storageKey="aiPromptTextareaHeight"
           defaultHeight={100}
           onBlur={handlePromptBlur}
@@ -550,9 +550,17 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         >
           {isLoading ? "處理中..." : isCompressing ? "圖片壓縮中..." : "發送給AI助理"}
         </button>
-        <InfoTooltip
-          message={'我們除了會將您的指令發送給AI之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的發音紀錄發送給AI。\n注意：發音歷史為最新十次發音紀錄。'}
-        />
+        <span 
+          data-tooltip-id="ai-processor-tooltip"
+          data-tooltip-content="想要造句麼? 除了可以輸入您的造句指令之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的過往發音紀錄發送給AI。注意：發音歷史為最新十次發音紀錄。"
+          style={{
+            color: 'var(--ios-text-secondary)',
+            marginLeft: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          <i className="fas fa-question-circle" />
+        </span>
       </div>
       
       {error && (
@@ -644,6 +652,15 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           </div>
         </div>
       )}
+      <Tooltip 
+        id="ai-processor-tooltip" 
+        style={{
+          maxWidth: '300px',
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          lineHeight: '1.4'
+        }}
+      />
     </div>
   );
 };

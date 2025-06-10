@@ -14,6 +14,7 @@ import ResizableTextarea from "../components/ResizableTextarea";
 import LoginModal from "../components/LoginModal";
 import ShareImportModal from "../components/ShareImportModal";
 import SEOContent from "../components/SEOContent";
+import { Tooltip } from 'react-tooltip';
 
 // 鉤子導入
 import { useRecorder } from "../hooks/useRecorder";
@@ -124,6 +125,10 @@ const PronunciationAssessment: React.FC = () => {
   const [loginModalMessage, setLoginModalMessage] = useState<string>('');
   const [loginModalAction, setLoginModalAction] = useState<string>('此功能');
 
+  // 新用戶提示狀態
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState<boolean>(false);
+  const [showAITooltip, setShowAITooltip] = useState<boolean>(false);
+
   // 分享導入 Modal 相關狀態
   const [showShareImportModal, setShowShareImportModal] = useState<boolean>(false);
   const [shareImportId, setShareImportId] = useState<string>('');
@@ -143,6 +148,13 @@ const PronunciationAssessment: React.FC = () => {
             setNextFavoriteId(storage.getNextFavoriteId(favs));
           } else {
             setFavorites([]);
+            // 如果是新用戶（沒有收藏），設定為首次用戶
+            setIsFirstTimeUser(true);
+            setShowAITooltip(true);
+            // 5秒後自動關閉 tooltip
+            setTimeout(() => {
+              setShowAITooltip(false);
+            }, 5000);
           }
         } catch (err) {
           console.error('載入使用者收藏失敗:', err);
@@ -153,6 +165,7 @@ const PronunciationAssessment: React.FC = () => {
     } else {
       setFavorites(storage.getFavorites());
       setFavoritesLoaded(false);
+      setIsFirstTimeUser(false);
     }
   }, [user]);
 
@@ -1420,8 +1433,41 @@ const PronunciationAssessment: React.FC = () => {
               className={`tab-button ${topActiveTab === 'ai' ? 'active' : ''}`}
               onClick={() => handleTabChange('ai')}
             >
-              AI助理
+              AI造句幫手
+              <span 
+                data-tooltip-id="ai-helper-tooltip"
+                data-tooltip-content="在這裡輸入指令，要求AI造出能幫助你英文能力的句子。例如：請造一些關於旅遊的基礎句子，或者幫我練習過去式動詞的句子。"
+                data-tooltip-place="bottom"
+                style={{
+                  color: 'var(--ios-text-secondary)',
+                  marginLeft: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                <i className="fas fa-question-circle" />
+              </span>
             </button>
+            <Tooltip
+              id="ai-helper-tooltip"
+              openOnClick
+              isOpen={showAITooltip}
+              setIsOpen={setShowAITooltip}
+              clickable
+              style={{
+                backgroundColor: 'var(--ios-background-secondary, #f2f2f7)',
+                color: 'var(--ios-text-primary, #000000)',
+                border: '1px solid var(--ios-border-color, #c6c6c8)',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                lineHeight: '1.5',
+                maxWidth: '300px',
+                whiteSpace: 'normal',
+                wordWrap: 'break-word',
+                zIndex: 9999,
+                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+              }}
+            />
           </div>
           
           {/* 發音評分 TAB */}

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Tag, Favorite } from '../types/speech';
 import * as storage from '../utils/storage';
 import '../styles/PronunciationAssessment.css';
-import InfoTooltip from './InfoTooltip';
+import { Tooltip } from 'react-tooltip';
+
 
 interface ShareDataProps {
   tags: Tag[];
@@ -304,14 +305,56 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   
   // 複製文本到剪貼板
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
+    // 檢查是否支援 Clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          alert('已複製到剪貼板！');
+        })
+        .catch(err => {
+          console.error('Clipboard API 失敗:', err);
+          fallbackCopyToClipboard(text);
+        });
+    } else {
+      // 使用備用方案
+      fallbackCopyToClipboard(text);
+    }
+  };
+
+  // 備用複製方案
+  const fallbackCopyToClipboard = (text: string) => {
+    try {
+      // 創建一個臨時的 textarea 元素
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      // 嘗試使用 execCommand
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
         alert('已複製到剪貼板！');
-      })
-      .catch(err => {
-        console.error('複製失敗:', err);
-        alert('複製失敗，請手動選擇並複製');
-      });
+      } else {
+        throw new Error('execCommand 複製失敗');
+      }
+    } catch (err) {
+      console.error('備用複製方案失敗:', err);
+      // 最後的備用方案：顯示文本讓用戶手動複製
+      const userAgent = navigator.userAgent.toLowerCase();
+      if (userAgent.includes('mobile') || userAgent.includes('android') || userAgent.includes('iphone')) {
+        // 手機版：使用 prompt 顯示文本
+        prompt('請手動複製以下內容：', text);
+      } else {
+        // 桌面版：顯示警告
+        alert('無法自動複製，請手動選擇並複製文本：\n\n' + text);
+      }
+    }
   };
   
   return (
@@ -544,9 +587,17 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
               >
                 {isSharing ? '處理中...' : '生成分享鏈接'}
               </button>
-              <InfoTooltip
-                message={'您可以輸入有意義的名稱作為分享連結，例如：「我的英文學習」或「小明的收藏」'}
-              />
+              <span 
+                data-tooltip-id="share-name-tooltip"
+                data-tooltip-content="您可以輸入有意義的名稱作為分享連結，例如：「我的英文學習」或「小明的收藏」"
+                style={{
+                  color: 'var(--ios-text-secondary)',
+                  marginLeft: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                <i className="fas fa-question-circle" />
+              </span>
             </div>
             
             {/* 刪除success-message區塊，只保留錯誤提示 */}
@@ -583,19 +634,29 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                           <td>
                             <div className="copy-container">
                               <input type="text" value={formatShareLink(item.hash)} readOnly onClick={() => copyToClipboard(formatShareLink(item.hash))} />
-                              <button onClick={() => {
-                                if (navigator.share) {
-                                  navigator.share({
-                                    title: '發音評估分享',
-                                    text: '查看我的發音評估數據',
-                                    url: formatShareLink(item.hash)
-                                  })
-                                  .catch(err => {
-                                    console.error('分享失敗:', err);
-                                    copyToClipboard(formatShareLink(item.hash));
-                                  });
-                                } else {
+                              <button onClick={async () => {
+                                try {
+                                  if (navigator.share && navigator.canShare) {
+                                    const shareData = {
+                                      title: '發音評估分享',
+                                      text: '查看我的發音評估數據',
+                                      url: formatShareLink(item.hash)
+                                    };
+                                    
+                                    if (navigator.canShare(shareData)) {
+                                      await navigator.share(shareData);
+                                      return;
+                                    }
+                                  }
+                                  
+                                  // 備用方案：複製到剪貼板
                                   copyToClipboard(formatShareLink(item.hash));
+                                  alert('分享鏈接已複製到剪貼板');
+                                } catch (err) {
+                                  console.error('分享失敗:', err);
+                                  // 如果分享失敗，複製到剪貼板
+                                  copyToClipboard(formatShareLink(item.hash));
+                                  alert('分享鏈接已複製到剪貼板');
                                 }
                               }}>分享</button>
                             </div>
@@ -660,9 +721,17 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
               >
                 {isUpdating ? '更新中...' : '更新數據'}
               </button>
-              <InfoTooltip
-                message={'請輸入哈希值而非完整URL。如需從歷史記錄中更新，請點擊"複製"按鈕獲取編輯密碼。'}
-              />
+              <span 
+                data-tooltip-id="update-data-tooltip"
+                data-tooltip-content="如果你擁有分享網址也有修改密碼則可以把它們填入這裡，就能修改分享內容。或者點選上方的修改，就會自動帶入相關資訊。"
+                style={{
+                  color: 'var(--ios-text-secondary)',
+                  marginLeft: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                <i className="fas fa-question-circle" />
+              </span>
             </div>
             
             {updateResult && (
@@ -823,11 +892,17 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                 >
                   匯入JSON
                 </button>
-                <InfoTooltip
-                  message={
-                    '匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移。\n匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據。'
-                  }
-                />
+                <span 
+                  data-tooltip-id="export-import-tooltip"
+                  data-tooltip-content="匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移。&#10;匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據。"
+                  style={{
+                    color: 'var(--ios-text-secondary)',
+                    marginLeft: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <i className="fas fa-question-circle" />
+                </span>
               </div>
             </div>
             
