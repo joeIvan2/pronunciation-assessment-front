@@ -21,6 +21,7 @@ try {
 } catch (error) {
   console.error('Firebase 初始化失敗:', error);
 }
+const DISPLAY_LIMIT = 10; // SEO section item limit
 
 // 生成SEO優化的HTML
 function generateSEOHTML(shareData, hashId, baseUrl) {
@@ -29,11 +30,11 @@ function generateSEOHTML(shareData, hashId, baseUrl) {
   const sentences = favorites
     .map(fav => fav.text)
     .filter(text => text && text.length > 0)
-    .slice(0, 10);
+    .slice(0, DISPLAY_LIMIT);
   const tagNames = tags
     .map(tag => tag.name)
     .filter(name => name)
-    .slice(0, 10);
+    .slice(0, DISPLAY_LIMIT);
   
   // 生成標題和描述
   const title = sentences.length > 0
@@ -64,7 +65,7 @@ function generateSEOHTML(shareData, hashId, baseUrl) {
       "description": "英語發音練習和評估"
     },
     "teaches": ["英語發音", "語音評估"],
-    "text": sentences.slice(0, 10), // 只包含前10個句子避免過大
+    "text": sentences.slice(0, DISPLAY_LIMIT), // 只包含前10個句子避免過大
     "keywords": keywords.split(', '),
     "publisher": {
       "@type": "Organization",
