@@ -25,8 +25,15 @@ try {
 // 生成SEO優化的HTML
 function generateSEOHTML(shareData, hashId, baseUrl) {
   const { favorites = [], tags = [] } = shareData || {};
-  const sentences = favorites.map(fav => fav.text).filter(text => text && text.length > 0);
-  const tagNames = tags.map(tag => tag.name).filter(name => name);
+  // 僅取前10個句子和標籤以減少頁面體積
+  const sentences = favorites
+    .map(fav => fav.text)
+    .filter(text => text && text.length > 0)
+    .slice(0, 10);
+  const tagNames = tags
+    .map(tag => tag.name)
+    .filter(name => name)
+    .slice(0, 10);
   
   // 生成標題和描述
   const title = sentences.length > 0
@@ -152,7 +159,7 @@ ${JSON.stringify(structuredData, null, 2)}
     <main>
         ${tagNames.length > 0 ? `
         <section>
-            <h2>練習標籤 (${tagNames.length} 個)</h2>
+            <h2>練習標籤 (前10個)</h2>
             <ul>
                 ${tagNames.map(tag => `<li>${tag}</li>`).join('')}
             </ul>
@@ -160,7 +167,7 @@ ${JSON.stringify(structuredData, null, 2)}
         ` : ''}
         
         <section>
-            <h2>練習句子 (${sentences.length} 個)</h2>
+            <h2>練習句子 (前10個)</h2>
             ${sentences.length > 0 ? `
             <div class="sentence-list">
                 <ol>
