@@ -75,8 +75,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     return fav;
   });
   
-  // 新增列表展開/收起狀態
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  // 移除展開/收起狀態，直接展開
   
   // 子TAB狀態
   const [activeSubTab, setActiveSubTab] = useState<'sentences' | 'tags' | 'share'>('sentences');
@@ -100,15 +99,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   // 文件上傳引用
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // 在组件挂载时设置展开状态
-  useEffect(() => {
-    // 先从localStorage获取状态
-    const savedState = storage.getCardExpandStates().favoriteList;
-    // 只有当明确设置为false时才收起，其他情况默认展开
-    if (savedState === false) {
-      setIsExpanded(false);
-    }
-  }, []);
+  // 移除展開狀態相關的 useEffect
   
   // 對標籤按創建日期排序，最新的放在最前面
   const sortedTags = [...tags].sort((a, b) => {
@@ -130,12 +121,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   
   const filteredFavorites = getFilteredFavorites();
   
-  // 保存展開狀態
-  const handleExpandToggle = () => {
-    const newState = !isExpanded;
-    setIsExpanded(newState);
-    storage.saveCardExpandState('favoriteList', newState);
-  };
+  // 移除展開狀態處理函數
   
   // 切換數據表格展開/收起狀態
   const toggleDataTableExpanded = () => {
@@ -367,16 +353,12 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   
   return (
     <div>
-      <div className="card-header" onClick={handleExpandToggle}>
-        <h3>⭐ 我的最愛</h3>
-        <span className={`expand-arrow ${isExpanded ? 'expanded' : ''}`}>
-          {isExpanded ? '▲' : '▼'}
-        </span>
+      <div className="card-header">
+        <h3>我的最愛</h3>
       </div>
       
-      {isExpanded && (
-        <>
-          {/* 子TAB導航 */}
+      <div>
+        {/* 子TAB導航 */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ 
               display: "flex", 
@@ -982,11 +964,10 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
               user={user}
               onLoginRequired={onLoginRequired}
             />
-          )}
-        </>
-      )}
-      
-      {/* 標籤選擇模態框 */}
+                    )}
+        </div>
+        
+        {/* 標籤選擇模態框 */}
       {showTagSelector && (
         <div 
           style={{

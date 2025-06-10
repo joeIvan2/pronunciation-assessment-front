@@ -11,8 +11,7 @@ interface ShareDataProps {
 }
 
 const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginRequired }) => {
-  // 分享狀態
-  const [isExpanded, setIsExpanded] = useState<boolean>(true); // 默認展開
+  // 分享狀態（移除展開/收起功能）
   const [isSharing, setIsSharing] = useState<boolean>(false);
   const [shareResult, setShareResult] = useState<{success: boolean; url?: string; editPassword?: string; error?: string; directLink?: string} | null>(null);
   const [customShareId, setCustomShareId] = useState<string>(''); // 自訂分享ID
@@ -38,15 +37,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   // 分享歷史動畫效果
   const [showHistoryAnimation, setShowHistoryAnimation] = useState<boolean>(false);
   
-  // 初始加載分享歷史記錄和展開狀態
+  // 初始加載分享歷史記錄
   useEffect(() => {
     setShareHistory(storage.getSavedShareInfo());
-    
-    // 獲取展開狀態，如果沒有則默認為true
-    const cardStates = storage.getCardExpandStates();
-    if ('shareData' in cardStates) {
-      setIsExpanded(cardStates.shareData);
-    }
   }, []);
   
   // 當favorites變化時，預設全選
@@ -54,15 +47,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
     setSelectedFavorites(favorites.map(fav => fav.id));
   }, [favorites]);
   
-  // 處理展開/收起
-  const handleExpandToggle = () => {
-    const newState = !isExpanded;
-    setIsExpanded(newState);
-    
-    // 保存展開狀態
-    const cardStates = storage.getCardExpandStates();
-    storage.saveCardExpandState('shareData', newState);
-  };
+  // 移除展開/收起處理函數
   
   // 處理句子選擇器展開/收起
   const handleSelectionToggle = () => {
@@ -287,15 +272,11 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   
   return (
     <div>
-      <div className="card-header" onClick={handleExpandToggle}>
-        <h3>🔗 數據分享</h3>
-        <span className={`expand-arrow ${isExpanded ? 'expanded' : ''}`}>
-          {isExpanded ? '▲' : '▼'}
-        </span>
+      <div className="card-header">
+        <h3>數據分享</h3>
       </div>
       
-      {isExpanded && (
-        <div>
+      <div>
           <div className="card-section">
             <h4>分享我的句子</h4>
             <p>選擇您想要分享的句子並生成分享鏈接，與他人共享或備份。</p>
@@ -517,7 +498,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             )}
           </div>
         </div>
-      )}
     </div>
   );
 };
