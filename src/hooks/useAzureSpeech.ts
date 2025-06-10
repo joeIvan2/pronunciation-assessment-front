@@ -257,20 +257,19 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       
       // 首先嘗試使用永久blob緩存
       if (audioCache.hasBlobCache(text, voice, rate)) {
-        audioUrl = audioCache.get(text, voice, rate);
+        audioUrl = await audioCache.getAsync(text, voice, rate);
         if (audioUrl) {
           console.log(`[${getTimeStamp()}] 使用永久blob緩存: ${audioUrl}`);
           fileInfo = '(永久blob緩存)';
         }
       }
       
-      // 如果沒有永久blob緩存，檢查普通緩存
+      // 如果沒有永久blob緩存，檢查普通緩存（使用異步方法）
       if (!audioUrl) {
-        const cachedUrl = audioCache.get(text, voice, rate);
-        if (cachedUrl) {
-          console.log(`[${getTimeStamp()}] 使用臨時緩存音頻: ${cachedUrl}`);
-          audioUrl = cachedUrl;
-          fileInfo = '(臨時緩存音頻)';
+        audioUrl = await audioCache.getAsync(text, voice, rate);
+        if (audioUrl) {
+          console.log(`[${getTimeStamp()}] 使用緩存音頻: ${audioUrl}`);
+          fileInfo = '(緩存音頻)';
         }
       }
       
@@ -322,7 +321,6 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       }
       
       // 創建 Audio 元素進行播放
-      const audioCreateTime = getPerformanceTime();
       const audio = new Audio();
       audioRef.current = audio;
       

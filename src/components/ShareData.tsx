@@ -19,7 +19,10 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   
   // 句子選擇狀態
   const [selectedFavorites, setSelectedFavorites] = useState<string[]>([]); // 存儲選中的favorite ID
-  const [isSelectionExpanded, setIsSelectionExpanded] = useState<boolean>(false); // 句子選擇器是否展開
+  
+  // 標籤篩選狀態
+  const [selectedTagsForFilter, setSelectedTagsForFilter] = useState<string[]>([]); // 用於篩選句子的標籤ID
+  const [showAllSentences, setShowAllSentences] = useState<boolean>(true); // 是否顯示全部句子
   
   // 導入狀態
   const [isImporting, setIsImporting] = useState<boolean>(false);
@@ -48,20 +51,47 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
     setSelectedFavorites(favorites.map(fav => fav.id));
   }, [favorites]);
   
-  // 移除展開/收起處理函數
+  // 當tags變化時，預設全選篩選標籤
+  useEffect(() => {
+    setSelectedTagsForFilter(tags.map(tag => tag.tagId));
+  }, [tags]);
   
-  // 處理句子選擇器展開/收起
-  const handleSelectionToggle = () => {
-    setIsSelectionExpanded(!isSelectionExpanded);
+  // 根據標籤篩選更新顯示的句子
+  useEffect(() => {
+    if (showAllSentences) {
+      // 顯示全部句子
+      setSelectedFavorites(favorites.map(fav => fav.id));
+    } else {
+      // 根據選中的標籤篩選句子
+      const filteredFavorites = favorites.filter(fav => 
+        fav.tagIds.some(tagId => selectedTagsForFilter.includes(tagId))
+      );
+      setSelectedFavorites(filteredFavorites.map(fav => fav.id));
+    }
+  }, [favorites, selectedTagsForFilter, showAllSentences]);
+  
+  // 處理"全選"標籤的切換
+  const handleShowAllToggle = () => {
+    setShowAllSentences(!showAllSentences);
+    if (!showAllSentences) {
+      // 如果切換到顯示全部，清空標籤選擇
+      setSelectedTagsForFilter([]);
+    } else {
+      // 如果切換到標籤篩選，預設選中所有標籤
+      setSelectedTagsForFilter(tags.map(tag => tag.tagId));
+    }
   };
   
-  // 處理全選/取消全選
-  const handleSelectAll = () => {
-    if (selectedFavorites.length === favorites.length) {
-      setSelectedFavorites([]); // 全部取消選擇
-    } else {
-      setSelectedFavorites(favorites.map(fav => fav.id)); // 全部選擇
-    }
+  // 處理單個標籤的切換
+  const handleTagForFilterToggle = (tagId: string) => {
+    setShowAllSentences(false); // 選擇具體標籤時，取消"全選"
+    setSelectedTagsForFilter(prev => {
+      if (prev.includes(tagId)) {
+        return prev.filter(id => id !== tagId);
+      } else {
+        return [...prev, tagId];
+      }
+    });
   };
   
   // 處理單個句子選擇
@@ -81,7 +111,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
     return `${baseUrl}/practice/${hash}`;
   };
   
-  // 分享數據（只分享選中的句子，不分享標籤）
+  // 分享數據（根據選擇模式分享）
   const shareData = async () => {
     // 檢查登入狀態
     if (!user && onLoginRequired) {
@@ -102,13 +132,13 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       setIsSharing(true);
       setShareResult(null);
       
-      // 過濾出選中的收藏句子
+      // 過濾出選中的句子
       const selectedFavoritesData = favorites.filter(fav => selectedFavorites.includes(fav.id));
       
       // 清理自訂分享ID（移除特殊字符，只保留字母數字和中文）
       const cleanedCustomId = customShareId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]/g, '');
       
-      // 只分享選中的句子，不分享標籤
+      // 分享選中的句子（不分享標籤）
       const result = await storage.shareTagsAndFavorites([], selectedFavoritesData, user?.uid, cleanedCustomId || undefined);
       
       if (result.success && result.hash && result.editPassword && result.url) {
@@ -289,53 +319,151 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       
       <div>
           <div className="card-section">
-            <h4>分享我的句子</h4>
-            <p>選擇您想要分享的句子並生成分享鏈接，與他人共享或備份。</p>
+            <h4>分享我的學習內容</h4>
+            <p>選擇標籤來篩選要分享的句子，或選擇"全部"來分享所有句子。</p>
             
-            {/* 句子選擇器 */}
-            <div className="sentence-selector" style={{marginBottom: '15px'}}>
-              <div className="selector-header" onClick={handleSelectionToggle} style={{
-                cursor: 'pointer', 
-                padding: '10px', 
-                backgroundColor: 'var(--ios-background-secondary)', 
-                borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span>
-                  📝 已選擇 {selectedFavorites.length} / {favorites.length} 個句子
-                  {selectedFavorites.length > 0 && (
-                    <span style={{color: 'var(--ios-text-secondary)', fontSize: '14px', marginLeft: '10px'}}>
-                      (點擊展開查看詳情)
-                    </span>
-                  )}
-                </span>
-                <span className={`expand-arrow ${isSelectionExpanded ? 'expanded' : ''}`}>
-                  {isSelectionExpanded ? '▲' : '▼'}
-                </span>
-              </div>
+            {/* 標籤選擇器 - 水平排列 */}
+            <div style={{marginBottom: '20px'}}>
+              <h5 style={{marginBottom: '10px', color: 'var(--ios-text-primary)'}}>選擇標籤篩選：</h5>
               
-              {isSelectionExpanded && (
-                <div className="selector-content" style={{
-                  border: '1px solid var(--ios-border)',
-                  borderTop: 'none',
-                  borderRadius: '0 0 8px 8px',
-                  padding: '15px',
-                  backgroundColor: 'var(--ios-background)'
-                }}>
-                  <div style={{marginBottom: '10px'}}>
-                    <button 
-                      className="secondary-button"
-                      onClick={handleSelectAll}
-                      style={{fontSize: '14px', padding: '5px 10px'}}
-                    >
-                      {selectedFavorites.length === favorites.length ? '取消全選' : '全選'}
-                    </button>
-                  </div>
+              {/* 標籤水平排列 */}
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+                marginBottom: '15px',
+                padding: '10px',
+                backgroundColor: 'var(--ios-background-secondary)',
+                borderRadius: '8px'
+              }}>
+                {/* 全部選項 */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  backgroundColor: showAllSentences ? '#007AFF' : 'var(--ios-background)',
+                  color: showAllSentences ? 'white' : 'var(--ios-text-primary)',
+                  border: '1px solid ' + (showAllSentences ? '#007AFF' : 'var(--ios-border)'),
+                  fontSize: '14px',
+                  fontWeight: showAllSentences ? 'bold' : 'normal',
+                  transition: 'all 0.2s ease'
+                }} onClick={handleShowAllToggle}>
+                  <input 
+                    type="checkbox"
+                    checked={showAllSentences}
+                    onChange={() => {}}
+                    style={{marginRight: '6px', pointerEvents: 'none'}}
+                  />
+                  全部 ({favorites.length} 個句子)
+                </div>
+                
+                {/* 標籤列表 */}
+                {tags.map((tag) => {
+                  const tagSentenceCount = favorites.filter(fav => fav.tagIds.includes(tag.tagId)).length;
+                  const isSelected = !showAllSentences && selectedTagsForFilter.includes(tag.tagId);
                   
-                  <div style={{maxHeight: '200px', overflowY: 'auto'}}>
-                    {favorites.map((favorite) => (
+                  return (
+                    <div key={tag.tagId} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      backgroundColor: isSelected ? tag.color : 'var(--ios-background)',
+                      color: isSelected ? 'white' : 'var(--ios-text-primary)',
+                      border: '1px solid ' + (isSelected ? tag.color : 'var(--ios-border)'),
+                      fontSize: '14px',
+                      fontWeight: isSelected ? 'bold' : 'normal',
+                      opacity: showAllSentences ? 0.6 : 1,
+                      transition: 'all 0.2s ease'
+                    }} onClick={() => handleTagForFilterToggle(tag.tagId)}>
+                      <input 
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        disabled={showAllSentences}
+                        style={{marginRight: '6px', pointerEvents: 'none'}}
+                      />
+                      {tag.name} ({tagSentenceCount} 個句子)
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* 符合條件的句子列表 */}
+            <div style={{marginBottom: '20px'}}>
+              <h5 style={{marginBottom: '10px', color: 'var(--ios-text-primary)'}}>
+                符合條件的句子 ({
+                  showAllSentences 
+                    ? favorites.length 
+                    : favorites.filter(fav => fav.tagIds.some(tagId => selectedTagsForFilter.includes(tagId))).length
+                } 個)：
+              </h5>
+              
+              <div style={{
+                maxHeight: '300px',
+                overflowY: 'auto',
+                border: '1px solid var(--ios-border)',
+                borderRadius: '8px',
+                backgroundColor: 'var(--ios-background)'
+              }}>
+                {/* 全選/取消全選按鈕 */}
+                <div style={{
+                  padding: '10px',
+                  borderBottom: '1px solid var(--ios-border)',
+                  backgroundColor: 'var(--ios-background-secondary)'
+                }}>
+                  <button 
+                    className="secondary-button"
+                    onClick={() => {
+                      const filteredFavorites = showAllSentences 
+                        ? favorites 
+                        : favorites.filter(fav => fav.tagIds.some(tagId => selectedTagsForFilter.includes(tagId)));
+                      
+                      if (selectedFavorites.length === filteredFavorites.length) {
+                        setSelectedFavorites([]);
+                      } else {
+                        setSelectedFavorites(filteredFavorites.map(fav => fav.id));
+                      }
+                    }}
+                    style={{fontSize: '14px', padding: '5px 10px'}}
+                  >
+                    {(() => {
+                      const filteredFavorites = showAllSentences 
+                        ? favorites 
+                        : favorites.filter(fav => fav.tagIds.some(tagId => selectedTagsForFilter.includes(tagId)));
+                      return selectedFavorites.length === filteredFavorites.length ? '取消全選' : '全選';
+                    })()}
+                  </button>
+                  <span style={{marginLeft: '10px', fontSize: '14px', color: 'var(--ios-text-secondary)'}}>
+                    已選擇 {selectedFavorites.length} 個句子
+                  </span>
+                </div>
+                
+                {/* 句子列表 */}
+                <div style={{padding: '10px'}}>
+                  {(() => {
+                    const filteredFavorites = showAllSentences 
+                      ? favorites 
+                      : favorites.filter(fav => fav.tagIds.some(tagId => selectedTagsForFilter.includes(tagId)));
+                    
+                    if (filteredFavorites.length === 0) {
+                      return (
+                        <div style={{
+                          padding: '20px',
+                          textAlign: 'center',
+                          color: 'var(--ios-text-secondary)',
+                          fontSize: '14px'
+                        }}>
+                          沒有符合條件的句子
+                        </div>
+                      );
+                    }
+                    
+                    return filteredFavorites.map((favorite) => (
                       <div key={favorite.id} style={{
                         display: 'flex',
                         alignItems: 'flex-start',
@@ -343,26 +471,61 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                         padding: '8px',
                         backgroundColor: selectedFavorites.includes(favorite.id) ? 'var(--ios-background-secondary)' : 'transparent',
                         borderRadius: '6px',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        border: '1px solid transparent',
+                        transition: 'all 0.2s ease'
                       }} onClick={() => handleFavoriteToggle(favorite.id)}>
                         <input 
                           type="checkbox"
                           checked={selectedFavorites.includes(favorite.id)}
-                          onChange={() => handleFavoriteToggle(favorite.id)}
-                          style={{marginRight: '10px', marginTop: '2px'}}
+                          onChange={() => {}}
+                          style={{marginRight: '10px', marginTop: '2px', pointerEvents: 'none'}}
                         />
-                        <span style={{
-                          flex: 1,
-                          fontSize: '14px',
-                          lineHeight: '1.4'
-                        }}>
-                          {favorite.text.length > 100 ? `${favorite.text.substring(0, 100)}...` : favorite.text}
-                        </span>
+                        <div style={{flex: 1}}>
+                          <div style={{
+                            fontSize: '14px',
+                            lineHeight: '1.4',
+                            marginBottom: '4px'
+                          }}>
+                            {favorite.text}
+                          </div>
+                          {/* 顯示句子的標籤 */}
+                          <div style={{display: 'flex', flexWrap: 'wrap', gap: '4px'}}>
+                            {favorite.tagIds.map(tagId => {
+                              const tag = tags.find(t => t.tagId === tagId);
+                              if (!tag) return null;
+                              return (
+                                <span key={tagId} style={{
+                                  padding: '2px 6px',
+                                  borderRadius: '8px',
+                                  backgroundColor: tag.color,
+                                  color: 'white',
+                                  fontSize: '10px'
+                                }}>
+                                  {tag.name}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    ));
+                  })()}
                 </div>
-              )}
+              </div>
+            </div>
+            
+            {/* 顯示將要分享的句子數量 */}
+            <div style={{
+              padding: '10px',
+              backgroundColor: 'var(--ios-background-secondary)',
+              borderRadius: '8px',
+              marginBottom: '15px',
+              textAlign: 'center'
+            }}>
+              <span style={{fontSize: '14px', color: 'var(--ios-text-primary)'}}>
+                將分享 <strong>{selectedFavorites.length}</strong> 個句子
+              </span>
             </div>
             
             <div className="input-group" style={{marginBottom: '15px'}}>

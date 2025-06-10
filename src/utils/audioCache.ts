@@ -202,8 +202,23 @@ class AudioCacheManager {
     return url;
   }
 
+  // 檢測blob URL是否有效
+  private async isBlobUrlValid(url: string): Promise<boolean> {
+    if (!url.startsWith('blob:')) {
+      return true; // 非blob URL假設有效
+    }
+    
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch (error) {
+      console.warn(`[音頻緩存] blob URL檢測失效: ${url}`, error);
+      return false;
+    }
+  }
+
   // 獲取緩存
-  get(text: string, voice: string, rate?: number): string | null {
+  async getAsync(text: string, voice: string, rate?: number): Promise<string | null> {
     this.initialize();
     
     const key = this.generateCacheKey(text, voice, rate);
@@ -234,29 +249,30 @@ class AudioCacheManager {
     
     // 對於blob緩存，檢查URL是否仍然有效
     if (item.isBlob && item.url) {
-      try {
-        // 簡單測試URL是否有效
-        const testAudio = new Audio();
-        testAudio.preload = 'none';
-        testAudio.src = item.url;
-        
-        if (item.neverExpire) {
-          console.log(`[音頻緩存] 命中永久blob緩存: ${text.substring(0, 30)}... (語音:${voice})`);
-        } else {
-          console.log(`[音頻緩存] 命中blob緩存: ${text.substring(0, 30)}... (剩餘時間:${Math.round((item.expiresAt - Date.now()) / (60 * 60 * 1000))}小時)`);
-        }
-        return item.url;
-      } catch (e) {
-        console.warn(`[音頻緩存] blob URL已失效，嘗試重新創建:`, e);
+      const isValid = await this.isBlobUrlValid(item.url);
+      
+      if (!isValid) {
+        console.warn(`[音頻緩存] blob URL已失效，嘗試重新創建: ${item.url}`);
         
         // 嘗試重新創建blob URL
         const blobData = this.blobCache.get(key);
         if (blobData) {
           try {
+            // 撤銷舊的blob URL
+            URL.revokeObjectURL(item.url);
+            
+            // 創建新的blob URL
             const newUrl = URL.createObjectURL(blobData.blob);
             item.url = newUrl;
             this.cache.set(key, item);
-            console.log(`[音頻緩存] 重新創建blob URL成功: ${text.substring(0, 30)}...`);
+            
+            console.log(`[音頻緩存] 重新創建blob URL成功: ${text.substring(0, 30)}... 新URL: ${newUrl}`);
+            
+            if (item.neverExpire) {
+              console.log(`[音頻緩存] 命中永久blob緩存（重新創建）: ${text.substring(0, 30)}... (語音:${voice})`);
+            } else {
+              console.log(`[音頻緩存] 命中blob緩存（重新創建）: ${text.substring(0, 30)}... (剩餘時間:${Math.round((item.expiresAt - Date.now()) / (60 * 60 * 1000))}小時)`);
+            }
             return newUrl;
           } catch (recreateError) {
             console.warn(`[音頻緩存] 重新創建blob URL失敗:`, recreateError);
@@ -265,8 +281,88 @@ class AudioCacheManager {
             this.blobCache.delete(key);
             return null;
           }
+        } else {
+          console.warn(`[音頻緩存] 沒有找到blob數據，無法重新創建URL`);
+          // 清理無效的緩存
+          this.cache.delete(key);
+          return null;
+        }
+      } else {
+        // blob URL有效
+        if (item.neverExpire) {
+          console.log(`[音頻緩存] 命中永久blob緩存: ${text.substring(0, 30)}... (語音:${voice})`);
+        } else {
+          console.log(`[音頻緩存] 命中blob緩存: ${text.substring(0, 30)}... (剩餘時間:${Math.round((item.expiresAt - Date.now()) / (60 * 60 * 1000))}小時)`);
+        }
+        return item.url;
+      }
+    }
+    
+    // 非blob緩存的情況
+    if (item.neverExpire) {
+      console.log(`[音頻緩存] 命中永久緩存: ${text.substring(0, 30)}... (語音:${voice})`);
+    } else {
+      console.log(`[音頻緩存] 命中緩存: ${text.substring(0, 30)}... (剩餘時間:${Math.round((item.expiresAt - Date.now()) / (60 * 60 * 1000))}小時)`);
+    }
+    return item.url;
+  }
+
+  // 獲取緩存（同步版本，保持向後兼容）
+  get(text: string, voice: string, rate?: number): string | null {
+    this.initialize();
+    
+    const key = this.generateCacheKey(text, voice, rate);
+    const item = this.cache.get(key);
+    
+    if (!item) {
+      return null;
+    }
+    
+    // 檢查是否過期（永不過期的除外）
+    if (!item.neverExpire && item.expiresAt <= Date.now()) {
+      // 清理過期的項目
+      this.cache.delete(key);
+      this.blobCache.delete(key);
+      this.saveToStorage();
+      
+      try {
+        if (item.isBlob) {
+          URL.revokeObjectURL(item.url);
+          console.log(`[音頻緩存] 清理過期緩存: ${text.substring(0, 30)}... blob URL: ${item.url}`);
+        }
+      } catch (e) {
+        console.warn(`[音頻緩存] 清理過期 blob URL 失敗:`, e);
+      }
+      
+      return null;
+    }
+    
+    // 對於blob緩存，進行簡單的同步檢查
+    if (item.isBlob && item.url) {
+      // 嘗試重新創建blob URL（如果有blob數據的話）
+      const blobData = this.blobCache.get(key);
+      if (blobData) {
+        try {
+          // 創建新的blob URL替換可能失效的URL
+          const newUrl = URL.createObjectURL(blobData.blob);
+          if (newUrl !== item.url) {
+            // 撤銷舊URL
+            URL.revokeObjectURL(item.url);
+            item.url = newUrl;
+            this.cache.set(key, item);
+            console.log(`[音頻緩存] 預防性重新創建blob URL: ${text.substring(0, 30)}...`);
+          }
+        } catch (e) {
+          console.warn(`[音頻緩存] 預防性重新創建blob URL失敗:`, e);
         }
       }
+      
+      if (item.neverExpire) {
+        console.log(`[音頻緩存] 命中永久blob緩存: ${text.substring(0, 30)}... (語音:${voice})`);
+      } else {
+        console.log(`[音頻緩存] 命中blob緩存: ${text.substring(0, 30)}... (剩餘時間:${Math.round((item.expiresAt - Date.now()) / (60 * 60 * 1000))}小時)`);
+      }
+      return item.url;
     }
     
     if (item.neverExpire) {
