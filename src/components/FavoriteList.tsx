@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Favorite, Tag } from '../types/speech';
 import '../styles/PronunciationAssessment.css';
 import * as storage from '../utils/storage';
@@ -23,6 +23,7 @@ interface FavoriteListProps {
   onAddTag: (name: string, color?: string) => string;
   onEditTag: (tagId: string, newName: string, newColor?: string) => void;
   onDeleteTag: (tagId: string) => void;
+  onDataImported?: (newTags: Tag[], newFavorites: Favorite[]) => void;
 }
 
 const FavoriteList: React.FC<FavoriteListProps> = ({
@@ -43,7 +44,8 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onLoginRequired,
   onAddTag,
   onEditTag,
-  onDeleteTag
+  onDeleteTag,
+  onDataImported
 }) => {
   // 數據規範化 - 確保每個收藏項目都有正確的數據結構
   const normalizedFavorites: Favorite[] = favorites.map((fav: any) => {
@@ -91,15 +93,16 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   const [showTagSelector, setShowTagSelector] = useState<boolean>(false);
   
   // 控制數據表格展開/收起狀態
-  const [isDataTableExpanded, setIsDataTableExpanded] = useState<boolean>(false);
+  // 移除 isDataTableExpanded 狀態 - 匯出功能已移動到分享與備份標籤
   
   // 編輯中的數據項
   const [editingData, setEditingData] = useState<{id: string; field: string; value: any} | null>(null);
   
-  // 文件上傳引用
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // 搜尋狀態
+  const [searchText, setSearchText] = useState<string>('');
+  const [searchHighlightId, setSearchHighlightId] = useState<string | null>(null);
   
-  // 移除展開狀態相關的 useEffect
+  // 移除匯出相關引用 - 匯出功能已移動到分享與備份標籤
   
   // 對標籤按創建日期排序，最新的放在最前面
   const sortedTags = [...tags].sort((a, b) => {
@@ -120,13 +123,6 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   };
   
   const filteredFavorites = getFilteredFavorites();
-  
-  // 移除展開狀態處理函數
-  
-  // 切換數據表格展開/收起狀態
-  const toggleDataTableExpanded = () => {
-    setIsDataTableExpanded(!isDataTableExpanded);
-  };
   
   // 開啟標籤選擇器
   const openTagSelector = (favoriteId: string) => {
@@ -150,6 +146,49 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   const handleTagClick = (tagId: string) => {
     if (editingTagsFavoriteId) {
       onToggleTag(editingTagsFavoriteId, tagId);
+    }
+  };
+
+  // 搜尋功能
+  const handleSearch = (searchValue: string) => {
+    setSearchText(searchValue);
+    
+    if (!searchValue.trim()) {
+      setSearchHighlightId(null);
+      return;
+    }
+    
+    // 先切換到全部標籤
+    onClearTagSelection();
+    
+    // 搜尋匹配的句子
+    const foundFavorite = normalizedFavorites.find(fav => 
+      fav.text.toLowerCase().includes(searchValue.toLowerCase())
+    );
+    
+    if (foundFavorite) {
+      setSearchHighlightId(foundFavorite.id);
+      
+      // 滾動到找到的句子並高亮
+      setTimeout(() => {
+        const itemElement = document.getElementById(`favorite-item-${foundFavorite.id}`);
+        if (itemElement) {
+          itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 添加搜尋高亮效果
+          itemElement.style.animation = 'searchHighlight 2s';
+          
+          // 動畫結束後移除動畫屬性
+          setTimeout(() => {
+            if (itemElement) {
+              itemElement.style.animation = '';
+              setSearchHighlightId(null);
+            }
+          }, 2000);
+        }
+      }, 100);
+    } else {
+      setSearchHighlightId(null);
+      alert('未找到匹配的句子');
     }
   };
   
@@ -209,121 +248,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     window.location.reload();
   };
   
-  // 複製表格到剪貼板
-  const copyTableToClipboard = () => {
-    const headers = ['ID', '文本內容', '標籤IDs', '標籤名稱', '創建時間'];
-    const rows = filteredFavorites.map(fav => [
-      fav.id,
-      fav.text,
-      fav.tagIds.join(', '),
-      fav.tagIds.map(tagId => getTagName(tagId)).join(', '),
-      formatTimestamp(fav.createdAt)
-    ]);
-    
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join('\t'))
-      .join('\n');
-    
-    navigator.clipboard.writeText(csvContent)
-      .then(() => alert('表格已複製到剪貼板！'))
-      .catch(err => {
-        console.error('複製失敗:', err);
-        alert('複製失敗，請手動選擇並複製');
-      });
-  };
-  
-  // 準備CSV數據
-  const prepareCSVData = () => {
-    return {
-      tags: tags,
-      favorites: normalizedFavorites
-    };
-  };
-  
-  // 匯出到CSV
-  const exportToCSV = () => {
-    const data = prepareCSVData();
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `favorites-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    alert('數據已匯出為JSON文件！');
-  };
-  
-  // 觸發文件輸入
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-  
-  // 處理文件上傳
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const content = event.target?.result as string;
-        const data = JSON.parse(content);
-        
-        if (data.tags && data.favorites) {
-          // 確認是否要覆蓋現有數據
-          if (window.confirm('這將覆蓋您現有的所有標籤和收藏數據。確定要繼續嗎？')) {
-            // 處理標籤數據
-            const importedTags = Array.isArray(data.tags) ? data.tags : [];
-            
-            // 處理收藏數據，確保ID唯一性
-            const timestamp = Date.now();
-            const importedFavorites = Array.isArray(data.favorites) ? data.favorites.map((fav: any, index: number) => {
-              // 檢查ID是否為純數字
-              const isNumericId = /^\d+$/.test(String(fav.id));
-              
-              // 如果是數字ID，將其轉為負數或使用時間戳前綴，避免與用戶新增的ID衝突
-              const newId = isNumericId 
-                ? `imp-${timestamp}-${index}` // 使用前綴和索引
-                : (fav.id || `imp-${timestamp}-${index}`);
-                
-              return {
-                id: newId,
-                text: fav.text || '',
-                tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : (Array.isArray(fav.tags) ? fav.tags : []),
-                createdAt: fav.createdAt || Date.now()
-              };
-            }) : [];
-            
-            // 更新數據
-            storage.saveTags(importedTags);
-            storage.saveFavorites(importedFavorites);
-            
-            // 重新加載頁面以應用更改
-            alert('數據已成功匯入，頁面將重新加載以應用更改');
-            window.location.reload();
-          }
-        } else {
-          alert('無效的JSON格式，請確保文件包含tags和favorites字段');
-        }
-      } catch (err) {
-        console.error('匯入失敗:', err);
-        alert(`匯入失敗: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    };
-    reader.readAsText(file);
-    
-    // 重置文件輸入
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
+  // 移除所有匯出相關函數 - 匯出功能已移動到分享與備份標籤
   
   // 用於跟踪已經滾動過的項目ID
   const [scrolledItemId, setScrolledItemId] = useState<string | null>(null);
@@ -353,9 +278,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   
   return (
     <div>
-      <div className="card-header">
-        <h3>我的最愛</h3>
-      </div>
+      {/* 移除標題 */}
       
       <div>
         {/* 子TAB導航 */}
@@ -432,9 +355,14 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                 }}>
                   <input 
                     type="text" 
-                    placeholder="輸入要收藏的句子..." 
-                    value={currentText}
-                    onChange={() => {}} // 由父組件控制
+                    placeholder="搜尋收藏的句子..." 
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch(searchText);
+                      }
+                    }}
                     style={{ 
                       padding: 8, 
                       borderRadius: 12, 
@@ -443,13 +371,12 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                       color: "var(--ios-text)", 
                       flexGrow: 1 
                     }} 
-                    readOnly
                   />
                   <button 
-                    onClick={() => onAddFavorite(currentText)} 
+                    onClick={() => handleSearch(searchText)} 
                     style={{ 
                       padding: "0 12px", 
-                      background: "var(--ios-success)", 
+                      background: "var(--ios-primary)", 
                       color: "var(--ios-text)", 
                       border: "none", 
                       borderRadius: 12, 
@@ -457,9 +384,27 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                       fontSize: "13px",
                       fontWeight: 500
                     }}
-                    disabled={!currentText.trim()}
+                    disabled={!searchText.trim()}
                   >
-                    收藏
+                    🔍
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setSearchText('');
+                      setSearchHighlightId(null);
+                    }} 
+                    style={{ 
+                      padding: "0 12px", 
+                      background: "var(--ios-secondary)", 
+                      color: "var(--ios-text)", 
+                      border: "none", 
+                      borderRadius: 12, 
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: 500
+                    }}
+                  >
+                    清除
                   </button>
                 </div>
               </div>
@@ -472,320 +417,143 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                   gap: 8, 
                   marginBottom: 8 
                 }}>
-                  <button
-                    onClick={onClearTagSelection}
-                    className={`tag-button ${selectedTags.length === 0 ? 'active' : ''}`}
+            <button
+              onClick={onClearTagSelection}
+              className={`tag-button ${selectedTags.length === 0 ? 'active' : ''}`}
                     style={{
                       background: selectedTags.length === 0 ? 'var(--ios-primary)' : '',
                     }}
-                  >
-                    全部
-                  </button>
+            >
+              全部
+            </button>
                 </div>
-                
+            
                 <div style={{ 
                   display: "flex", 
                   flexWrap: "wrap", 
                   gap: 8 
                 }}>
-                  {sortedTags.map(tag => (
-                    <button
-                      key={tag.tagId}
-                      onClick={() => onToggleTagSelection(tag.tagId)}
-                      className={`tag-button ${selectedTags.includes(tag.tagId) ? 'active' : ''}`}
-                      style={{
-                        background: selectedTags.includes(tag.tagId) ? tag.color : '',
-                      }}
-                    >
-                      {tag.name}
-                    </button>
-                  ))}
+            {sortedTags.map(tag => (
+              <button
+                key={tag.tagId}
+                onClick={() => onToggleTagSelection(tag.tagId)}
+                className={`tag-button ${selectedTags.includes(tag.tagId) ? 'active' : ''}`}
+                style={{
+                  background: selectedTags.includes(tag.tagId) ? tag.color : '',
+                }}
+              >
+                {tag.name}
+              </button>
+            ))}
                 </div>
-              </div>
-              
-              {/* 收藏列表 */}
-              {normalizedFavorites.length > 0 ? (
-                <ul style={{ listStyle: "none", padding: 0 }}>
-                  {filteredFavorites.map((fav) => (
-                    <li
-                      key={fav.id}
-                      id={`favorite-item-${fav.id}`}
-                      className={`favorite-item ${
-                        fav.id === highlightedFavoriteId ? 'favorite-selected' : ''
-                      }`}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                        <span 
-                          onClick={() => onLoadFavorite(fav.id)} 
-                          style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee", fontSize: 16 }}
-                        >
-                          {fav.text}
-                        </span>
-                        <button 
-                          onClick={() => onRemoveFavorite(fav.id)} 
-                          className="btn-delete"
-                          title="刪除"
-                        >
-                          <span>×</span>
-                        </button>
-                      </div>
-                      
-                      {/* 標籤展示 */}
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                        {sortedTags
-                          .filter(tag => fav.tagIds.includes(tag.tagId))
-                          .map(tag => (
-                            <span
-                              key={tag.tagId}
-                              onClick={() => onToggleTag(fav.id, tag.tagId)}
-                              style={{
-                                padding: "2px 6px",
-                                background: tag.color,
-                                color: "#fff",
-                                borderRadius: 4,
-                                fontSize: 12,
-                                cursor: "pointer"
-                              }}
-                            >
-                              {tag.name} ✓
-                            </span>
-                          ))}
-                        
-                        {/* 新增標籤按鈕 */}
-                        {sortedTags
-                          .filter(tag => !fav.tagIds.includes(tag.tagId))
-                          .slice(0, 3) // 只顯示前3個未新增的標籤
-                          .map(tag => (
-                            <span
-                              key={tag.tagId}
-                              onClick={() => onToggleTag(fav.id, tag.tagId)}
-                              style={{
-                                padding: "2px 6px",
-                                background: "#444",
-                                color: "#ccc",
-                                borderRadius: 4,
-                                fontSize: 12,
-                                cursor: "pointer"
-                              }}
-                            >
-                              + {tag.name}
-                            </span>
-                          ))}
-                        
-                        {/* 更多標籤選項 */}
-                        {sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length > 3 && (
-                          <span
-                            style={{
-                              padding: "2px 6px",
-                              background: "#333",
-                              color: "#aaa",
-                              borderRadius: 4,
-                              fontSize: 12,
-                              cursor: "pointer"
-                            }}
-                            onClick={() => openTagSelector(fav.id)}
-                          >
-                            +{sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length - 3} 更多...
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                // 收藏列表為空時顯示提示
-                <div style={{ 
-                  padding: "16px", 
-                  background: "rgba(44, 44, 48, 0.5)", 
-                  borderRadius: "12px", 
-                  color: "var(--ios-text-secondary)",
-                  textAlign: "center",
-                  border: "1px solid var(--ios-border)"
-                }}>
-                  還沒有收藏的句子，請使用文本輸入框右下方的星號按鈕(★)新增
-                </div>
-              )}
-              
-              {/* 數據表格區域 */}
-              <div style={{ marginTop: "20px" }}>
-                <h4 
-                  onClick={toggleDataTableExpanded} 
-                  style={{ 
-                    cursor: "pointer", 
-                    display: "flex", 
-                    alignItems: "center",
-                    fontSize: "16px",
-                    color: "var(--ios-primary)",
-                    marginBottom: "8px",
-                    userSelect: "none"
-                  }}
+          </div>
+          
+          {/* 收藏列表 */}
+          {normalizedFavorites.length > 0 ? (
+            <ul style={{ listStyle: "none", padding: 0 }}>
+              {filteredFavorites.map((fav) => (
+                <li
+                  key={fav.id}
+                  id={`favorite-item-${fav.id}`}
+                  className={`favorite-item ${
+                    fav.id === highlightedFavoriteId ? 'favorite-selected' : ''
+                  } ${
+                    fav.id === searchHighlightId ? 'search-highlighted' : ''
+                  }`}
                 >
-                  <span style={{ 
-                    display: "inline-block", 
-                    width: "18px", 
-                    height: "18px", 
-                    textAlign: "center", 
-                    lineHeight: "16px", 
-                    marginRight: "6px",
-                    borderRadius: "50%",
-                    background: "var(--ios-primary)",
-                    color: "#fff"
-                  }}>
-                    {isDataTableExpanded ? "-" : "+"}
-                  </span>
-                  匯出數據表
-                </h4>
-                
-                {isDataTableExpanded && (
-                  <div style={{ marginBottom: "16px" }}>
-                    <div style={{ 
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "8px"
-                    }}>
-                      <span style={{ color: "var(--ios-text-secondary)", fontSize: "14px" }}>
-                        顯示 {filteredFavorites.length} 條記錄
-                      </span>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                          onClick={copyTableToClipboard}
-                          style={{
-                            padding: "4px 8px",
-                            background: "var(--ios-primary)",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          複製表格
-                        </button>
-                        <button
-                          onClick={exportToCSV}
-                          style={{
-                            padding: "4px 8px",
-                            background: "var(--ios-success)",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          匯出JSON
-                        </button>
-                        <button
-                          onClick={triggerFileInput}
-                          style={{
-                            padding: "4px 8px",
-                            background: "var(--ios-warning)",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          匯入JSON
-                        </button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept=".json"
-                          style={{ display: "none" }}
-                          onChange={handleFileUpload}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* 匯出說明 */}
-                    <div style={{
-                      padding: "8px",
-                      backgroundColor: "rgba(40, 40, 50, 0.7)",
-                      borderRadius: "4px",
-                      marginBottom: "8px",
-                      fontSize: "12px",
-                      color: "var(--ios-text-secondary)"
-                    }}>
-                      <p>匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移</p>
-                      <p>匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據</p>
-                    </div>
-                    
-                    <div style={{ 
-                      overflowX: "auto", 
-                      background: "rgba(30, 30, 34, 0.7)",
-                      borderRadius: "8px",
-                      border: "1px solid var(--ios-border)"
-                    }}>
-                      <table style={{ 
-                        width: "100%", 
-                        borderCollapse: "collapse",
-                        fontSize: "14px"
-                      }}>
-                        <thead>
-                          <tr style={{ 
-                            borderBottom: "1px solid var(--ios-border)",
-                            textAlign: "left"
-                          }}>
-                            <th style={{ padding: "8px", whiteSpace: "nowrap" }}>ID</th>
-                            <th style={{ padding: "8px", whiteSpace: "nowrap" }}>文本內容</th>
-                            <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤IDs</th>
-                            <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤名稱</th>
-                            <th style={{ padding: "8px", whiteSpace: "nowrap" }}>創建時間</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredFavorites.map(fav => (
-                            <tr key={fav.id} style={{ 
-                              borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
-                            }}>
-                              <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
-                                {fav.id}
-                              </td>
-                              <td style={{ padding: "8px" }}>
-                                {editingData && editingData.id === fav.id && editingData.field === 'text' ? (
-                                  <input
-                                    type="text"
-                                    value={editingData.value}
-                                    onChange={handleEditChange}
-                                    onBlur={handleEditComplete}
-                                    autoFocus
-                                    style={{
-                                      width: "100%",
-                                      background: "rgba(60, 60, 70, 0.8)",
-                                      border: "1px solid var(--ios-primary)",
-                                      color: "#fff",
-                                      padding: "4px"
-                                    }}
-                                  />
-                                ) : (
-                                  <span 
-                                    onDoubleClick={() => handleEditStart(fav.id, 'text', fav.text)}
-                                    style={{ cursor: "pointer" }}
-                                  >
-                                    {fav.text}
-                                  </span>
-                                )}
-                              </td>
-                              <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
-                                {fav.tagIds.join(', ')}
-                              </td>
-                              <td style={{ padding: "8px" }}>
-                                {fav.tagIds.map(tagId => getTagName(tagId)).join(', ')}
-                              </td>
-                              <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
-                                {formatTimestamp(fav.createdAt)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span 
+                      onClick={() => onLoadFavorite(fav.id)} 
+                      style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee", fontSize: 16 }}
+                    >
+                      {fav.text}
+                    </span>
+                    <button 
+                      onClick={() => onRemoveFavorite(fav.id)} 
+                      className="btn-delete"
+                      title="刪除"
+                    >
+                      <span>×</span>
+                    </button>
                   </div>
-                )}
-              </div>
+                  
+                  {/* 標籤展示 */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {sortedTags
+                      .filter(tag => fav.tagIds.includes(tag.tagId))
+                      .map(tag => (
+                        <span
+                          key={tag.tagId}
+                          onClick={() => onToggleTag(fav.id, tag.tagId)}
+                          style={{
+                            padding: "2px 6px",
+                            background: tag.color,
+                            color: "#fff",
+                            borderRadius: 4,
+                            fontSize: 12,
+                            cursor: "pointer"
+                          }}
+                        >
+                          {tag.name} ✓
+                        </span>
+                      ))}
+                    
+                    {/* 新增標籤按鈕 */}
+                    {sortedTags
+                      .filter(tag => !fav.tagIds.includes(tag.tagId))
+                      .slice(0, 3) // 只顯示前3個未新增的標籤
+                      .map(tag => (
+                        <span
+                          key={tag.tagId}
+                          onClick={() => onToggleTag(fav.id, tag.tagId)}
+                          style={{
+                            padding: "2px 6px",
+                            background: "#444",
+                            color: "#ccc",
+                            borderRadius: 4,
+                            fontSize: 12,
+                            cursor: "pointer"
+                          }}
+                        >
+                          + {tag.name}
+                        </span>
+                      ))}
+                    
+                    {/* 更多標籤選項 */}
+                    {sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length > 3 && (
+                      <span
+                        style={{
+                          padding: "2px 6px",
+                          background: "#333",
+                          color: "#aaa",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          cursor: "pointer"
+                        }}
+                        onClick={() => openTagSelector(fav.id)}
+                      >
+                        +{sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length - 3} 更多...
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            // 收藏列表為空時顯示提示
+            <div style={{ 
+              padding: "16px", 
+              background: "rgba(44, 44, 48, 0.5)", 
+              borderRadius: "12px", 
+              color: "var(--ios-text-secondary)",
+              textAlign: "center",
+              border: "1px solid var(--ios-border)"
+            }}>
+              還沒有收藏的句子，請使用文本輸入框右下方的星號按鈕(★)新增
+            </div>
+          )}
+          
+              {/* 移除數據表格區域 - 已移動到分享與備份標籤 */}
             </>
           )}
           
@@ -838,13 +606,13 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                       
                       setNewTagName('');
                     }} 
-                    style={{ 
+              style={{ 
                       padding: "0 12px", 
                       background: "var(--ios-success)", 
                       color: "var(--ios-text)", 
                       border: "none", 
                       borderRadius: 12, 
-                      cursor: "pointer",
+                cursor: "pointer", 
                       fontSize: "13px",
                       fontWeight: 500
                     }}
@@ -853,16 +621,16 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                   </button>
                   
                   {editingTagId && (
-                    <button 
+                    <button
                       onClick={() => {
                         setEditingTagId(null);
                         setNewTagName('');
                       }} 
-                      style={{ 
+                      style={{
                         padding: "0 12px", 
                         background: "var(--ios-danger)", 
                         color: "var(--ios-text)", 
-                        border: "none", 
+                        border: "none",
                         borderRadius: 12, 
                         cursor: "pointer",
                         fontSize: "13px",
@@ -928,46 +696,47 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                           }}
                         >
                           編輯
-                        </button>
-                        <button
+                    </button>
+                    <button
                           onClick={() => {
                             if (window.confirm(`確定要刪除標籤 "${tag.name}" 嗎？`)) {
                               onDeleteTag(tag.tagId);
                             }
                           }}
-                          style={{ 
+                      style={{
                             background: "var(--ios-danger)", 
                             color: "var(--ios-text)", 
                             border: "none", 
                             borderRadius: 12, 
-                            padding: "4px 8px",
+                        padding: "4px 8px",
                             cursor: "pointer",
                             fontSize: "13px",
                             fontWeight: 500
                           }}
                         >
                           刪除
-                        </button>
-                      </div>
+                    </button>
+                  </div>
                     </li>
                   ))}
                 </ul>
-              </div>
-            </>
-          )}
+          </div>
+        </>
+      )}
           
-          {/* 分享與備份TAB內容 */}
+                    {/* 分享與備份TAB內容 */}
           {activeSubTab === 'share' && (
             <ShareData 
               tags={tags} 
               favorites={favorites} 
               user={user}
               onLoginRequired={onLoginRequired}
+              onDataImported={onDataImported}
             />
-                    )}
+          )}
         </div>
-        
-        {/* 標籤選擇模態框 */}
+      
+      {/* 標籤選擇模態框 */}
       {showTagSelector && (
         <div 
           style={{

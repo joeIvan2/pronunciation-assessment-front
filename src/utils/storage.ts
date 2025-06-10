@@ -380,7 +380,7 @@ export const clearHistoryRecords = (): void => {
 // 标签页相关类型和函数
 export type TabName = 'history' | 'favorites' | 'tags' | 'voices' | 'ai' | 'share' | 'input';
 export type TopTabName = 'input' | 'ai';
-export type BottomTabName = 'history' | 'favorites' | 'tags' | 'voices';
+export type BottomTabName = 'history' | 'favorites' | 'voices';
 
 // 获取顶部标签页
 export const getTopActiveTab = (): TopTabName => {

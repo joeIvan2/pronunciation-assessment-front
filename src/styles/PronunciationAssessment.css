@@ -1034,6 +1034,39 @@ h4 {
   }
 }
 
+/* 搜尋高亮動畫 */
+@keyframes searchHighlight {
+  0% { 
+    background: rgba(10, 132, 255, 0.4); 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(10, 132, 255, 0.7);
+  }
+  25% { 
+    background: rgba(10, 132, 255, 0.6); 
+    transform: scale(1.03);
+    box-shadow: 0 0 0 8px rgba(10, 132, 255, 0.3);
+  }
+  50% { 
+    background: rgba(10, 132, 255, 0.5); 
+    transform: scale(1.02);
+    box-shadow: 0 0 0 12px rgba(10, 132, 255, 0.2);
+  }
+  75% { 
+    background: rgba(10, 132, 255, 0.3); 
+    transform: scale(1.01);
+    box-shadow: 0 0 0 8px rgba(10, 132, 255, 0.1);
+  }
+  100% { 
+    background: rgba(44, 44, 48, 0.5); 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(10, 132, 255, 0);
+  }
+}
+
+.search-highlighted {
+  border: 2px solid var(--ios-primary) !important;
+}
+
 /* 按鈕比例設置 */
 .btn-flex-1-5 {
   flex: 1.5;

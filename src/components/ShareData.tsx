@@ -8,9 +8,10 @@ interface ShareDataProps {
   favorites: Favorite[];
   user?: any;
   onLoginRequired?: (actionName: string, message?: string) => void;
+  onDataImported?: (newTags: Tag[], newFavorites: Favorite[]) => void;
 }
 
-const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginRequired }) => {
+const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginRequired, onDataImported }) => {
   // 分享狀態（移除展開/收起功能）
   const [isSharing, setIsSharing] = useState<boolean>(false);
   const [shareResult, setShareResult] = useState<{success: boolean; url?: string; editPassword?: string; error?: string; directLink?: string} | null>(null);
@@ -272,9 +273,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   
   return (
     <div>
-      <div className="card-header">
-        <h3>數據分享</h3>
-      </div>
+      {/* 移除標題 */}
       
       <div>
           <div className="card-section">
@@ -459,12 +458,12 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                   </table>
                 </div>
               </div>
-            )}
+                        )}
           </div>
           
+          {/* 更新數據區塊 */}
           <div className="card-section">
-            <h4>修改並更新你的網址</h4>
-            
+            {/* 移除標題 */}
             
             <div className="input-group">
               <input 
@@ -496,6 +495,224 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                 {updateResult.message}
               </div>
             )}
+          </div>
+          
+          {/* 匯出數據表區塊 */}
+          <div className="card-section">
+            <h4>匯出數據表</h4>
+            <p>導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移。</p>
+            
+            <div style={{ 
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "8px"
+            }}>
+              <span style={{ color: "var(--ios-text-secondary)", fontSize: "14px" }}>
+                顯示 {favorites.length} 條記錄
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  onClick={() => {
+                    // 複製表格到剪貼板
+                    const headers = ['ID', '文本內容', '標籤IDs', '標籤名稱', '創建時間'];
+                    const rows = favorites.map(fav => [
+                      fav.id,
+                      fav.text,
+                      fav.tagIds.join(', '),
+                      fav.tagIds.map(tagId => tags.find(tag => tag.tagId === tagId)?.name || tagId).join(', '),
+                      new Date(fav.createdAt).toLocaleString()
+                    ]);
+                    
+                    const tableText = [headers, ...rows]
+                      .map(row => row.join('\t'))
+                      .join('\n');
+                    
+                    navigator.clipboard.writeText(tableText).then(() => {
+                      alert('表格已複製到剪貼板');
+                    }).catch(err => {
+                      console.error('複製失敗:', err);
+                      alert('複製失敗');
+                    });
+                  }}
+                  style={{
+                    padding: "4px 8px",
+                    background: "var(--ios-primary)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    cursor: "pointer"
+                  }}
+                >
+                  複製表格
+                </button>
+                <button
+                  onClick={() => {
+                    // 匯出JSON
+                    const exportData = {
+                      favorites: favorites,
+                      tags: tags,
+                      exportTime: new Date().toISOString(),
+                      version: '1.0'
+                    };
+                    
+                    const dataStr = JSON.stringify(exportData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `pronunciation-data-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                  }}
+                  style={{
+                    padding: "4px 8px",
+                    background: "var(--ios-success)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    cursor: "pointer"
+                  }}
+                >
+                  匯出JSON
+                </button>
+                <button
+                  onClick={() => {
+                    // 觸發文件選擇
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          try {
+                            const data = JSON.parse(e.target?.result as string);
+                            if (data.favorites && data.tags) {
+                              if (window.confirm('匯入將覆蓋當前數據，確定要繼續嗎？')) {
+                                try {
+                                  // 處理標籤數據
+                                  const importedTags = Array.isArray(data.tags) ? data.tags : [];
+                                  
+                                  // 處理收藏數據，直接使用原本的ID（因為是整個替換操作）
+                                  const importedFavorites = Array.isArray(data.favorites) ? data.favorites.map((fav: any, index: number) => {
+                                    return {
+                                      id: fav.id || String(index), // 使用原本的ID，如果沒有則用索引
+                                      text: fav.text || '',
+                                      tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : (Array.isArray(fav.tags) ? fav.tags : []),
+                                      createdAt: fav.createdAt || Date.now()
+                                    };
+                                  }) : [];
+                                  
+                                  // 保存數據到本地存儲
+                                  storage.saveTags(importedTags);
+                                  storage.saveFavorites(importedFavorites);
+                                  
+                                  // 如果有回調函數，更新父組件狀態
+                                  if (onDataImported) {
+                                    onDataImported(importedTags, importedFavorites);
+                                  }
+                                  
+                                  alert(`成功匯入 ${importedFavorites.length} 個收藏和 ${importedTags.length} 個標籤！`);
+                                } catch (error) {
+                                  console.error('匯入失敗:', error);
+                                  alert(`匯入失敗: ${error instanceof Error ? error.message : String(error)}`);
+                                }
+                              }
+                            } else {
+                              alert('無效的JSON格式，請確保文件包含 favorites 和 tags 字段');
+                            }
+                          } catch (err) {
+                            console.error('解析JSON失敗:', err);
+                            alert('解析JSON失敗');
+                          }
+                        };
+                        reader.readAsText(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                  style={{
+                    padding: "4px 8px",
+                    background: "var(--ios-warning)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    cursor: "pointer"
+                  }}
+                >
+                  匯入JSON
+                </button>
+              </div>
+            </div>
+            
+            {/* 匯出說明 */}
+            <div style={{
+              padding: "8px",
+              backgroundColor: "rgba(40, 40, 50, 0.7)",
+              borderRadius: "4px",
+              marginBottom: "8px",
+              fontSize: "12px",
+              color: "var(--ios-text-secondary)"
+            }}>
+              <p>匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移</p>
+              <p>匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據</p>
+            </div>
+            
+            <div style={{ 
+              overflowX: "auto", 
+              background: "rgba(30, 30, 34, 0.7)",
+              borderRadius: "8px",
+              border: "1px solid var(--ios-border)"
+            }}>
+              <table style={{ 
+                width: "100%", 
+                borderCollapse: "collapse",
+                fontSize: "14px"
+              }}>
+                <thead>
+                  <tr style={{ 
+                    borderBottom: "1px solid var(--ios-border)",
+                    textAlign: "left"
+                  }}>
+                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>ID</th>
+                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>文本內容</th>
+                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤IDs</th>
+                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤名稱</th>
+                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>創建時間</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {favorites.map(fav => (
+                    <tr key={fav.id} style={{ 
+                      borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
+                    }}>
+                      <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                        {fav.id}
+                      </td>
+                      <td style={{ padding: "8px" }}>
+                        {fav.text}
+                      </td>
+                      <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
+                        {fav.tagIds.join(', ')}
+                      </td>
+                      <td style={{ padding: "8px" }}>
+                        {fav.tagIds.map(tagId => tags.find(tag => tag.tagId === tagId)?.name || tagId).join(', ')}
+                      </td>
+                      <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                        {new Date(fav.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
     </div>

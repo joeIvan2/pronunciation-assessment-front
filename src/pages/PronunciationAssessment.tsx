@@ -4,7 +4,7 @@ import "../styles/PronunciationAssessment.css";
 // 組件導入
 import ScoreBar from "../components/ScoreBar";
 import WordsDisplay from "../components/WordsDisplay";
-import TagManager from "../components/TagManager";
+// import TagManager from "../components/TagManager"; // 不再需要，標籤管理已整合到 FavoriteList
 import VoicePicker from "../components/VoicePicker";
 import FavoriteList from "../components/FavoriteList";
 import HistoryRecord from "../components/HistoryRecord";
@@ -47,8 +47,7 @@ const PronunciationAssessment: React.FC = () => {
   // 新增AI語音設置
   const [selectedAIVoice, setSelectedAIVoice] = useState<string>(() => storage.getAIVoice());
   
-  // 標籤系統
-  const [isTagExpanded, setIsTagExpanded] = useState<boolean>(() => storage.getCardExpandStates().tagManager);
+  // 標籤系統（標籤管理已整合到 FavoriteList 中）
   const [tags, setTags] = useState<Tag[]>(() => storage.getTags());
   const [nextTagId, setNextTagId] = useState<number>(() => storage.getNextTagId());
   const [tagsLoaded, setTagsLoaded] = useState<boolean>(false);
@@ -208,6 +207,28 @@ const PronunciationAssessment: React.FC = () => {
       })();
     }
   }, [tags, user, tagsLoaded]);
+
+  // 處理匯入數據的回調函數
+  const handleDataImported = (newTags: Tag[], newFavorites: Favorite[]) => {
+    setTags(newTags);
+    setFavorites(newFavorites);
+    setNextFavoriteId(storage.getNextFavoriteId(newFavorites));
+    
+    // 計算新的標籤ID
+    if (newTags.length > 0) {
+      const maxId = Math.max(...newTags.map(tag => parseInt(tag.tagId, 10) || 0), 0);
+      setNextTagId(maxId + 1);
+    }
+    
+    // 清除選擇的標籤
+    setSelectedTags([]);
+    
+    // 如果用戶已登入，標記為已載入以觸發雲端同步
+    if (user) {
+      setTagsLoaded(true);
+      setFavoritesLoaded(true);
+    }
+  };
 
   // 登入後載入使用者歷史記錄
   useEffect(() => {
@@ -652,12 +673,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  // 保存卡片展開狀態
-  const handleTagExpandToggle = () => {
-    const newState = !isTagExpanded;
-    setIsTagExpanded(newState);
-    storage.saveCardExpandState('tagManager', newState);
-  };
+  // 移除標籤展開狀態處理函數 - 標籤管理已整合到 FavoriteList
   
 
 
@@ -1473,12 +1489,7 @@ const PronunciationAssessment: React.FC = () => {
               >
                 發音歷史
               </button>
-              <button 
-                className={`tab-button ${bottomActiveTab === 'tags' ? 'active' : ''}`}
-                onClick={() => handleTabChange('tags')}
-              >
-                管理標籤
-              </button>
+              {/* 移除管理標籤按鈕 - 標籤管理已整合到我的最愛中 */}
               <button 
                 className={`tab-button ${bottomActiveTab === 'voices' ? 'active' : ''}`}
                 onClick={() => handleTabChange('voices')}
@@ -1500,7 +1511,7 @@ const PronunciationAssessment: React.FC = () => {
                   onToggleTagSelection={toggleTagSelection}
                   onClearTagSelection={clearTagSelection}
                   onAddFavorite={addToFavorites}
-                  onManageTags={() => handleTabChange('tags')}
+                  onManageTags={() => {}} // 不再需要跳轉到獨立的標籤管理頁面
                   currentText={referenceText}
                   lastAddedFavoriteId={lastAddedFavoriteId}
                   highlightedFavoriteId={highlightedFavoriteId}
@@ -1513,6 +1524,7 @@ const PronunciationAssessment: React.FC = () => {
                   onAddTag={addTag}
                   onEditTag={editTag}
                   onDeleteTag={deleteTag}
+                  onDataImported={handleDataImported}
                 />
               )}
               
@@ -1528,17 +1540,7 @@ const PronunciationAssessment: React.FC = () => {
                 />
               )}
               
-              {/* 標籤管理標籤頁 */}
-              {bottomActiveTab === 'tags' && (
-                <TagManager
-                  tags={tags}
-                  onAddTag={addTag}
-                  onEditTag={editTag}
-                  onDeleteTag={deleteTag}
-                  isExpanded={true} // 標籤頁模式下始終展開
-                  onToggleExpand={() => {}} // 標籤頁模式下不需要切換展開狀態
-                />
-              )}
+              {/* 移除標籤管理標籤頁 - 標籤管理已整合到我的最愛中 */}
               
               {/* 語音選擇標籤頁 */}
               {bottomActiveTab === 'voices' && (

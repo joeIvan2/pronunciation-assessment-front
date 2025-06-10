@@ -37,37 +37,45 @@ export const useFirebaseAuth = (): AuthResult => {
 
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      // 檢測是否是移動裝置或有 COOP 限制的環境
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+      // 所有設備都優先嘗試彈出視窗登入（回到原本的桌面處理方式）
+      console.log('嘗試彈出視窗登入');
       
-      // 在某些環境下直接使用重定向登入以避免 COOP 問題
-      if (isMobile || isFirefox) {
-        console.log('檢測到移動裝置或Firefox，使用重定向登入');
-        await signInWithRedirect(auth, googleProvider);
-        return;
-      }
-      
-      // 先嘗試彈出視窗登入
-      await signInWithPopup(auth, googleProvider);
-      console.log('彈出視窗登入成功');
-    } catch (error: any) {
-      console.warn('彈出視窗登入失敗，嘗試重定向登入:', error.message);
-      
-      // 如果彈出視窗失敗（如 COOP 錯誤），使用重定向登入
-      if (error.code === 'auth/popup-blocked' || 
-          error.code === 'auth/popup-closed-by-user' ||
-          error.message?.includes('Cross-Origin-Opener-Policy') ||
-          error.message?.includes('window.closed') ||
-          error.message?.includes('window.frames')) {
-        try {
+      try {
+        await signInWithPopup(auth, googleProvider);
+        console.log('彈出視窗登入成功');
+      } catch (popupError: any) {
+        console.warn('彈出視窗登入失敗，切換到重定向登入:', popupError.message);
+        
+        // 彈出視窗失敗時的處理
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/popup-closed-by-user' ||
+            popupError.code === 'auth/cancelled-popup-request' ||
+            popupError.message?.includes('Cross-Origin-Opener-Policy') ||
+            popupError.message?.includes('window.closed') ||
+            popupError.message?.includes('window.frames')) {
+          
           console.log('使用重定向登入作為備用方案');
           await signInWithRedirect(auth, googleProvider);
           console.log('重定向登入已啟動');
-        } catch (redirectError) {
-          console.error('重定向登入也失敗:', redirectError);
-          throw new Error(`登入失敗: ${redirectError instanceof Error ? redirectError.message : String(redirectError)}`);
+        } else {
+          throw popupError;
         }
+      }
+    } catch (error: any) {
+      console.error('Google 登入過程中發生錯誤:', error);
+      
+      // 統一的錯誤處理
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('彈出視窗被阻擋，請允許彈出視窗或稍後再試。');
+      } else if (error.code === 'auth/network-request-failed') {
+        throw new Error('網絡連接失敗，請檢查網絡連接後重試。');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('登入嘗試過於頻繁，請稍後再試。');
+      } else if (error.code === 'auth/user-disabled') {
+        throw new Error('此帳戶已被停用，請聯繫管理員。');
+      } else if (error.message?.includes('重定向登入失敗') || error.message?.includes('登入失敗：')) {
+        // 已經是格式化的錯誤信息，直接拋出
+        throw error;
       } else {
         throw new Error(`登入失敗: ${error.message || String(error)}`);
       }

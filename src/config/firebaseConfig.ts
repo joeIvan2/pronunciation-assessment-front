@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 // Firebase配置
 const firebaseConfig = {
@@ -39,6 +39,17 @@ googleProvider.addScope('email');
 
 // 初始化 Firestore，連接到 nicetone 資料庫
 export const db = getFirestore(app, 'nicetone');
+
+// 添加 Firestore 設置，改善連接穩定性
+try {
+  // 在開發環境中啟用詳細日誌記錄（僅用於調試）
+  if (process.env.NODE_ENV === 'development') {
+    // 可以啟用詳細日誌記錄
+    // 注意：這可能會在某些瀏覽器中與廣告攔截器衝突
+  }
+} catch (error) {
+  console.warn('Firestore 配置警告:', error);
+}
 
 // 初始化 Analytics（僅在生產環境）
 let analytics;
