@@ -232,7 +232,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     });
   };
   
-  // 使用 nicetone.ai 進行流式文本转语音（WebM格式直接播放）
+  // 使用 nicetone.ai 進行流式文本转语音（WebM格式直接播放，支持永久blob緩存和失敗重試）
   const speakWithAIServerStream = async (
     text: string,
     voice: string = DEFAULT_VOICE,
@@ -250,54 +250,92 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         audioRef.current = null;
       }
       
-      // 先檢查緩存
-      const cachedUrl = audioCache.get(text, voice, rate);
-      let audioUrl: string;
+      // 優先檢查永久blob緩存
+      let audioUrl: string | null = null;
+      let useRemoteTTS = false;
       let fileInfo = '';
       
-      if (cachedUrl) {
-        // 使用緩存的音頻
-        console.log(`[${getTimeStamp()}] 使用緩存音頻: ${cachedUrl}`);
-        audioUrl = cachedUrl;
-        fileInfo = '(緩存音頻)';
-      } else {
-        // 調用 nicetone.ai WebM API
+      // 首先嘗試使用永久blob緩存
+      if (audioCache.hasBlobCache(text, voice, rate)) {
+        audioUrl = audioCache.get(text, voice, rate);
+        if (audioUrl) {
+          console.log(`[${getTimeStamp()}] 使用永久blob緩存: ${audioUrl}`);
+          fileInfo = '(永久blob緩存)';
+        }
+      }
+      
+      // 如果沒有永久blob緩存，檢查普通緩存
+      if (!audioUrl) {
+        const cachedUrl = audioCache.get(text, voice, rate);
+        if (cachedUrl) {
+          console.log(`[${getTimeStamp()}] 使用臨時緩存音頻: ${cachedUrl}`);
+          audioUrl = cachedUrl;
+          fileInfo = '(臨時緩存音頻)';
+        }
+      }
+      
+      // 如果沒有任何緩存，調用遠端API
+      if (!audioUrl) {
         const apiStartTime = getPerformanceTime();
         console.log(`[${getTimeStamp()}] 發送 nicetone.ai WebM API 請求: ${voice}`);
         
-        const data = await generateSpeechWithNicetone(text, voice);
-        const apiEndTime = getPerformanceTime();
-        console.log(`[${getTimeStamp()}] nicetone.ai WebM API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
-        
-        if (!data.success || !data.audioUrl) {
-          throw new Error(data.error || "nicetone.ai WebM API 返回失敗");
+        try {
+          const data = await generateSpeechWithNicetone(text, voice);
+          const apiEndTime = getPerformanceTime();
+          console.log(`[${getTimeStamp()}] nicetone.ai WebM API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
+          
+          if (!data.success || !data.audioUrl) {
+            throw new Error(data.error || "nicetone.ai WebM API 返回失敗");
+          }
+          
+          // 獲取blob數據並設置為永久緩存
+          try {
+            const response = await fetch(data.audioUrl);
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const blob = await response.blob();
+            
+            // 設置永久blob緩存
+            audioUrl = await audioCache.setBlobPermanent(text, voice, blob, rate);
+            fileInfo = `大小=${data.size} bytes, 類型=${data.type} (已設為永久blob緩存)`;
+            
+            console.log(`[${getTimeStamp()}] WebM音頻blob永久緩存設置成功: ${audioUrl}`);
+            console.log(`[${getTimeStamp()}] WebM文件信息: ${fileInfo}`);
+          } catch (blobError) {
+            console.warn(`[${getTimeStamp()}] 設置永久blob緩存失敗，使用臨時URL:`, blobError);
+            
+            // 如果blob緩存失敗，使用普通緩存
+            audioUrl = data.audioUrl;
+            fileInfo = `大小=${data.size} bytes, 類型=${data.type} (臨時緩存)`;
+            audioCache.set(text, voice, audioUrl, rate);
+            useRemoteTTS = true;
+          }
+        } catch (apiError) {
+          console.error(`[${getTimeStamp()}] nicetone.ai WebM API 調用失敗:`, apiError);
+          throw apiError;
         }
-        
-        audioUrl = data.audioUrl;
-        fileInfo = `大小=${data.size} bytes, 類型=${data.type}`;
-        
-        // 緩存音頻 URL（1天）
-        audioCache.set(text, voice, audioUrl, rate);
-        
-        console.log(`[${getTimeStamp()}] WebM音頻blob URL創建成功，開始播放: ${audioUrl}`);
-        console.log(`[${getTimeStamp()}] WebM文件信息: ${fileInfo}`);
       }
       
-      // 創建 Audio 元素，使用blob URL進行播放
+      if (!audioUrl) {
+        throw new Error("無法獲取音頻URL");
+      }
+      
+      // 創建 Audio 元素進行播放
       const audioCreateTime = getPerformanceTime();
       const audio = new Audio();
       audioRef.current = audio;
       
-      // 使用已獲取的 audioUrl，實現快速播放
       audio.src = audioUrl;
       audio.preload = "auto";
       audio.playbackRate = 1.0;
       
-      // 設置播放事件 - 儘快開始播放
+      // 設置播放事件和錯誤處理
       let hasStartedPlaying = false;
+      let playbackFailed = false;
       
       const tryToPlay = async () => {
-        if (hasStartedPlaying) return;
+        if (hasStartedPlaying || playbackFailed) return;
         try {
           await audio.play();
           hasStartedPlaying = true;
@@ -306,6 +344,38 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           console.log(`[${getTimeStamp()}] WebM播放開始 (總耗時: ${formatDuration(totalTime)})`);
         } catch (playError) {
           console.warn(`[${getTimeStamp()}] WebM播放嘗試失敗:`, playError);
+          
+          // 如果blob播放失敗且不是遠端TTS，嘗試使用遠端TTS
+          if (!useRemoteTTS && !playbackFailed) {
+            playbackFailed = true;
+            console.log(`[${getTimeStamp()}] blob播放失敗，嘗試使用遠端TTS重試`);
+            
+            try {
+              // 重新調用API獲取遠端URL
+              const fallbackData = await generateSpeechWithNicetone(text, voice);
+              if (fallbackData.success && fallbackData.audioUrl) {
+                console.log(`[${getTimeStamp()}] 遠端TTS重試成功，切換音頻源`);
+                
+                // 更新音頻源為遠端URL
+                audio.src = fallbackData.audioUrl;
+                
+                // 設置臨時緩存
+                audioCache.set(text, voice, fallbackData.audioUrl, rate);
+                
+                // 重新嘗試播放
+                await audio.play();
+                hasStartedPlaying = true;
+                const retryPlayTime = getPerformanceTime();
+                const retryTotalTime = retryPlayTime - startTime;
+                console.log(`[${getTimeStamp()}] 遠端TTS重試播放成功 (總耗時: ${formatDuration(retryTotalTime)})`);
+              } else {
+                throw new Error("遠端TTS重試也失敗");
+              }
+            } catch (retryError) {
+              console.error(`[${getTimeStamp()}] 遠端TTS重試失敗:`, retryError);
+              throw retryError;
+            }
+          }
         }
       };
       
@@ -314,6 +384,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
         console.log(`[${getTimeStamp()}] WebM音頻數據載入完成`);
         tryToPlay();
       };
+      
       audio.oncanplay = () => {
         console.log(`[${getTimeStamp()}] WebM音頻可以開始播放`);
         tryToPlay();
@@ -322,20 +393,25 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       audio.onended = () => {
         const endTime = getPerformanceTime();
         const totalTime = endTime - startTime;
-        console.log(`[${getTimeStamp()}] WebM播放完成 (總耗時: ${formatDuration(totalTime)}) - 音頻已緩存1天`);
+        console.log(`[${getTimeStamp()}] WebM播放完成 (總耗時: ${formatDuration(totalTime)}) - ${fileInfo}`);
         
-        // 不再立即清理 blob URL，而是讓緩存系統在1天後自動清理
         audioRef.current = null;
       };
       
       audio.onerror = (error) => {
         console.error(`[${getTimeStamp()}] WebM音頻播放錯誤:`, error);
         
-        setState(prev => ({ 
-          ...prev, 
-          error: `WebM音頻播放失敗: ${error}`,
-          isLoading: false 
-        }));
+        // 如果是blob URL出錯且不是遠端TTS，嘗試遠端TTS
+        if (!useRemoteTTS && !playbackFailed) {
+          console.log(`[${getTimeStamp()}] blob音頻出錯，嘗試遠端TTS`);
+          tryToPlay(); // 這會觸發遠端TTS重試邏輯
+        } else {
+          setState(prev => ({ 
+            ...prev, 
+            error: `WebM音頻播放失敗: ${error}`,
+            isLoading: false 
+          }));
+        }
       };
       
       // 立即開始加載WebM音頻
