@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface SEOContentProps {
   shareData?: {
@@ -14,6 +14,68 @@ interface SEOContentProps {
 }
 
 const SEOContent: React.FC<SEOContentProps> = ({ shareData, shareId }) => {
+  useEffect(() => {
+    if (shareData && shareId) {
+      // 生成動態的 meta description
+      const firstFiveSentences = shareData.favorites.slice(0, 5).map(f => f.text);
+      const description = `這是關於${shareId}的句子集合，裡面共有${shareData.favorites.length}個句子可以幫助練習英文，分別是：${firstFiveSentences.join('、')}`;
+      
+      // 更新 meta description
+      let metaDescription = document.querySelector('meta[name="description"]');
+      if (!metaDescription) {
+        metaDescription = document.createElement('meta');
+        metaDescription.setAttribute('name', 'description');
+        document.head.appendChild(metaDescription);
+      }
+      metaDescription.setAttribute('content', description);
+      
+      // 更新 title
+      const title = shareData.metadata?.title || `英語發音學習分享 - ${shareId}`;
+      document.title = title;
+      
+      // 更新 og:description
+      let ogDescription = document.querySelector('meta[property="og:description"]');
+      if (!ogDescription) {
+        ogDescription = document.createElement('meta');
+        ogDescription.setAttribute('property', 'og:description');
+        document.head.appendChild(ogDescription);
+      }
+      ogDescription.setAttribute('content', description);
+      
+      // 更新 og:title
+      let ogTitle = document.querySelector('meta[property="og:title"]');
+      if (!ogTitle) {
+        ogTitle = document.createElement('meta');
+        ogTitle.setAttribute('property', 'og:title');
+        document.head.appendChild(ogTitle);
+      }
+      ogTitle.setAttribute('content', title);
+    }
+    
+    // 清理函數：當組件卸載時恢復默認的 meta 標籤
+    return () => {
+      const defaultDescription = "AI 驅動的英語發音評估工具，幫助您改善英語發音和口語表達能力";
+      const defaultTitle = "英語發音評估工具 - AI 智能發音練習";
+      
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute('content', defaultDescription);
+      }
+      
+      document.title = defaultTitle;
+      
+      const ogDescription = document.querySelector('meta[property="og:description"]');
+      if (ogDescription) {
+        ogDescription.setAttribute('content', defaultDescription);
+      }
+      
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) {
+        ogTitle.setAttribute('content', defaultTitle);
+      }
+    };
+  }, [shareData, shareId]);
+
   if (!shareData || !shareId) return null;
 
   return (
@@ -30,7 +92,10 @@ const SEOContent: React.FC<SEOContentProps> = ({ shareData, shareId }) => {
       
       <meta itemProp="description" content={
         shareData.metadata?.description || 
-        `包含 ${shareData.favorites.length} 個學習句子和 ${shareData.tags.length} 個標籤的英語發音學習內容分享`
+        (() => {
+          const firstFiveSentences = shareData.favorites.slice(0, 5).map(f => f.text);
+          return `這是關於${shareId}的句子集合，裡面共有${shareData.favorites.length}個句子可以幫助練習英文，分別是：${firstFiveSentences.join('、')}`;
+        })()
       } />
       
       <meta itemProp="dateCreated" content={
@@ -79,7 +144,10 @@ const SEOContent: React.FC<SEOContentProps> = ({ shareData, shareId }) => {
           "@type": "EducationalContent",
           "name": shareData.metadata?.title || `英語發音學習分享 - ${shareId}`,
           "description": shareData.metadata?.description || 
-            `包含 ${shareData.favorites.length} 個學習句子和 ${shareData.tags.length} 個標籤的英語發音學習內容分享`,
+            (() => {
+              const firstFiveSentences = shareData.favorites.slice(0, 5).map(f => f.text);
+              return `這是關於${shareId}的句子集合，裡面共有${shareData.favorites.length}個句子可以幫助練習英文，分別是：${firstFiveSentences.join('、')}`;
+            })(),
           "dateCreated": shareData.metadata?.createdAt ? 
             new Date(shareData.metadata.createdAt).toISOString() : 
             new Date().toISOString(),

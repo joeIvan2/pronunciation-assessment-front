@@ -1255,6 +1255,7 @@ h4 {
     position: static;
     transform: none;
     margin-top: 8px;
+    margin-bottom: 16px;
     justify-content: center;
   }
   

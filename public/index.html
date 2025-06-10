@@ -69,20 +69,41 @@
       // 為所有用戶（包括搜索引擎）提供相同的SEO增強內容
       (function() {
         const hasHashParam = window.location.search.includes('hash=');
+        const isPracticePage = window.location.pathname.startsWith('/practice/');
+        
+        let hashId = null;
         
         if (hasHashParam) {
           const urlParams = new URLSearchParams(window.location.search);
-          const hashId = urlParams.get('hash');
+          hashId = urlParams.get('hash');
+        } else if (isPracticePage) {
+          // 從路徑中提取 hash ID
+          const pathParts = window.location.pathname.split('/');
+          if (pathParts.length >= 3) {
+            hashId = decodeURIComponent(pathParts[2]);
+          }
+        }
+        
+        if (hashId) {
+          // 為所有用戶更新頁面標題（不區分bot）
+          document.title = `英語發音練習集 (${hashId}) - NiceTone`;
           
-          if (hashId) {
-            // 為所有用戶更新頁面標題（不區分bot）
-            document.title = `英語發音練習集 (${hashId}) - NiceTone`;
-            
-            // 更新meta描述
-            const metaDesc = document.querySelector('meta[name="description"]');
-            if (metaDesc) {
-              metaDesc.content = `這個英語發音練習集 (${hashId}) 包含多個英語句子，使用AI技術進行發音評估，幫助您提升英語口語能力。`;
-            }
+          // 更新meta描述 - 使用通用描述，因為無法在此階段獲取實際句子內容
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc) {
+            metaDesc.content = `這是關於「${hashId}」的英語句子集合，包含多個精選句子可以幫助練習英文發音。使用AI技術進行發音評估，提供即時反饋和改進建議。`;
+          }
+          
+          // 更新 Open Graph meta 標籤
+          const ogTitle = document.querySelector('meta[property="og:title"]');
+          if (ogTitle) {
+            ogTitle.content = `英語發音練習集 (${hashId}) - NiceTone`;
+          }
+          
+          const ogDesc = document.querySelector('meta[property="og:description"]');
+          if (ogDesc) {
+            ogDesc.content = `這是關於「${hashId}」的英語句子集合，包含多個精選句子可以幫助練習英文發音。使用AI技術進行發音評估，提供即時反饋和改進建議。`;
+          }
             
             // 添加SEO內容（對所有用戶可見，但樣式隱藏）
             const seoContent = document.createElement('div');
