@@ -23,6 +23,7 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 
 // 工具導入
 import * as storage from "../utils/storage";
+import { seoOptimizer } from "../utils/seoOptimizer";
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
@@ -821,6 +822,22 @@ const PronunciationAssessment: React.FC = () => {
           
           if (result.success && result.data) {
             setShareImportData(result.data);
+            
+            // 為分享頁面設置SEO優化
+            if (result.data.favorites && result.data.tags) {
+              seoOptimizer.optimizeForSharePage(
+                result.data.favorites,
+                result.data.tags,
+                hash
+              );
+              
+              // 預載入內容供搜索引擎抓取
+              seoOptimizer.preloadContentForCrawlers(
+                result.data.favorites,
+                result.data.tags
+              );
+            }
+            
             // 每次都顯示分享導入 modal
             setShowShareImportModal(true);
           } else {
@@ -837,6 +854,26 @@ const PronunciationAssessment: React.FC = () => {
       loadSharePreview();
     }
   }, []); // 只在組件首次載入時執行
+
+  // 監聽URL變化，如果不再有hash參數則重置SEO
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = urlParams.get('hash');
+      
+      if (!hash) {
+        // 沒有hash參數時重置SEO為默認設置
+        seoOptimizer.resetToDefault();
+      }
+    };
+
+    // 監聽瀏覽器前進後退
+    window.addEventListener('popstate', handleUrlChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
 
   // 統一的開始評估入口 - 更新以支持streaming
   const startAssessment = async () => {

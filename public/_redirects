@@ -1,0 +1,8 @@
+# Netlify 重定向規則，用於SEO優化
+
+# 處理帶有hash參數的請求，用於搜索引擎爬蟲
+# 將帶有hash參數的請求重定向到預渲染頁面
+/?hash=:hash  /prerender/:hash  200  Country=!country
+
+# SPA 路由規則 - 必須放在最後
+/*    /index.html   200 
