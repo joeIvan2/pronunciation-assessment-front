@@ -48,14 +48,22 @@ export const saveReferenceText = (text: string): void => {
   setItem('referenceText', text);
 };
 
-// 获取字体大小
+// 获取字体大小（不受登入狀態限制）
 export const getFontSize = (): number => {
-  return getItem<number>('fontSize', 16);
+  const item = localStorage.getItem('fontSize');
+  if (item === null) {
+    return 16; // 預設值
+  }
+  try {
+    return JSON.parse(item) as number;
+  } catch {
+    return 16;
+  }
 };
 
-// 保存字体大小
+// 保存字体大小（不受登入狀態限制）
 export const saveFontSize = (size: number) => {
-  setItem('fontSize', size.toString());
+  localStorage.setItem('fontSize', JSON.stringify(size));
 };
 
 // 获取textarea高度
@@ -91,22 +99,32 @@ export const saveAzureSettings = (key: string, region: string): void => {
   setItem('azureRegion', region);
 };
 
-// 获取语音设置
+// 获取语音设置（不受登入狀態限制）
 export const getVoiceSettings = (): { 
   searchTerm: string; 
   rate: number;
   voiceName?: string;
   voiceLang?: string;
 } => {
+  const getLocalItem = (key: string, defaultValue: any) => {
+    const item = localStorage.getItem(key);
+    if (item === null) return defaultValue;
+    try {
+      return JSON.parse(item);
+    } catch {
+      return item; // 如果解析失敗，返回字串
+    }
+  };
+
   return {
-    searchTerm: getItem<string>('voiceSearchTerm', 'english'),
-    rate: getItem<number>('speechRate', 1.0),
-    voiceName: getItem<string>('selectedVoiceName', ''),
-    voiceLang: getItem<string>('selectedVoiceLang', '')
+    searchTerm: getLocalItem('voiceSearchTerm', 'english'),
+    rate: getLocalItem('speechRate', 1.0),
+    voiceName: getLocalItem('selectedVoiceName', ''),
+    voiceLang: getLocalItem('selectedVoiceLang', '')
   };
 };
 
-// 保存语音设置
+// 保存语音设置（不受登入狀態限制）
 export const saveVoiceSettings = (
   settings: { 
     searchTerm?: string; 
@@ -116,16 +134,16 @@ export const saveVoiceSettings = (
   }
 ): void => {
   if (settings.searchTerm !== undefined) {
-    setItem('voiceSearchTerm', settings.searchTerm);
+    localStorage.setItem('voiceSearchTerm', JSON.stringify(settings.searchTerm));
   }
   if (settings.rate !== undefined) {
-    setItem('speechRate', settings.rate);
+    localStorage.setItem('speechRate', JSON.stringify(settings.rate));
   }
   if (settings.voiceName !== undefined) {
-    setItem('selectedVoiceName', settings.voiceName);
+    localStorage.setItem('selectedVoiceName', JSON.stringify(settings.voiceName));
   }
   if (settings.voiceLang !== undefined) {
-    setItem('selectedVoiceLang', settings.voiceLang);
+    localStorage.setItem('selectedVoiceLang', JSON.stringify(settings.voiceLang));
   }
 };
 
@@ -651,14 +669,22 @@ export const deleteShareInfo = (hash: string): void => {
   setItem('savedShareInfo', updatedInfos);
 };
 
-// 获取AI语音设置
+// 获取AI语音设置（不受登入狀態限制）
 export const getAIVoice = (): string => {
-  return getItem<string>('selectedAIVoice', DEFAULT_VOICE);
+  const item = localStorage.getItem('selectedAIVoice');
+  if (item === null) {
+    return DEFAULT_VOICE; // 預設值
+  }
+  try {
+    return JSON.parse(item) as string;
+  } catch {
+    return item; // 如果解析失敗，返回字串
+  }
 };
 
-// 保存AI语音设置
+// 保存AI语音设置（不受登入狀態限制）
 export const saveAIVoice = (voice: string): void => {
-  setItem('selectedAIVoice', voice);
+  localStorage.setItem('selectedAIVoice', JSON.stringify(voice));
 };
 
 // TTS缓存相关类型和函数

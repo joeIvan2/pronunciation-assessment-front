@@ -329,13 +329,14 @@ export const saveUserTags = async (
   }
 };
 
-// 讀取使用者個人資料（包含分享歷史）
+// 讀取使用者個人資料（包含分享歷史和歷史記錄）
 export const loadUserProfile = async (uid: string): Promise<{
   displayName?: string;
   email?: string;
   tokens?: number;
   shareHistory?: Array<{ shareId: string; editPassword: string; createdAt: any }>;
   preferences?: Record<string, any>;
+  historyRecords?: Array<any>;
 } | null> => {
   if (!uid) return null;
 
@@ -379,12 +380,12 @@ export const saveShareToUserHistory = async (
       const userDoc = await getDoc(userDocRef);
       const existingData = userDoc.exists() ? userDoc.data() : {};
       
-      // 更新分享歷史
+      // 更新分享歷史 - 使用當前時間戳而不是 serverTimestamp()
       const shareHistory = existingData.shareHistory || [];
       shareHistory.push({
         shareId,
         editPassword,
-        createdAt: serverTimestamp()
+        createdAt: Date.now()  // 改用 Date.now() 而不是 serverTimestamp()
       });
       
       // 儲存更新後的資料
@@ -423,6 +424,33 @@ export const saveUserPreferences = async (
     console.log('使用者偏好設定已儲存');
   } catch (error) {
     console.error('儲存偏好設定失敗:', error);
+    throw new Error(`儲存失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+  }
+};
+
+
+
+// 儲存使用者歷史記錄
+export const saveUserHistoryRecords = async (
+  uid: string,
+  historyRecords: Array<any>
+): Promise<void> => {
+  if (!uid) return;
+
+  try {
+    await checkNetworkConnection();
+    
+    await retryOperation(async () => {
+      const userDocRef = doc(db, 'users', uid);
+      await setDoc(userDocRef, {
+        historyRecords,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    });
+
+    console.log('使用者歷史記錄已儲存');
+  } catch (error) {
+    console.error('儲存使用者歷史記錄失敗:', error);
     throw new Error(`儲存失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
   }
 };

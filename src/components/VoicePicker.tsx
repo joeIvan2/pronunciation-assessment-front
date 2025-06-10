@@ -3,8 +3,6 @@ import '../styles/VoicePicker.css';
 import { getVoiceOptions, SPEED_RANGE } from '../config/voiceConfig';
 
 interface VoicePickerProps {
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   rate: number;
   onRateChange: (rate: number) => void;
   selectedAIVoice: string;
@@ -12,8 +10,6 @@ interface VoicePickerProps {
 }
 
 const VoicePicker: React.FC<VoicePickerProps> = ({
-  isExpanded,
-  onToggleExpand,
   rate,
   onRateChange,
   selectedAIVoice,
@@ -28,16 +24,11 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
   
   return (
     <div className="voice-picker-container card-section">
-      <h3 
-        className="card-header collapsible" 
-        onClick={onToggleExpand}
-      >
+      <h3 className="card-header">
         AI語音設置
-        <span className={`expand-icon ${isExpanded ? 'expanded' : ''}`}>▼</span>
       </h3>
       
-      {isExpanded && (
-        <div className="voice-picker-content">
+      <div className="voice-picker-content">
           {/* 模式說明 */}
           <div className="voice-mode-info ai-mode">
             <p className="mode-info-text">使用AI合成語音進行朗讀</p>
@@ -71,7 +62,6 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
               ))}
             </div>
         </div>
-      )}
     </div>
   );
 };

@@ -12,6 +12,8 @@ import AIDataProcessor from "../components/AIDataProcessor";
 import ShareData from "../components/ShareData";
 import ResizableTextarea from "../components/ResizableTextarea";
 import LoginModal from "../components/LoginModal";
+import ShareImportModal from "../components/ShareImportModal";
+import SEOContent from "../components/SEOContent";
 
 // 鉤子導入
 import { useRecorder } from "../hooks/useRecorder";
@@ -41,7 +43,6 @@ const PronunciationAssessment: React.FC = () => {
   const [showAzureSettings, setShowAzureSettings] = useState<boolean>(false);
   
   // 語音設置
-  const [isVoiceExpanded, setIsVoiceExpanded] = useState<boolean>(() => storage.getCardExpandStates().voicePicker);
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
   // 新增AI語音設置
   const [selectedAIVoice, setSelectedAIVoice] = useState<string>(() => storage.getAIVoice());
@@ -118,6 +119,12 @@ const PronunciationAssessment: React.FC = () => {
   const [loginModalMessage, setLoginModalMessage] = useState<string>('');
   const [loginModalAction, setLoginModalAction] = useState<string>('此功能');
 
+  // 分享導入 Modal 相關狀態
+  const [showShareImportModal, setShowShareImportModal] = useState<boolean>(false);
+  const [shareImportId, setShareImportId] = useState<string>('');
+  const [shareImportData, setShareImportData] = useState<any>(null);
+  const [shareImportLoading, setShareImportLoading] = useState<boolean>(false);
+
   // 登入後載入 Firestore 收藏並在更新時同步
   useEffect(() => {
     if (user) {
@@ -181,6 +188,7 @@ const PronunciationAssessment: React.FC = () => {
           await saveUserFavorites(user.uid, favorites);
         } catch (err) {
           console.error('保存使用者收藏失敗:', err);
+          // 不要拋出錯誤，只記錄
         }
       })();
     }
@@ -195,11 +203,66 @@ const PronunciationAssessment: React.FC = () => {
           await saveUserTags(user.uid, tags);
         } catch (err) {
           console.error('保存使用者標籤失敗:', err);
+          // 不要拋出錯誤，只記錄
         }
       })();
     }
   }, [tags, user, tagsLoaded]);
-  
+
+  // 登入後載入使用者歷史記錄
+  useEffect(() => {
+    if (user) {
+      (async () => {
+        try {
+          const { loadUserProfile } = await import('../utils/firebaseStorage');
+          const profile = await loadUserProfile(user.uid);
+          
+          // 只載入歷史記錄，字型、語音設定改為使用 localStorage
+          if (profile?.historyRecords) {
+            setHistoryRecords(profile.historyRecords);
+          }
+          
+          console.log('使用者歷史記錄載入成功');
+        } catch (err) {
+          console.error('載入使用者歷史記錄失敗:', err);
+        }
+      })();
+    }
+  }, [user]);
+
+  // 字型大小變更時儲存到 localStorage
+  useEffect(() => {
+    storage.saveFontSize(fontSize);
+  }, [fontSize]);
+
+  // 語音設定變更時儲存到 localStorage
+  useEffect(() => {
+    storage.saveVoiceSettings(voiceSettings);
+  }, [voiceSettings]);
+
+  // AI語音選擇變更時儲存到 localStorage
+  useEffect(() => {
+    storage.saveAIVoice(selectedAIVoice);
+  }, [selectedAIVoice]);
+
+  // 暫時禁用歷史記錄同步以避免 Firestore 錯誤
+  // useEffect(() => {
+  //   if (!user) return;
+
+  //   const timeoutId = setTimeout(async () => {
+  //     try {
+  //       const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
+  //       await saveUserHistoryRecords(user.uid, historyRecords);
+  //       console.log('歷史記錄已同步');
+  //     } catch (err) {
+  //       console.error('保存歷史記錄失敗:', err);
+  //       // 不要拋出錯誤，只記錄
+  //     }
+  //   }, 1000); // 1秒防抖，因為歷史記錄更新較少
+
+  //   return () => clearTimeout(timeoutId);
+  // }, [historyRecords, user]);
+
   // 新增streaming相關狀態和refs
   const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);
   
@@ -596,11 +659,7 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveCardExpandState('tagManager', newState);
   };
   
-  const handleVoiceExpandToggle = () => {
-    const newState = !isVoiceExpanded;
-    setIsVoiceExpanded(newState);
-    storage.saveCardExpandState('voicePicker', newState);
-  };
+
 
   // 歷史記錄相關函數
   const handleDeleteHistoryRecord = (id: string) => {
@@ -727,65 +786,39 @@ const PronunciationAssessment: React.FC = () => {
   }, [aiResponse]);
 
   // 檢查URL參數並自動加載分享數據
+  // 檢查URL hash參數，用於顯示分享導入 modal
   useEffect(() => {
-    // 檢查URL中是否有hash參數
     const urlParams = new URLSearchParams(window.location.search);
     const hash = urlParams.get('hash');
     
-    if (hash) {
-      // 檢查是否已經處理過這個hash，避免重複處理
-      const processedHash = sessionStorage.getItem('processedHash');
-      if (processedHash === hash) {
-        return; // 已經處理過，跳過
-      }
+    if (hash && hash.trim() !== '') {
+      console.log('檢測到分享hash:', hash);
       
-      // 標記為已處理
-      sessionStorage.setItem('processedHash', hash);
+      // 設置分享導入數據
+      setShareImportId(hash);
       
-      // 顯示正在加載的提示
-      setIsLoading(true);
-      setError(null);
-      
-      // 嘗試加載分享數據
-      const loadSharedData = async () => {
+      // 預載入分享數據用於預覽
+      const loadSharePreview = async () => {
         try {
-          // 加載數據
+          setShareImportLoading(true);
           const result = await storage.loadFromHash(hash);
           
           if (result.success && result.data) {
-            // 應用加載的數據
-            storage.applyLoadedData(result.data);
-            
-            // 更新本地狀態
-            setTags(result.data.tags);
-            setFavorites(result.data.favorites);
-            
-            // 切換到favorites標籤
-            setBottomActiveTab('favorites');
-            
-            // 顯示成功消息
-            alert('分享數據已成功導入！');
-            
-            // 從URL中移除hash參數
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
-            
-            // 清除已處理標記
-            sessionStorage.removeItem('processedHash');
+            setShareImportData(result.data);
+            // 每次都顯示分享導入 modal
+            setShowShareImportModal(true);
           } else {
-            setError(`無法加載分享數據: ${result.error || '未知錯誤'}`);
-            sessionStorage.removeItem('processedHash');
+            setError(`無法載入分享數據: ${result.error || '未知錯誤'}`);
           }
         } catch (err) {
-          console.error('加載分享數據出錯:', err);
-          setError(`加載分享數據失敗: ${err instanceof Error ? err.message : String(err)}`);
-          sessionStorage.removeItem('processedHash');
+          console.error('載入分享數據出錯:', err);
+          setError(`載入分享數據失敗: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
-          setIsLoading(false);
+          setShareImportLoading(false);
         }
       };
       
-      loadSharedData();
+      loadSharePreview();
     }
   }, []); // 只在組件首次載入時執行
 
@@ -988,6 +1021,173 @@ const PronunciationAssessment: React.FC = () => {
     setSelectedAIVoice(voice);
     // 可以考慮存儲到localStorage
     storage.saveAIVoice(voice);
+  };
+
+  // 分享導入 modal 處理函數
+  const handleShareImportModalClose = () => {
+    setShowShareImportModal(false);
+    setShareImportData(null);
+    setShareImportId('');
+    // 從URL中移除hash參數
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+  };
+
+  const handleDirectImport = async () => {
+    if (!shareImportData) return;
+    
+    try {
+      setShareImportLoading(true);
+      
+      // 將分享的句子加入到本地最愛（使用相同的邏輯）
+      if (shareImportData.favorites) {
+        const shareTexts = shareImportData.favorites.map(fav => fav.text);
+        
+        // 過濾出需要添加的文本
+        const textsToAdd = shareTexts.filter(text => {
+          if (!text || !text.trim()) return false;
+          const trimmedText = text.trim();
+          return !favorites.find(fav => fav.text.trim() === trimmedText);
+        });
+        
+        if (textsToAdd.length === 0) {
+          alert('所有句子都已經在您的收藏中了！');
+          setShowShareImportModal(false);
+          handleShareImportModalClose();
+          return;
+        }
+        
+        // 批量創建新的收藏項目
+        const newFavorites: Favorite[] = [];
+        let currentNextId = storage.getNextFavoriteId(favorites);
+        
+        for (let i = 0; i < textsToAdd.length; i++) {
+          const trimmedText = textsToAdd[i].trim();
+          const newId = currentNextId.toString();
+          const newFavorite = {
+            id: newId,
+            text: trimmedText,
+            tagIds: [], // 不指定標籤
+            createdAt: Date.now() + i
+          };
+          
+          newFavorites.push(newFavorite);
+          currentNextId++;
+        }
+        
+        // 一次性更新狀態
+        const updatedFavorites = [...newFavorites, ...favorites];
+        setFavorites(updatedFavorites);
+        setNextFavoriteId(currentNextId);
+        
+        // 保存到 localStorage
+        storage.saveFavorites(updatedFavorites);
+        storage.saveNextFavoriteId(currentNextId);
+        
+        // 切換到favorites標籤
+        setBottomActiveTab('favorites');
+        
+        // 關閉 modal
+        setShowShareImportModal(false);
+        
+        // 顯示成功訊息
+        alert(`已成功將 ${newFavorites.length} 個句子加入本地收藏！`);
+        
+        // 清理狀態
+        handleShareImportModalClose();
+      }
+    } catch (err) {
+      console.error('直接導入失敗:', err);
+      setError(`導入失敗: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setShareImportLoading(false);
+    }
+  };
+
+  const handleLoginAndImport = async () => {
+    try {
+      setShareImportLoading(true);
+      
+      // 檢查是否已經登入
+      if (user) {
+        // 已經登入，直接導入句子
+        await handleImportToFavorites();
+      } else {
+        // 需要登入
+        try {
+          await signInWithGoogle();
+          // 等待一下確保登入狀態更新
+          await new Promise(resolve => setTimeout(resolve, 500));
+          // 登入成功後導入句子
+          await handleImportToFavorites();
+        } catch (authError) {
+          console.error('登入失敗:', authError);
+          setError(`登入失敗: ${authError instanceof Error ? authError.message : String(authError)}`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('登入並導入失敗:', err);
+      setError(`登入並導入失敗: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setShareImportLoading(false);
+    }
+  };
+
+  // 輔助函數：將分享的句子導入到我的最愛
+  const handleImportToFavorites = async () => {
+    if (shareImportData && shareImportData.favorites) {
+      const shareTexts = shareImportData.favorites.map(fav => fav.text);
+      
+      // 過濾出需要添加的文本
+      const textsToAdd = shareTexts.filter(text => {
+        if (!text || !text.trim()) return false;
+        const trimmedText = text.trim();
+        return !favorites.find(fav => fav.text.trim() === trimmedText);
+      });
+      
+      if (textsToAdd.length === 0) {
+        alert('所有句子都已經在您的收藏中了！');
+        setShowShareImportModal(false);
+        handleShareImportModalClose();
+        return;
+      }
+      
+      // 批量創建新的收藏項目
+      const newFavorites: Favorite[] = [];
+      let currentNextId = storage.getNextFavoriteId(favorites);
+      
+      for (let i = 0; i < textsToAdd.length; i++) {
+        const trimmedText = textsToAdd[i].trim();
+        const newId = currentNextId.toString();
+        const newFavorite = {
+          id: newId,
+          text: trimmedText,
+          tagIds: [], // 不指定標籤
+          createdAt: Date.now() + i
+        };
+        
+        newFavorites.push(newFavorite);
+        currentNextId++;
+      }
+      
+      // 一次性更新狀態
+      const updatedFavorites = [...newFavorites, ...favorites];
+      setFavorites(updatedFavorites);
+      setNextFavoriteId(currentNextId);
+      
+      // 切換到favorites標籤
+      setBottomActiveTab('favorites');
+      
+      // 關閉 modal
+      setShowShareImportModal(false);
+      
+      // 顯示成功訊息
+      alert(`已成功將 ${newFavorites.length} 個句子加入我的最愛！`);
+      
+      // 清理狀態
+      handleShareImportModalClose();
+    }
   };
 
   // JSX 渲染部分
@@ -1345,8 +1545,6 @@ const PronunciationAssessment: React.FC = () => {
               {/* 語音選擇標籤頁 */}
               {bottomActiveTab === 'voices' && (
                 <VoicePicker 
-                  isExpanded={isVoiceExpanded}
-                  onToggleExpand={handleVoiceExpandToggle}
                   rate={voiceSettings.rate}
                   onRateChange={handleSpeechRateChange}
                   selectedAIVoice={selectedAIVoice}
@@ -1509,6 +1707,30 @@ const PronunciationAssessment: React.FC = () => {
           onLogin={handleLoginFromModal}
           message={loginModalMessage}
           actionName={loginModalAction}
+        />
+
+        {/* 分享導入 Modal */}
+        <ShareImportModal
+          isOpen={showShareImportModal}
+          onClose={handleShareImportModalClose}
+          onDirectImport={handleDirectImport}
+          onLoginAndImport={handleLoginAndImport}
+          isLoading={shareImportLoading}
+          shareId={shareImportId}
+          previewData={shareImportData ? {
+            favorites: shareImportData.favorites || [],
+            tags: shareImportData.tags || []
+          } : undefined}
+        />
+
+        {/* SEO 內容 */}
+        <SEOContent
+          shareData={shareImportData ? {
+            favorites: shareImportData.favorites || [],
+            tags: shareImportData.tags || [],
+            metadata: shareImportData.metadata
+          } : undefined}
+          shareId={shareImportId}
         />
       </div>
     </div>
