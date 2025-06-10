@@ -1510,6 +1510,9 @@ const PronunciationAssessment: React.FC = () => {
                     setLoginModalMessage(message || '');
                     setShowLoginModal(true);
                   }}
+                  onAddTag={addTag}
+                  onEditTag={editTag}
+                  onDeleteTag={deleteTag}
                 />
               )}
               
