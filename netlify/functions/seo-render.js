@@ -30,11 +30,13 @@ function generateSEOHTML(shareData, hashId, baseUrl) {
   const sentences = favorites
     .map(fav => fav.text)
     .filter(text => text && text.length > 0)
+
     .slice(0, DISPLAY_LIMIT);
   const tagNames = tags
     .map(tag => tag.name)
     .filter(name => name)
     .slice(0, DISPLAY_LIMIT);
+
   
   // 生成標題和描述
   const title = sentences.length > 0
