@@ -1368,13 +1368,18 @@ const PronunciationAssessment: React.FC = () => {
   return (
     <div className="pa-container">
       <div className="pa-title">
-        <img 
-          src="/nicetone.webp" 
-          alt="NiceTone" 
-          className="pa-title-logo" 
-          onClick={() => setShowAzureSettings(true)}
-          style={{ cursor: 'pointer' }}
-        />
+        <div className="logo-container">
+          <img 
+            src="/nicetone.webp" 
+            alt="NiceTone" 
+            className="pa-title-logo" 
+            onClick={() => setShowAzureSettings(true)}
+            style={{ cursor: 'pointer' }}
+          />
+          <div className="pa-subtitle">
+            口袋裡的AI英語教練
+          </div>
+        </div>
         
         {/* 登入/登出按鈕 */}
         <div className="auth-buttons">

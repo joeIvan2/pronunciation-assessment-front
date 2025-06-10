@@ -1,0 +1,78 @@
+.app-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  padding: 16px 0;
+  margin-top: auto;
+  position: relative;
+  bottom: 0;
+  width: 100%;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.footer-contact {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.footer-email {
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-email:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.footer-divider {
+  color: #dee2e6;
+  margin: 0 4px;
+}
+
+.footer-copyright {
+  color: #6c757d;
+}
+
+.footer-beta {
+  color: #fd7e14;
+  font-weight: 500;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+    font-size: 13px;
+  }
+  
+  .footer-divider {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-content {
+    font-size: 12px;
+    padding: 0 15px;
+  }
+  
+  .app-footer {
+    padding: 12px 0;
+  }
+} 
