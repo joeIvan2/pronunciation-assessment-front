@@ -132,11 +132,31 @@ const PronunciationAssessment: React.FC = () => {
   const [isFirstTimeUser, setIsFirstTimeUser] = useState<boolean>(false);
   const [showAITooltip, setShowAITooltip] = useState<boolean>(false);
 
+  // iOS Facebook 操作提示狀態
+  const [showFacebookTooltip, setShowFacebookTooltip] = useState<boolean>(false);
+
   // 分享導入 Modal 相關狀態
   const [showShareImportModal, setShowShareImportModal] = useState<boolean>(false);
   const [shareImportId, setShareImportId] = useState<string>('');
   const [shareImportData, setShareImportData] = useState<any>(null);
   const [shareImportLoading, setShareImportLoading] = useState<boolean>(false);
+
+  // 監聽 iOS Facebook 操作提示事件
+  useEffect(() => {
+    const handleShowFacebookTooltip = () => {
+      setShowFacebookTooltip(true);
+      // 5秒後自動關閉
+      setTimeout(() => {
+        setShowFacebookTooltip(false);
+      }, 8000);
+    };
+
+    window.addEventListener('showFacebookTooltip', handleShowFacebookTooltip);
+
+    return () => {
+      window.removeEventListener('showFacebookTooltip', handleShowFacebookTooltip);
+    };
+  }, []);
 
   // 登入後載入 Firestore 收藏並在更新時同步
   useEffect(() => {
@@ -1264,22 +1284,35 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  const handleLoginAndImport = async () => {
+    const handleLoginAndImport = async () => {
     try {
       setShareImportLoading(true);
       
       // 檢查是否已經登入
       if (user) {
-        // 已經登入，直接導入句子
-        await handleImportToFavorites();
+        // 已經登入，直接導入句子（標記為雲端導入）
+        await handleImportToFavorites(true);
       } else {
         // 需要登入
         try {
           await signInWithGoogle();
-          // 等待一下確保登入狀態更新
-          await new Promise(resolve => setTimeout(resolve, 500));
-          // 登入成功後導入句子
-          await handleImportToFavorites();
+          
+          // 等待登入狀態更新（最多等待3秒）
+          let attempts = 0;
+          const maxAttempts = 30; // 3秒，每100ms檢查一次
+          
+          while (!user && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+          }
+          
+          // 檢查登入是否成功
+          if (!user) {
+            throw new Error('登入超時或失敗，請重試');
+          }
+          
+          // 登入成功後導入句子（標記為雲端導入）
+          await handleImportToFavorites(true);
         } catch (authError) {
           console.error('登入失敗:', authError);
           setError(`登入失敗: ${authError instanceof Error ? authError.message : String(authError)}`);
@@ -1295,7 +1328,7 @@ const PronunciationAssessment: React.FC = () => {
   };
 
   // 輔助函數：將分享的句子導入到我的最愛
-  const handleImportToFavorites = async () => {
+  const handleImportToFavorites = async (isCloudImport: boolean = false) => {
     if (shareImportData && shareImportData.favorites) {
       const shareTexts = shareImportData.favorites.map(fav => fav.text);
       
@@ -1342,8 +1375,10 @@ const PronunciationAssessment: React.FC = () => {
       // 關閉 modal
       setShowShareImportModal(false);
       
-      // 顯示成功訊息
-      alert(`已成功將 ${newFavorites.length} 個句子加入我的最愛！`);
+      // 只有在雲端導入（用戶已登入）時才顯示成功訊息
+      if (isCloudImport && user) {
+        alert(`已成功將 ${newFavorites.length} 個句子加入我的最愛！`);
+      }
       
       // 清理狀態
       handleShareImportModalClose();
@@ -1827,6 +1862,17 @@ const PronunciationAssessment: React.FC = () => {
               from { opacity: 1; }
               to { opacity: 0; }
             }
+            
+            @keyframes slideInRight {
+              from {
+                transform: translateX(100%);
+                opacity: 0;
+              }
+              to {
+                transform: translateX(0);
+                opacity: 1;
+              }
+            }
           `}
         </style>
         
@@ -1882,6 +1928,32 @@ const PronunciationAssessment: React.FC = () => {
           message={loginModalMessage}
           actionName={loginModalAction}
         />
+
+        {/* iOS Facebook 操作提示 Tooltip */}
+        {showFacebookTooltip && (
+          <div style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            backgroundColor: '#ff9500',
+            color: 'white',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            fontSize: '14px',
+            lineHeight: '1.4',
+            maxWidth: '280px',
+            zIndex: 10000,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+            animation: 'slideInRight 0.3s ease-out'
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+              🔍 Facebook 登入提示
+            </div>
+            <div>
+              請點擊右下角的<strong>三個橫點按鈕（⋯）</strong>，選擇「在瀏覽器中開啟」或「在 Safari 中開啟」來進行 Google 登入。
+            </div>
+          </div>
+        )}
 
         {/* 分享導入 Modal */}
         <ShareImportModal

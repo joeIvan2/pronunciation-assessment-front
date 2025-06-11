@@ -46,11 +46,20 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
 
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      const userAgent = navigator.userAgent || '';
-      const isIOS = /iPhone|iPad|iPod/.test(userAgent);
-      const isAndroid = /Android/.test(userAgent);
-      const isLineInApp = userAgent.includes('Line');
-      const isLineOrMessenger = userAgent.includes('Line') || userAgent.includes('Messenger');
+      const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+      const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
+      const isLineInApp = /line/i.test(navigator.userAgent.toLowerCase());
+      const isLineOrMessenger = /line|messenger/i.test(navigator.userAgent.toLowerCase());
+      const isFacebookInApp = /fban|fbav|fb_iab/i.test(navigator.userAgent.toLowerCase());
+
+      // iOS Facebook 環境特殊處理：顯示tooltip而不是登入
+      if (isIOS && isFacebookInApp) {
+        console.log('iOS Facebook WebView 檢測到，顯示操作提示');
+        // 觸發顯示tooltip的事件，而不是進行登入
+        const event = new CustomEvent('showFacebookTooltip');
+        window.dispatchEvent(event);
+        return;
+      }
 
       // iOS LINE 使用 openExternalBrowser 參數直接跳轉
       if (isIOS && isLineInApp) {
