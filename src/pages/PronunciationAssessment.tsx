@@ -13,7 +13,7 @@ import ShareData from "../components/ShareData";
 import ResizableTextarea from "../components/ResizableTextarea";
 import LoginModal from "../components/LoginModal";
 import ShareImportModal from "../components/ShareImportModal";
-import SEOContent from "../components/SEOContent";
+
 import { Tooltip } from 'react-tooltip';
 
 // 鉤子導入
@@ -24,7 +24,7 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 
 // 工具導入
 import * as storage from "../utils/storage";
-import { seoOptimizer } from "../utils/seoOptimizer";
+
 import { getPracticeIdFromUrl, redirectToNewFormat, isPracticePage } from "../utils/urlUtils";
 import { useParams } from "react-router-dom";
 
@@ -945,20 +945,7 @@ const PronunciationAssessment: React.FC = () => {
           if (result.success && result.data) {
             setShareImportData(result.data);
             
-            // 為分享頁面設置SEO優化
-            if (result.data.favorites && result.data.tags) {
-              seoOptimizer.optimizeForSharePage(
-                result.data.favorites,
-                result.data.tags,
-                practiceId
-              );
-              
-              // 預載入內容供SEO優化（對所有用戶）
-              seoOptimizer.preloadContentForSEO(
-                result.data.favorites,
-                result.data.tags
-              );
-            }
+
             
             // 每次都顯示分享導入 modal
             setShowShareImportModal(true);
@@ -977,24 +964,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [slug]); // 依賴於slug參數的變化
 
-  // 監聽URL變化，如果不再有練習ID則重置SEO
-  useEffect(() => {
-    const handleUrlChange = () => {
-      const practiceId = getPracticeIdFromUrl();
-      
-      if (!practiceId) {
-        // 沒有練習ID時重置SEO為默認設置
-        seoOptimizer.resetToDefault();
-      }
-    };
 
-    // 監聽瀏覽器前進後退
-    window.addEventListener('popstate', handleUrlChange);
-    
-    return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-    };
-  }, []);
 
   // 統一的開始評估入口 - 更新以支持streaming
   const startAssessment = async () => {
@@ -1907,15 +1877,7 @@ const PronunciationAssessment: React.FC = () => {
           } : undefined}
         />
 
-        {/* SEO 內容 */}
-        <SEOContent
-          shareData={shareImportData ? {
-            favorites: shareImportData.favorites || [],
-            tags: shareImportData.tags || [],
-            metadata: shareImportData.metadata
-          } : undefined}
-          shareId={shareImportId}
-        />
+
       </div>
     </div>
   );

@@ -1,11 +1,14 @@
 .app-footer {
-  background-color: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-  padding: 16px 0;
+  background-color: var(--ios-card, #2c2c2e);
+  border-top: 1px solid var(--ios-border, #3a3a3c);
+  padding: 20px 0;
   margin-top: auto;
   position: relative;
   bottom: 0;
   width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .footer-content {
@@ -13,66 +16,95 @@
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
   font-size: 14px;
-  color: #6c757d;
+  color: var(--ios-text-secondary, #98989f);
+  line-height: 1.4;
 }
 
 .footer-contact {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  color: var(--ios-text-secondary, #98989f);
 }
 
 .footer-email {
-  color: #007bff;
+  color: var(--ios-primary, #0a84ff);
   text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.footer-email:hover {
-  color: #0056b3;
-  text-decoration: underline;
-}
-
-.footer-divider {
-  color: #dee2e6;
-  margin: 0 4px;
-}
-
-.footer-copyright {
-  color: #6c757d;
-}
-
-.footer-beta {
-  color: #fd7e14;
+  transition: all 0.2s ease;
   font-weight: 500;
 }
 
-/* 響應式設計 */
+.footer-email:hover {
+  color: #409cff;
+  text-decoration: underline;
+  text-decoration-color: var(--ios-primary, #0a84ff);
+}
+
+.footer-divider {
+  color: var(--ios-border, #3a3a3c);
+  margin: 0 6px;
+  font-weight: 300;
+}
+
+.footer-copyright {
+  color: var(--ios-text-secondary, #98989f);
+  font-weight: 400;
+}
+
+.footer-beta {
+  color: var(--ios-warning, #ff9f0a);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* 響應式設計 - 平板 */
 @media (max-width: 768px) {
+  .app-footer {
+    padding: 16px 0;
+  }
+  
   .footer-content {
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     text-align: center;
     font-size: 13px;
+    padding: 0 20px;
   }
   
   .footer-divider {
     display: none;
   }
+  
+  .footer-beta {
+    font-size: 12px;
+  }
 }
 
+/* 響應式設計 - 手機 */
 @media (max-width: 480px) {
-  .footer-content {
-    font-size: 12px;
-    padding: 0 15px;
+  .app-footer {
+    padding: 14px 0;
   }
   
-  .app-footer {
-    padding: 12px 0;
+  .footer-content {
+    font-size: 12px;
+    padding: 0 16px;
+    gap: 8px;
+  }
+  
+  .footer-contact {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .footer-beta {
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.3;
   }
 } 

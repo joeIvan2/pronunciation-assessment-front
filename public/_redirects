@@ -1,22 +1,2 @@
-# Netlify 重定向規則，用於SEO優化
-
-# 新路徑格式 - practice/:slug 檢測搜索引擎爬蟲並重定向到SEO渲染函數
-/practice/:slug  /.netlify/functions/seo-render?hash=:slug  200!  Role=bot
-/practice/:slug  /.netlify/functions/seo-render?hash=:slug  200!  User-Agent=*bot*
-/practice/:slug  /.netlify/functions/seo-render?hash=:slug  200!  User-Agent=*crawler*
-/practice/:slug  /.netlify/functions/seo-render?hash=:slug  200!  User-Agent=*spider*
-/practice/:slug  /.netlify/functions/seo-render?hash=:slug  200!  User-Agent=*facebookexternalhit*
-/practice/:slug  /.netlify/functions/seo-render?hash=:slug  200!  User-Agent=*twitterbot*
-/practice/:slug  /.netlify/functions/seo-render?hash=:slug  200!  User-Agent=*linkedinbot*
-
-# 舊路徑格式的向後兼容性 - /?hash=:hash
-/?hash=:hash  /.netlify/functions/seo-render?hash=:hash  200!  Role=bot
-/?hash=:hash  /.netlify/functions/seo-render?hash=:hash  200!  User-Agent=*bot*
-/?hash=:hash  /.netlify/functions/seo-render?hash=:hash  200!  User-Agent=*crawler*
-/?hash=:hash  /.netlify/functions/seo-render?hash=:hash  200!  User-Agent=*spider*
-/?hash=:hash  /.netlify/functions/seo-render?hash=:hash  200!  User-Agent=*facebookexternalhit*
-/?hash=:hash  /.netlify/functions/seo-render?hash=:hash  200!  User-Agent=*twitterbot*
-/?hash=:hash  /.netlify/functions/seo-render?hash=:hash  200!  User-Agent=*linkedinbot*
-
-# SPA 路由規則 - 必須放在最後
+# SPA 路由規則
 /*    /index.html   200 

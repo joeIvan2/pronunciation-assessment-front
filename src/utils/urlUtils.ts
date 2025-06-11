@@ -1,7 +1,7 @@
 // URL 工具函數，處理新的路徑格式和向後兼容
 
 /**
- * 將字符串轉換為SEO友好的slug
+ * 將字符串轉換為URL友好的slug
  */
 export function generateSlug(text: string): string {
   return text
