@@ -31,32 +31,43 @@ export const isIOSInAppBrowser = (): boolean => {
   return isIOS() && isInAppBrowser();
 };
 
+// 檢測是否為 Facebook 內建瀏覽器
+export const isFacebookInAppBrowser = (): boolean => {
+  const userAgent = navigator.userAgent || '';
+  return userAgent.includes('FBAN') || userAgent.includes('FBAV');
+};
+
+// 檢測是否為 LINE 內建瀏覽器
+export const isLineInAppBrowser = (): boolean => {
+  const userAgent = navigator.userAgent || '';
+  return userAgent.includes('Line');
+};
+
 // 檢測是否應該禁用 Google 登入（僅針對 iPhone 在內建瀏覽器）
 export const shouldDisableGoogleAuth = (): boolean => {
   return isIPhoneInAppBrowser();
 };
 
-// 檢測是否應該允許 Facebook 登入（iOS 設備在 FB/LINE/WEBVIEW 中都允許）
-export const shouldAllowFacebookAuth = (): boolean => {
-  return isIOSInAppBrowser();
-};
-
-// 顯示瀏覽器引導訊息（現在只針對非 iOS 或特定情況時）
+// 顯示瀏覽器引導訊息
 export const showBrowserGuideMessage = (): void => {
   const userAgent = navigator.userAgent || '';
   const isAndroid = /Android/.test(userAgent);
   
-  // iOS 設備在內建瀏覽器時不顯示引導訊息，因為 Facebook 可以正常運作
-  if (isIOSInAppBrowser()) {
-    return;
-  }
-
   let message = '為了確保登入功能正常運作，建議您使用外部瀏覽器開啟此頁面。\n\n';
   
   if (isAndroid) {
+    // Android 一般性指導
     message += '請點擊右上角的選單，選擇「在瀏覽器中開啟」或「在 Chrome 中開啟」。';
   } else {
-    message += '請點擊右上角或右下角的選單，選擇「在 Safari 中開啟」或「在瀏覽器中開啟」。';
+    // iOS 設備針對不同的內建瀏覽器提供具體的操作指導
+    if (isFacebookInAppBrowser()) {
+      message += '請點擊右下角的選單，選擇「在瀏覽器中開啟」或「在 Safari 中開啟」。';
+    } else if (isLineInAppBrowser()) {
+      message += '請點擊右上角的選單，選擇「在瀏覽器中開啟」或「在 Safari 中開啟」。';
+    } else {
+      // 其他iOS內建瀏覽器的一般性指導
+      message += '請點擊右上角或右下角的選單，選擇「在 Safari 中開啟」或「在瀏覽器中開啟」。';
+    }
   }
 
   alert(message);

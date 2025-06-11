@@ -6,7 +6,6 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onGoogleLogin: () => void;
-  onFacebookLogin: () => void;
   message?: string;
   actionName?: string;
 }
@@ -15,7 +14,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
   isOpen, 
   onClose, 
   onGoogleLogin,
-  onFacebookLogin,
   message,
   actionName = "此功能"
 }) => {
@@ -76,11 +74,6 @@ const LoginModal: React.FC<LoginModalProps> = ({
                 使用 Google 登入
               </button>
             )}
-            
-            <button className="btn btn-facebook login-modal-login-btn" onClick={onFacebookLogin}>
-              <i className="fab fa-facebook-f"></i>
-              使用 Facebook 登入
-            </button>
           </div>
         </div>
       </div>

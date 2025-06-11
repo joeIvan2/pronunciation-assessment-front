@@ -8,7 +8,7 @@ import {
   onAuthStateChanged,
   type User
 } from 'firebase/auth';
-import { isInAppBrowser, showBrowserGuideMessage, shouldDisableGoogleAuth, shouldAllowFacebookAuth } from '../utils/browserDetection';
+import { isInAppBrowser, showBrowserGuideMessage, shouldDisableGoogleAuth } from '../utils/browserDetection';
 
 interface UseFirebaseAuthReturn {
   user: User | null;
@@ -44,17 +44,34 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
     return () => unsubscribe();
   }, []);
 
-
-
   const signInWithGoogle = async (): Promise<void> => {
     try {
       // 檢查是否應該禁用 Google 登入（iPhone 在內建瀏覽器）
       if (shouldDisableGoogleAuth()) {
-        alert('在此瀏覽器環境中，Google 登入功能不可用。請使用 Facebook 登入，或在外部瀏覽器（如 Safari）中開啟網站使用 Google 登入。');
+        alert('在此瀏覽器環境中，Google 登入功能不可用。請使用外部瀏覽器（如 Safari）中開啟網站使用 Google 登入。');
         return;
       }
 
-      // 檢查是否在內建瀏覽器中（其他情況）
+      // Android 在 LINE/Messenger WebView 中直接嘗試 intent 跳轉
+      const userAgent = navigator.userAgent || '';
+      const isAndroid = /Android/.test(userAgent);
+      const isLineOrMessenger = userAgent.includes('Line') || userAgent.includes('Messenger');
+      
+      if (isAndroid && isLineOrMessenger) {
+        console.log('Android LINE/Messenger WebView 檢測到，嘗試 intent 跳轉');
+        try {
+                     // 嘗試使用 intent 跳轉到 Chrome 進行 Google 登入
+           const intentUrl = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end;`;
+          window.location.href = intentUrl;
+          return;
+        } catch (error) {
+          console.warn('Intent 跳轉失敗，顯示引導訊息');
+          showBrowserGuideMessage();
+          return;
+        }
+      }
+
+      // 檢查是否在其他內建瀏覽器中
       if (isInAppBrowser()) {
         console.log('檢測到內建瀏覽器，顯示引導訊息');
         showBrowserGuideMessage();
@@ -89,32 +106,7 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
 
   const signInWithFacebook = async (): Promise<void> => {
     try {
-      // 如果是 iOS 設備在內建瀏覽器中，直接嘗試 Facebook 登入，不顯示引導訊息
-      if (shouldAllowFacebookAuth()) {
-        console.log('iOS 設備在內建瀏覽器中，直接嘗試 Facebook 登入');
-        
-        try {
-          await signInWithPopup(auth, facebookProvider);
-          console.log('Facebook 彈出視窗登入成功');
-          return;
-        } catch (popupError: any) {
-          console.warn('Facebook 彈出視窗登入失敗，切換到重定向登入:', popupError.message);
-          
-          // 如果彈出視窗失敗，檢查是否為用戶關閉彈出視窗
-          if (popupError.code === 'auth/popup-closed-by-user') {
-            console.log('用戶關閉了 Facebook 登入彈出視窗');
-            return; // 不進行重定向，讓用戶再次嘗試
-          }
-          
-          // 其他錯誤則使用重定向登入
-          console.log('使用 Facebook 重定向登入作為備用方案');
-          await signInWithRedirect(auth, facebookProvider);
-          console.log('Facebook 重定向登入已啟動');
-          return;
-        }
-      }
-
-      // 非 iOS 內建瀏覽器的情況，檢查是否在內建瀏覽器中
+      // 在任何webview環境中都顯示引導訊息，要求跳轉到外部瀏覽器
       if (isInAppBrowser()) {
         console.log('檢測到內建瀏覽器，顯示引導訊息');
         showBrowserGuideMessage();
