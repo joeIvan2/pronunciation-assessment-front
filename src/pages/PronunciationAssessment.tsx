@@ -109,9 +109,8 @@ const PronunciationAssessment: React.FC = () => {
   const azureSpeech = useAzureSpeech();
   const { user, signInWithGoogle, signOutUser } = useFirebaseAuth();
 
-  // 檢測是否應該禁用 Google 登入
-  const { shouldDisableGoogleAuth } = require('../utils/browserDetection');
-  const disableGoogle = shouldDisableGoogleAuth();
+  // Google 登入按鈕永遠顯示，不再隱藏
+  const disableGoogle = false;
 
   // 用於跟踪最新新增的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);

@@ -8,7 +8,7 @@ import {
   onAuthStateChanged,
   type User
 } from 'firebase/auth';
-import { isInAppBrowser, showBrowserGuideMessage, shouldDisableGoogleAuth } from '../utils/browserDetection';
+import { isInAppBrowser, showBrowserGuideMessage } from '../utils/browserDetection';
 
 interface UseFirebaseAuthReturn {
   user: User | null;
@@ -46,22 +46,34 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
 
   const signInWithGoogle = async (): Promise<void> => {
     try {
-      // 檢查是否應該禁用 Google 登入（iPhone 在內建瀏覽器）
-      if (shouldDisableGoogleAuth()) {
-        alert('在此瀏覽器環境中，Google 登入功能不可用。請使用外部瀏覽器（如 Safari）中開啟網站使用 Google 登入。');
-        return;
+      const userAgent = navigator.userAgent || '';
+      const isIOS = /iPhone|iPad|iPod/.test(userAgent);
+      const isAndroid = /Android/.test(userAgent);
+      const isLineInApp = userAgent.includes('Line');
+      const isLineOrMessenger = userAgent.includes('Line') || userAgent.includes('Messenger');
+
+      // iOS LINE 使用 openExternalBrowser 參數直接跳轉
+      if (isIOS && isLineInApp) {
+        console.log('iOS LINE WebView 檢測到，使用 openExternalBrowser 參數跳轉進行 Google 登入');
+        try {
+          const { appendOpenExternalBrowserParam } = await import('../utils/browserDetection');
+          const currentUrl = window.location.href;
+          const newUrl = appendOpenExternalBrowserParam(currentUrl);
+          window.location.href = newUrl;
+          return;
+        } catch (error) {
+          console.warn('openExternalBrowser 跳轉失敗，顯示引導訊息');
+          showBrowserGuideMessage();
+          return;
+        }
       }
 
       // Android 在 LINE/Messenger WebView 中直接嘗試 intent 跳轉
-      const userAgent = navigator.userAgent || '';
-      const isAndroid = /Android/.test(userAgent);
-      const isLineOrMessenger = userAgent.includes('Line') || userAgent.includes('Messenger');
-      
       if (isAndroid && isLineOrMessenger) {
         console.log('Android LINE/Messenger WebView 檢測到，嘗試 intent 跳轉');
         try {
-                     // 嘗試使用 intent 跳轉到 Chrome 進行 Google 登入
-           const intentUrl = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end;`;
+          // 嘗試使用 intent 跳轉到 Chrome 進行 Google 登入
+          const intentUrl = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end;`;
           window.location.href = intentUrl;
           return;
         } catch (error) {
@@ -71,7 +83,7 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
         }
       }
 
-      // 檢查是否在其他內建瀏覽器中
+      // 檢查是否在任何內建瀏覽器中（包括iPhone WebView）
       if (isInAppBrowser()) {
         console.log('檢測到內建瀏覽器，顯示引導訊息');
         showBrowserGuideMessage();
