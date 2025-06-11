@@ -1,30 +1,41 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import PronunciationAssessment from "./pages/PronunciationAssessment";
 import Landing from "./pages/Landing";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import FirestoreErrorHandler from "./components/FirestoreErrorHandler";
 import Footer from "./components/Footer";
 import './App.css';
+
+function AppContent() {
+  const location = useLocation();
+  const isPrivacyPage = location.pathname === '/privacy';
+
+  return (
+    <div className="App">
+      <div className="app-content">
+        <Routes>
+          <Route path="/" element={<PronunciationAssessment />} />
+          <Route path="/intro" element={<Landing />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/practice/:slug" element={<PronunciationAssessment />} />
+          {/* 處理Firebase認證iframe和其他路徑 */}
+          <Route path="/__/*" element={<div></div>} />
+          <Route path="*" element={<PronunciationAssessment />} />
+        </Routes>
+      </div>
+      {!isPrivacyPage && <Footer />}
+    </div>
+  );
+}
 
 function App() {
   return (
     <ErrorBoundary>
       <FirestoreErrorHandler>
         <Router>
-          <div className="App">
-            <div className="app-content">
-              <Routes>
-                <Route path="/" element={<PronunciationAssessment />} />
-                <Route path="/intro" element={<Landing />} />
-                <Route path="/practice/:slug" element={<PronunciationAssessment />} />
-                {/* 處理Firebase認證iframe和其他路徑 */}
-                <Route path="/__/*" element={<div></div>} />
-                <Route path="*" element={<PronunciationAssessment />} />
-              </Routes>
-            </div>
-            <Footer />
-          </div>
+          <AppContent />
         </Router>
       </FirestoreErrorHandler>
     </ErrorBoundary>

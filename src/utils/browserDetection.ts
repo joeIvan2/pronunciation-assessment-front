@@ -1,16 +1,61 @@
-// 檢測是否在內建瀏覽器中（如 Facebook Messenger, LINE, Instagram 等）
+// 檢測是否為內建瀏覽器
 export const isInAppBrowser = (): boolean => {
-  const ua = navigator.userAgent.toLowerCase();
-  return (
-    ua.includes('fbav') ||           // Facebook App
-    ua.includes('fban') ||           // Facebook Browser
-    ua.includes('line') ||           // LINE App
-    ua.includes('instagram') ||      // Instagram App
-    ua.includes('micromessenger') || // WeChat
-    ua.includes('twitter') ||        // Twitter App
-    ua.includes('whatsapp') ||       // WhatsApp
-    ua.includes('linkedin')          // LinkedIn App
-  );
+  const userAgent = navigator.userAgent || '';
+  const isInApp = 
+    userAgent.includes('FBAN') ||        // Facebook
+    userAgent.includes('FBAV') ||        // Facebook
+    userAgent.includes('Instagram') ||   // Instagram  
+    userAgent.includes('Line') ||        // LINE
+    userAgent.includes('Messenger');     // Messenger
+
+  return isInApp;
+};
+
+// 檢測是否為 iPhone
+export const isIPhone = (): boolean => {
+  return /iPhone|iPod/.test(navigator.userAgent);
+};
+
+// 檢測是否為 iPhone 在內建瀏覽器中（這種情況下 Google OAuth 有問題）
+export const isIPhoneInAppBrowser = (): boolean => {
+  return isIPhone() && isInAppBrowser();
+};
+
+// 檢測是否應該禁用 Google 登入（僅針對 iPhone 在內建瀏覽器）
+export const shouldDisableGoogleAuth = (): boolean => {
+  return isIPhoneInAppBrowser();
+};
+
+// 顯示瀏覽器引導訊息（現在只針對非 iPhone 或 Google OAuth 不可用時）
+export const showBrowserGuideMessage = (): void => {
+  const userAgent = navigator.userAgent || '';
+  const isAndroid = /Android/.test(userAgent);
+  
+  // iPhone 在內建瀏覽器時不顯示引導訊息，因為 Facebook 可以正常運作
+  if (isIPhoneInAppBrowser()) {
+    return;
+  }
+
+  let message = '為了確保登入功能正常運作，建議您使用外部瀏覽器開啟此頁面。\n\n';
+  
+  if (isAndroid) {
+    message += '請點擊右上角的選單，選擇「在瀏覽器中開啟」或「在 Chrome 中開啟」。';
+  } else {
+    message += '請點擊右上角或右下角的選單，選擇「在 Safari 中開啟」或「在瀏覽器中開啟」。';
+  }
+
+  alert(message);
+
+  // 嘗試開啟外部瀏覽器
+  setTimeout(() => {
+    if (isAndroid) {
+      // Android Chrome Intent
+      window.location.href = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end`;
+    } else {
+      // iOS Safari
+      window.location.href = `x-web-search://?${encodeURIComponent(window.location.href)}`;
+    }
+  }, 1000);
 };
 
 // 檢測是否在行動裝置上
@@ -29,78 +74,4 @@ export const getExternalBrowserLink = (): string => {
   
   // 其他情況使用一般連結
   return currentUrl;
-};
-
-// 顯示引導訊息
-export const showBrowserGuideMessage = (): void => {
-  const isAndroid = navigator.userAgent.includes('Android');
-  const externalLink = getExternalBrowserLink();
-  
-  const message = isAndroid 
-    ? '請點擊下方連結用 Chrome 瀏覽器開啟網站以完成 Google 登入'
-    : '請點擊下方連結用外部瀏覽器（Safari/Chrome）開啟網站以完成 Google 登入';
-  
-  // 創建引導介面
-  const guideDiv = document.createElement('div');
-  guideDiv.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  `;
-  
-  guideDiv.innerHTML = `
-    <div style="
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      max-width: 400px;
-      text-align: center;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    ">
-      <h3 style="margin: 0 0 16px 0; color: #333; font-size: 18px;">
-        需要使用外部瀏覽器
-      </h3>
-      <p style="margin: 0 0 20px 0; color: #666; line-height: 1.5; font-size: 14px;">
-        ${message}
-      </p>
-      <div style="display: flex; gap: 12px; justify-content: center;">
-        <a href="${externalLink}" 
-           target="_blank" 
-           rel="noopener noreferrer"
-           style="
-             background: #007AFF;
-             color: white;
-             padding: 12px 20px;
-             border-radius: 8px;
-             text-decoration: none;
-             font-weight: 500;
-             display: inline-block;
-           ">
-          👉 開啟外部瀏覽器
-        </a>
-        <button onclick="this.parentElement.parentElement.parentElement.remove()" 
-                style="
-                  background: #f0f0f0;
-                  color: #333;
-                  border: none;
-                  padding: 12px 20px;
-                  border-radius: 8px;
-                  cursor: pointer;
-                  font-weight: 500;
-                ">
-          取消
-        </button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(guideDiv);
 }; 

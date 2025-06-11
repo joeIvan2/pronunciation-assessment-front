@@ -107,7 +107,11 @@ const PronunciationAssessment: React.FC = () => {
   const recorder = useRecorder();
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
-  const { user, signInWithGoogle, signOutUser } = useFirebaseAuth();
+  const { user, signInWithGoogle, signInWithFacebook, signOutUser } = useFirebaseAuth();
+
+  // 檢測是否應該禁用 Google 登入
+  const { shouldDisableGoogleAuth } = require('../utils/browserDetection');
+  const disableGoogle = shouldDisableGoogleAuth();
 
   // 用於跟踪最新新增的收藏項目ID
   const [lastAddedFavoriteId, setLastAddedFavoriteId] = useState<string | null>(null);
@@ -494,6 +498,15 @@ const PronunciationAssessment: React.FC = () => {
       setShowLoginModal(false);
     } catch (error) {
       console.error('登入失敗:', error);
+    }
+  };
+
+  const handleFacebookLoginFromModal = async () => {
+    try {
+      await signInWithFacebook();
+      setShowLoginModal(false);
+    } catch (error) {
+      console.error('Facebook 登入失敗:', error);
     }
   };
 
@@ -1377,21 +1390,41 @@ const PronunciationAssessment: React.FC = () => {
               </button>
             </div>
           ) : (
-            <button 
-              onClick={async () => {
-                try {
-                  await signInWithGoogle();
-                } catch (error: any) {
-                  console.error('登入失敗:', error);
-                  setError(`登入失敗: ${error.message || '請重試或檢查網路連接'}`);
-                }
-              }}
-              className="btn btn-primary auth-btn"
-              title="使用Google登入"
-            >
-              <i className="fab fa-google"></i>
-              <span>登入</span>
-            </button>
+            <div className="login-buttons-group">
+              {!disableGoogle && (
+                <button 
+                  onClick={async () => {
+                    try {
+                      await signInWithGoogle();
+                    } catch (error: any) {
+                      console.error('Google 登入失敗:', error);
+                      setError(`Google 登入失敗: ${error.message || '請重試或檢查網路連接'}`);
+                    }
+                  }}
+                  className="btn btn-google auth-btn"
+                  title="使用 Google 登入"
+                >
+                  <i className="fab fa-google"></i>
+                  <span>Google</span>
+                </button>
+              )}
+              
+              <button 
+                onClick={async () => {
+                  try {
+                    await signInWithFacebook();
+                  } catch (error: any) {
+                    console.error('Facebook 登入失敗:', error);
+                    setError(`Facebook 登入失敗: ${error.message || '請重試或檢查網路連接'}`);
+                  }
+                }}
+                className="btn btn-facebook auth-btn"
+                title="使用 Facebook 登入"
+              >
+                <i className="fab fa-facebook-f"></i>
+                <span>Facebook</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -1869,7 +1902,8 @@ const PronunciationAssessment: React.FC = () => {
         <LoginModal
           isOpen={showLoginModal}
           onClose={handleLoginModalClose}
-          onLogin={handleLoginFromModal}
+          onGoogleLogin={handleLoginFromModal}
+          onFacebookLogin={handleFacebookLoginFromModal}
           message={loginModalMessage}
           actionName={loginModalAction}
         />

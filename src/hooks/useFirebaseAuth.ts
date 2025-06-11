@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { auth, googleProvider } from '../config/firebaseConfig';
+import { auth, googleProvider, facebookProvider } from '../config/firebaseConfig';
 import { 
   signInWithPopup, 
   signInWithRedirect,
@@ -8,12 +8,13 @@ import {
   onAuthStateChanged,
   type User
 } from 'firebase/auth';
-import { isInAppBrowser, showBrowserGuideMessage } from '../utils/browserDetection';
+import { isInAppBrowser, showBrowserGuideMessage, shouldDisableGoogleAuth } from '../utils/browserDetection';
 
 interface UseFirebaseAuthReturn {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithFacebook: () => Promise<void>;
   signOutUser: () => Promise<void>;
 }
 
@@ -43,7 +44,50 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
     return () => unsubscribe();
   }, []);
 
+
+
   const signInWithGoogle = async (): Promise<void> => {
+    try {
+      // 檢查是否應該禁用 Google 登入（iPhone 在內建瀏覽器）
+      if (shouldDisableGoogleAuth()) {
+        alert('在此瀏覽器環境中，Google 登入功能不可用。請使用 Facebook 登入，或在外部瀏覽器（如 Safari）中開啟網站使用 Google 登入。');
+        return;
+      }
+
+      // 檢查是否在內建瀏覽器中（其他情況）
+      if (isInAppBrowser()) {
+        console.log('檢測到內建瀏覽器，顯示引導訊息');
+        showBrowserGuideMessage();
+        return;
+      }
+
+      // 所有設備都優先嘗試彈出視窗登入（回到原本的桌面處理方式）
+      console.log('嘗試 Google 彈出視窗登入');
+      
+      try {
+        await signInWithPopup(auth, googleProvider);
+        console.log('Google 彈出視窗登入成功');
+      } catch (popupError: any) {
+        console.warn('Google 彈出視窗登入失敗，切換到重定向登入:', popupError.message);
+        
+        // 如果彈出視窗失敗，檢查是否為用戶關閉彈出視窗
+        if (popupError.code === 'auth/popup-closed-by-user') {
+          console.log('用戶關閉了 Google 登入彈出視窗');
+          return; // 不進行重定向，讓用戶再次嘗試
+        }
+        
+        // 其他錯誤則使用重定向登入
+        console.log('使用 Google 重定向登入作為備用方案');
+        await signInWithRedirect(auth, googleProvider);
+        console.log('Google 重定向登入已啟動');
+      }
+    } catch (error: any) {
+      console.error('Google 登入過程中發生錯誤:', error);
+      throw error;
+    }
+  };
+
+  const signInWithFacebook = async (): Promise<void> => {
     try {
       // 檢查是否在內建瀏覽器中
       if (isInAppBrowser()) {
@@ -52,28 +96,27 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
         return;
       }
 
-      // 所有設備都優先嘗試彈出視窗登入（回到原本的桌面處理方式）
-      console.log('嘗試彈出視窗登入');
+      console.log('嘗試 Facebook 彈出視窗登入');
       
       try {
-        await signInWithPopup(auth, googleProvider);
-        console.log('彈出視窗登入成功');
+        await signInWithPopup(auth, facebookProvider);
+        console.log('Facebook 彈出視窗登入成功');
       } catch (popupError: any) {
-        console.warn('彈出視窗登入失敗，切換到重定向登入:', popupError.message);
+        console.warn('Facebook 彈出視窗登入失敗，切換到重定向登入:', popupError.message);
         
         // 如果彈出視窗失敗，檢查是否為用戶關閉彈出視窗
         if (popupError.code === 'auth/popup-closed-by-user') {
-          console.log('用戶關閉了登入彈出視窗');
+          console.log('用戶關閉了 Facebook 登入彈出視窗');
           return; // 不進行重定向，讓用戶再次嘗試
         }
         
         // 其他錯誤則使用重定向登入
-        console.log('使用重定向登入作為備用方案');
-        await signInWithRedirect(auth, googleProvider);
-        console.log('重定向登入已啟動');
+        console.log('使用 Facebook 重定向登入作為備用方案');
+        await signInWithRedirect(auth, facebookProvider);
+        console.log('Facebook 重定向登入已啟動');
       }
     } catch (error: any) {
-      console.error('Google 登入過程中發生錯誤:', error);
+      console.error('Facebook 登入過程中發生錯誤:', error);
       throw error;
     }
   };
@@ -92,6 +135,7 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
     user,
     loading,
     signInWithGoogle,
+    signInWithFacebook,
     signOutUser,
   };
 };

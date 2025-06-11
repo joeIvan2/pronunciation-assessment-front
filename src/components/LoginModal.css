@@ -120,9 +120,15 @@
 
 .login-modal-footer {
   display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 0 20px 20px;
-  justify-content: flex-end;
+}
+
+.login-buttons-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .login-modal-footer .btn {
@@ -139,6 +145,7 @@
   background: #f8f9fa;
   color: #6c757d;
   border: 1px solid #dee2e6;
+  align-self: flex-end;
 }
 
 .login-modal-footer .btn-secondary:hover {
@@ -147,17 +154,32 @@
 }
 
 .login-modal-login-btn {
-  background: #4285f4;
   color: white;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 100%;
 }
 
-.login-modal-login-btn:hover {
+.btn-google {
+  background: #4285f4;
+}
+
+.btn-google:hover {
   background: #3367d6;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.btn-facebook {
+  background: #1877f2;
+}
+
+.btn-facebook:hover {
+  background: #166fe5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
 }
 
 .login-modal-login-btn i {

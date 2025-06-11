@@ -1245,6 +1245,32 @@ h4 {
   font-size: 14px;
 }
 
+/* 登入按鈕群組 */
+.login-buttons-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* Facebook 按鈕樣式 */
+.btn-facebook {
+  background: #1877f2;
+  color: white;
+}
+
+.btn-facebook:hover {
+  background: #166fe5;
+}
+
+/* Google 按鈕樣式 */
+.btn-google {
+  background: #4285f4;
+  color: white;
+}
+
+.btn-google:hover {
+  background: #3367d6;
+}
+
 /* 響應式設計 - 認證按鈕 */
 @media (max-width: 768px) {
   .user-name {

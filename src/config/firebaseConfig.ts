@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
@@ -24,6 +24,7 @@ export const auth = getAuth(app);
 auth.useDeviceLanguage(); // 使用設備語言
 
 export const googleProvider = new GoogleAuthProvider();
+export const facebookProvider = new FacebookAuthProvider();
 
 // 配置 Google 登入提供者
 googleProvider.setCustomParameters({
@@ -36,6 +37,15 @@ googleProvider.setCustomParameters({
 // 設置作用域
 googleProvider.addScope('profile');
 googleProvider.addScope('email');
+
+// 配置 Facebook 登入提供者
+facebookProvider.setCustomParameters({
+  'display': 'popup'
+});
+
+// 設置 Facebook 作用域
+facebookProvider.addScope('email');
+facebookProvider.addScope('public_profile');
 
 // 初始化 Firestore，連接到 nicetone 資料庫
 export const db = getFirestore(app, 'nicetone');

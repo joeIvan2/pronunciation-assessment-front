@@ -1,10 +1,12 @@
 import React from 'react';
+import { shouldDisableGoogleAuth } from '../utils/browserDetection';
 import './LoginModal.css';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: () => void;
+  onGoogleLogin: () => void;
+  onFacebookLogin: () => void;
   message?: string;
   actionName?: string;
 }
@@ -12,13 +14,15 @@ interface LoginModalProps {
 const LoginModal: React.FC<LoginModalProps> = ({ 
   isOpen, 
   onClose, 
-  onLogin, 
+  onGoogleLogin,
+  onFacebookLogin,
   message,
   actionName = "此功能"
 }) => {
   if (!isOpen) return null;
 
   const defaultMessage = `${actionName}需要登入才能將您的設定儲存到雲端，確保在不同裝置間同步。`;
+  const disableGoogle = shouldDisableGoogleAuth();
 
   return (
     <div className="login-modal-overlay" onClick={onClose}>
@@ -64,10 +68,20 @@ const LoginModal: React.FC<LoginModalProps> = ({
           <button className="btn btn-secondary" onClick={onClose}>
             暫不登入
           </button>
-          <button className="btn btn-primary login-modal-login-btn" onClick={onLogin}>
-            <i className="fab fa-google"></i>
-            使用 Google 登入
-          </button>
+          
+          <div className="login-buttons-container">
+            {!disableGoogle && (
+              <button className="btn btn-google login-modal-login-btn" onClick={onGoogleLogin}>
+                <i className="fab fa-google"></i>
+                使用 Google 登入
+              </button>
+            )}
+            
+            <button className="btn btn-facebook login-modal-login-btn" onClick={onFacebookLogin}>
+              <i className="fab fa-facebook-f"></i>
+              使用 Facebook 登入
+            </button>
+          </div>
         </div>
       </div>
     </div>
