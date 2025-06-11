@@ -15,6 +15,9 @@ import LoginModal from "../components/LoginModal";
 import ShareImportModal from "../components/ShareImportModal";
 import AndroidChromeModal from "../components/AndroidChromeModal";
 
+// 瀏覽器環境檢測
+import { isAndroidWebView } from "../utils/browserDetection";
+
 import { Tooltip } from 'react-tooltip';
 
 // 鉤子導入
@@ -173,6 +176,13 @@ const PronunciationAssessment: React.FC = () => {
     return () => {
       window.removeEventListener('showAndroidChromeModal', handleShowAndroidModal);
     };
+  }, []);
+
+  // 初次載入時若為 Android WebView 直接顯示 Modal
+  useEffect(() => {
+    if (isAndroidWebView()) {
+      setShowAndroidModal(true);
+    }
   }, []);
 
   // 登入後載入 Firestore 收藏並在更新時同步

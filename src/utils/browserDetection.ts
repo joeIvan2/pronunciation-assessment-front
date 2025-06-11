@@ -58,11 +58,14 @@ export const isMessengerInAppBrowser = (): boolean => {
   return /messenger/i.test(ua);
 };
 
+// 檢測是否在 Android WebView 中
+export const isAndroidWebView = (): boolean => {
+  return /android/.test(ua) && (/wv/.test(ua) || isInAppBrowser());
+};
+
 // 顯示瀏覽器引導訊息
 export const showBrowserGuideMessage = (): void => {
-  const isAndroid = /android/.test(ua);
-
-  if (isAndroid) {
+  if (isAndroidWebView()) {
     // Android WebView 顯示跳轉提示 Modal
     console.log('Android WebView 檢測到，顯示跳轉 Chrome 的提示');
     window.dispatchEvent(new Event('showAndroidChromeModal'));
