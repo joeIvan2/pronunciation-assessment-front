@@ -1,35 +1,63 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 分享數據規則 - 允許任何人讀取和創建，但只有知道編輯密碼的人可以更新
+    // 分享數據規則 - 支援協作編輯模式
     match /sharedData/{shareId} {
-      // 允許任何人讀取分享的數據
+      // 允許所有人讀取分享數據
       allow read: if true;
-      // 允許任何人創建新的分享數據
-      allow create: if true;
-      // 只有提供正確編輯密碼的請求可以更新數據
-      allow update: if request.auth != null;
-      // 允許刪除（可能需要額外驗證）
-      allow delete: if request.auth != null;
+      
+      // 創建分享：必須登入，且創建者必須是當前用戶
+      allow create: if 
+        request.auth != null &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.shareId == shareId &&
+        request.resource.data.keys().hasAll(['tags', 'favorites', 'shareId', 'editPassword', 'createdBy', 'createdAt']);
+      
+      // 更新分享：任何登入用戶只要有正確密碼就可以修改
+      allow update: if 
+        request.auth != null &&
+        // 密碼驗證：更新的密碼必須與現有密碼匹配
+        request.resource.data.editPassword == resource.data.editPassword &&
+        // 限制可更新的字段
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tags', 'favorites', 'updatedAt', 'lastUpdatedBy']) &&
+        // 確保 lastUpdatedBy 是當前用戶
+        request.resource.data.lastUpdatedBy == request.auth.uid;
+      
+      // 刪除分享：只有創建者可以刪除
+      allow delete: if 
+        request.auth != null &&
+        request.auth.uid == resource.data.createdBy;
     }
-
-    // 使用者個人數據規則 - 只有登入的使用者可以存取自己的數據
+    
+    // 用戶數據規則
     match /users/{userId} {
-      // 只有該使用者本人可以讀寫自己的文檔
+      // 用戶只能讀寫自己的數據
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      // 使用者收藏子集合
+      // 用戶的收藏子集合
       match /favorites/{favoriteId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
       
-      // 使用者標籤子集合
+      // 用戶的標籤子集合
       match /tags/{tagId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+      
+      // 用戶的歷史記錄子集合
+      match /history/{historyId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
-
-    // 如果有其他集合需要公開讀取（例如預設句子庫），可以在這裡添加
-    // 預設情況下拒絕所有其他存取
+    
+    // 測試連接規則（用於檢查 Firestore 連接狀態）
+    match /_test/{testId} {
+      allow read: if true;
+    }
+    
+    // 默認拒絕所有其他操作
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 } 

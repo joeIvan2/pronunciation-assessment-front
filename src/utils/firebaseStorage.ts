@@ -123,6 +123,11 @@ export const shareTagsAndFavorites = async (
   uid?: string,
   customShareId?: string
 ): Promise<{ shareId: string; editPassword: string }> => {
+  // 強制要求登入
+  if (!uid) {
+    throw new Error('分享功能需要登入，請先登入您的帳戶');
+  }
+  
   let shareId: string;
   
   // 如果提供了自訂分享ID，檢查是否已存在
@@ -143,6 +148,7 @@ export const shareTagsAndFavorites = async (
     favorites,
     shareId,
     editPassword,
+    createdBy: uid, // 記錄創建者
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   };
@@ -155,13 +161,11 @@ export const shareTagsAndFavorites = async (
       await setDoc(docRef, shareData);
     });
 
-    // 如果有使用者ID，將分享記錄儲存到使用者歷史
-    if (uid) {
-      try {
-        await saveShareToUserHistory(uid, shareId, editPassword);
-      } catch (error) {
-        console.warn('儲存分享記錄到使用者歷史失敗，但分享成功:', error);
-      }
+    // 將分享記錄儲存到使用者歷史
+    try {
+      await saveShareToUserHistory(uid, shareId, editPassword);
+    } catch (error) {
+      console.warn('儲存分享記錄到使用者歷史失敗，但分享成功:', error);
     }
 
     console.log('數據分享成功:', shareId);
@@ -208,10 +212,16 @@ export const updateSharedData = async (
   shareId: string,
   editPassword: string,
   tags: Tag[],
-  favorites: Favorite[]
+  favorites: Favorite[],
+  uid?: string
 ): Promise<void> => {
   if (!shareId || !editPassword) {
     throw new Error('缺少分享ID或編輯密碼');
+  }
+  
+  // 強制要求登入
+  if (!uid) {
+    throw new Error('更新分享數據需要登入，請先登入您的帳戶');
   }
 
   try {
@@ -220,7 +230,7 @@ export const updateSharedData = async (
     await retryOperation(async () => {
       const docRef = doc(db, 'sharedData', shareId);
       
-      // 先驗證編輯密碼
+      // 驗證編輯密碼（不檢查創建者）
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
@@ -228,22 +238,25 @@ export const updateSharedData = async (
       }
       
       const existingData = docSnap.data();
+      
+      // 只驗證編輯密碼，不檢查創建者
       if (existingData.editPassword !== editPassword) {
         throw new Error('編輯密碼錯誤');
       }
       
-      // 更新數據
+      // 更新數據，並記錄最後修改者
       await updateDoc(docRef, {
         tags,
         favorites,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        lastUpdatedBy: uid // 記錄最後修改者
       });
     });
 
-    console.log('分享數據更新成功:', shareId);
+    console.log('分享數據更新成功:', shareId, '修改者:', uid);
   } catch (error) {
     console.error('更新分享數據失敗:', error);
-  throw new Error(`更新失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+    throw new Error(`更新失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
   }
 };
 

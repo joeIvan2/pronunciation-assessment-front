@@ -113,20 +113,20 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
     return `${baseUrl}/practice/${hash}`;
   };
   
-  // 分享數據（根據選擇模式分享）
+  // 分享數據
   const shareData = async () => {
     // 檢查登入狀態
-    if (!user && onLoginRequired) {
-      onLoginRequired(
-        '數據分享',
-        '分享您的收藏需要登入，這樣可以記錄您的分享歷史並提供編輯功能。'
-      );
+    if (!user) {
+      if (onLoginRequired) {
+        onLoginRequired('分享數據', '分享功能需要登入，這樣您就可以管理和更新您的分享。');
+      } else {
+        alert('分享功能需要登入，請先登入您的帳戶');
+      }
       return;
     }
-
-    // 檢查是否有選中的句子
+    
     if (selectedFavorites.length === 0) {
-      alert('請至少選擇一個句子進行分享！');
+      alert('請至少選擇一個句子進行分享');
       return;
     }
 
@@ -134,14 +134,14 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       setIsSharing(true);
       setShareResult(null);
       
-      // 過濾出選中的句子
+      // 獲取選中的收藏項目數據
       const selectedFavoritesData = favorites.filter(fav => selectedFavorites.includes(fav.id));
       
       // 清理自訂分享ID（移除特殊字符，只保留字母數字和中文）
       const cleanedCustomId = customShareId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]/g, '');
       
       // 分享選中的句子（不分享標籤）
-      const result = await storage.shareTagsAndFavorites([], selectedFavoritesData, user?.uid, cleanedCustomId || undefined);
+      const result = await storage.shareTagsAndFavorites([], selectedFavoritesData, user.uid, cleanedCustomId || undefined);
       
       if (result.success && result.hash && result.editPassword && result.url) {
         // 創建直接導入鏈接但不再顯示
@@ -236,6 +236,16 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   
   // 更新數據
   const updateData = async () => {
+    // 檢查登入狀態
+    if (!user) {
+      if (onLoginRequired) {
+        onLoginRequired('更新分享數據', '更新分享數據需要登入，請先登入您的帳戶。');
+      } else {
+        alert('更新分享數據需要登入，請先登入您的帳戶');
+      }
+      return;
+    }
+    
     if (!updateHash.trim()) {
       setUpdateResult({
         success: false,
@@ -243,7 +253,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       });
       return;
     }
-    
+
     if (!updatePassword.trim()) {
       setUpdateResult({
         success: false,
@@ -251,7 +261,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       });
       return;
     }
-    
+
     try {
       setIsUpdating(true);
       setUpdateResult(null);
@@ -259,7 +269,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       // 記錄原始輸入用於診斷
       console.log('更新數據請求:', { hashInput: updateHash.trim() });
       
-      const result = await storage.updateSharedData(updateHash.trim(), updatePassword.trim());
+      const result = await storage.updateSharedData(updateHash.trim(), updatePassword.trim(), user.uid);
       
       if (result.success) {
         setUpdateResult({

@@ -647,7 +647,8 @@ export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): v
 // 更新已分享的數據
 export const updateSharedData = async (
   hash: string, 
-  password: string
+  password: string,
+  uid?: string
 ): Promise<ShareResponse> => {
   try {
     const tags = getTags();
@@ -655,7 +656,7 @@ export const updateSharedData = async (
     
     // 動態導入Firebase存儲服務
     const { updateSharedData: firebaseUpdate } = await import('./firebaseStorage');
-    await firebaseUpdate(hash, password, tags, favorites);
+    await firebaseUpdate(hash, password, tags, favorites, uid);
     
     return {
       success: true,
