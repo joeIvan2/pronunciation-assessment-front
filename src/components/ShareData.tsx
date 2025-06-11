@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tag, Favorite } from '../types/speech';
 import * as storage from '../utils/storage';
 import '../styles/PronunciationAssessment.css';
@@ -42,6 +42,12 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   
   // 分享歷史動畫效果
   const [showHistoryAnimation, setShowHistoryAnimation] = useState<boolean>(false);
+  
+  // 添加更新數據區塊的 ref
+  const updateDataRef = useRef<HTMLDivElement>(null);
+  
+  // 添加第一個輸入框的 ref  
+  const updateHashInputRef = useRef<HTMLInputElement>(null);
   
   // 初始加載分享歷史記錄
   useEffect(() => {
@@ -620,21 +626,30 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             {shareHistory.length > 0 && (
               <div className={`share-history-section ${showHistoryAnimation ? 'history-highlight' : ''}`} style={{marginTop: '20px'}}>
                 <h4>分享歷史記錄</h4>
-                <div className="share-history">
-                  <table>
+                <div className="share-history" style={{ 
+                  overflowX: 'auto',
+                  maxWidth: '100%'
+                }}>
+                  <table style={{ 
+                    width: '100%',
+                    minWidth: '600px', // 設定最小寬度確保內容可讀
+                    fontSize: '12px'
+                  }}>
                     <thead>
                       <tr>
-                        <th>分享時間</th>
+                        <th style={{ minWidth: '120px' }}>分享時間</th>
                         <th style={{display: 'none'}}>哈希值</th>
-                        <th>分享網址</th>
-                        <th>用於編輯的密碼(請妥善保存)</th>
-                        <th>操作</th>
+                        <th style={{ minWidth: '200px' }}>分享網址</th>
+                        <th style={{ minWidth: '120px' }}>用於編輯的密碼(請妥善保存)</th>
+                        <th style={{ minWidth: '100px' }}>操作</th>
                       </tr>
                     </thead>
                     <tbody>
                       {shareHistory.map((item) => (
                         <tr key={item.hash}>
-                          <td>{new Date(item.timestamp).toLocaleString()}</td>
+                          <td style={{ fontSize: '11px' }}>
+                            {new Date(item.timestamp).toLocaleString()}
+                          </td>
                           <td style={{display: 'none'}}>
                             <div className="copy-container">
                               <input type="text" value={item.hash} readOnly />
@@ -642,61 +657,112 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                             </div>
                           </td>
                           <td>
-                            <div className="copy-container">
-                              <input type="text" value={formatShareLink(item.hash)} readOnly onClick={() => copyToClipboard(formatShareLink(item.hash))} />
-                              <button onClick={async () => {
-                                try {
-                                  if (navigator.share && navigator.canShare) {
-                                    const shareData = {
-                                      title: '發音評估分享',
-                                      text: '查看我的發音評估數據',
-                                      url: formatShareLink(item.hash)
-                                    };
-                                    
-                                    if (navigator.canShare(shareData)) {
-                                      await navigator.share(shareData);
-                                      return;
+                            <div className="copy-container" style={{ 
+                              display: 'flex', 
+                              gap: '4px',
+                              alignItems: 'center'
+                            }}>
+                              <input 
+                                type="text" 
+                                value={formatShareLink(item.hash)} 
+                                readOnly 
+                                onClick={() => copyToClipboard(formatShareLink(item.hash))} 
+                                style={{ 
+                                  fontSize: '11px',
+                                  minWidth: '150px',
+                                  flex: '1'
+                                }}
+                              />
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    if (navigator.share && navigator.canShare) {
+                                      const shareData = {
+                                        title: '發音評估分享',
+                                        text: '查看我的發音評估數據',
+                                        url: formatShareLink(item.hash)
+                                      };
+                                      
+                                      if (navigator.canShare(shareData)) {
+                                        await navigator.share(shareData);
+                                        return;
+                                      }
                                     }
+                                    
+                                    // 備用方案：複製到剪貼板
+                                    copyToClipboard(formatShareLink(item.hash));
+                                    alert('分享鏈接已複製到剪貼板');
+                                  } catch (err) {
+                                    console.error('分享失敗:', err);
+                                    // 如果分享失敗，複製到剪貼板
+                                    copyToClipboard(formatShareLink(item.hash));
+                                    alert('分享鏈接已複製到剪貼板');
                                   }
-                                  
-                                  // 備用方案：複製到剪貼板
-                                  copyToClipboard(formatShareLink(item.hash));
-                                  alert('分享鏈接已複製到剪貼板');
-                                } catch (err) {
-                                  console.error('分享失敗:', err);
-                                  // 如果分享失敗，複製到剪貼板
-                                  copyToClipboard(formatShareLink(item.hash));
-                                  alert('分享鏈接已複製到剪貼板');
-                                }
-                              }}>分享</button>
+                                }}
+                                style={{ 
+                                  fontSize: '10px',
+                                  padding: '2px 6px',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                分享
+                              </button>
                             </div>
                           </td>
                           <td>
                             <div className="copy-container">
-                              <input type="text" value={item.editPassword} readOnly onClick={() => copyToClipboard(item.editPassword)} />
+                              <input 
+                                type="text" 
+                                value={item.editPassword} 
+                                readOnly 
+                                onClick={() => copyToClipboard(item.editPassword)} 
+                                style={{ 
+                                  fontSize: '11px',
+                                  width: '100%'
+                                }}
+                              />
                             </div>
                           </td>
                           <td>
-                            <button 
-                              className="delete-button"
-                              onClick={() => deleteShareHistoryItem(item.hash)}
-                            >
-                              刪除
-                            </button>
-                            <button 
-                              className="update-button"
-                              onClick={() => {
-                                setUpdateHash(item.hash);
-                                setUpdatePassword(item.editPassword);
-                                // 滾動到更新表單
-                                const updateForm = document.querySelector('.card-section:nth-child(2)');
-                                if (updateForm) {
-                                  updateForm.scrollIntoView({ behavior: 'smooth' });
-                                }
-                              }}
-                            >
-                              編輯
-                            </button>
+                            <div style={{ 
+                              display: 'flex', 
+                              gap: '4px',
+                              flexDirection: 'column'
+                            }}>
+                              <button 
+                                className="delete-button"
+                                onClick={() => deleteShareHistoryItem(item.hash)}
+                                style={{ 
+                                  fontSize: '10px',
+                                  padding: '2px 6px'
+                                }}
+                              >
+                                刪除
+                              </button>
+                              <button 
+                                className="update-button"
+                                onClick={() => {
+                                  setUpdateHash(item.hash);
+                                  setUpdatePassword(item.editPassword);
+                                  // 滾動到更新表單並給予焦點
+                                  if (updateDataRef.current) {
+                                    updateDataRef.current.scrollIntoView({ behavior: 'smooth' });
+                                    // 延遲一下再 focus，確保滾動完成
+                                    setTimeout(() => {
+                                      if (updateHashInputRef.current) {
+                                        updateHashInputRef.current.focus();
+                                      }
+                                    }, 500);
+                                  }
+                                }}
+                                style={{ 
+                                  fontSize: '10px',
+                                  padding: '2px 6px'
+                                }}
+                              >
+                                編輯
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -704,11 +770,11 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                   </table>
                 </div>
               </div>
-                        )}
+            )}
           </div>
           
           {/* 更新數據區塊 */}
-          <div className="card-section">
+          <div className="card-section" ref={updateDataRef}>
             {/* 移除標題 */}
             
             <div className="input-group">
@@ -717,6 +783,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                 placeholder="例如：https://nicetone.ai/practice/ooxx" 
                 value={updateHash}
                 onChange={(e) => setUpdateHash(e.target.value)}
+                ref={updateHashInputRef}
               />
               <input 
                 type="password" 
@@ -966,6 +1033,11 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             </div>
           </div>
         </div>
+        
+        {/* Tooltip 組件 */}
+        <Tooltip id="share-name-tooltip" />
+        <Tooltip id="update-data-tooltip" />
+        <Tooltip id="export-import-tooltip" />
     </div>
   );
 };

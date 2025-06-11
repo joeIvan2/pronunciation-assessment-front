@@ -260,7 +260,18 @@ const PronunciationAssessment: React.FC = () => {
       if (isCancelled) return;
       
       try {
-        const { loadUserProfile } = await import('../utils/firebaseStorage');
+        // 首先創建或更新用戶基本資料
+        const { createOrUpdateUserProfile, loadUserProfile } = await import('../utils/firebaseStorage');
+        
+        // 創建/更新用戶基本資料，包含顯示名稱和電子郵件
+        await createOrUpdateUserProfile(
+          user.uid, 
+          user.displayName || undefined, 
+          user.email || undefined
+        );
+        console.log('用戶基本資料已確保存在');
+        
+        // 載入用戶資料
         const profile = await loadUserProfile(user.uid);
         
         if (isCancelled) return;

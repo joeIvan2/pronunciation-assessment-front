@@ -421,6 +421,55 @@ export const loadUserProfile = async (uid: string): Promise<{
   }
 };
 
+// 創建或更新使用者基本資料（首次登入時調用）
+export const createOrUpdateUserProfile = async (
+  uid: string,
+  displayName?: string,
+  email?: string
+): Promise<void> => {
+  if (!uid) return;
+
+  try {
+    await checkNetworkConnection();
+    
+    await retryOperation(async () => {
+      const userDocRef = doc(db, 'users', uid);
+      
+      // 先檢查是否已存在
+      const userDoc = await getDoc(userDocRef);
+      const existingData = userDoc.exists() ? userDoc.data() : {};
+      
+      // 準備更新資料
+      const updateData: any = {
+        updatedAt: serverTimestamp()
+      };
+      
+      // 如果是新用戶或者顯示名稱/電子郵件有變更，則更新
+      if (!userDoc.exists() || !existingData.displayName || !existingData.email) {
+        updateData.createdAt = existingData.createdAt || serverTimestamp();
+        if (displayName) updateData.displayName = displayName;
+        if (email) updateData.email = email;
+        
+        // 初始化預設值（僅在首次創建時）
+        if (!userDoc.exists()) {
+          updateData.tokens = 0;
+          updateData.shareHistory = [];
+          updateData.preferences = {};
+          updateData.historyRecords = [];
+        }
+      }
+      
+      // 儲存或更新資料
+      await setDoc(userDocRef, updateData, { merge: true });
+    });
+
+    console.log('使用者基本資料已創建/更新:', uid, displayName, email);
+  } catch (error) {
+    console.error('創建/更新使用者資料失敗:', error);
+    throw new Error(`操作失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+  }
+};
+
 // 儲存分享記錄到使用者資料
 export const saveShareToUserHistory = async (
   uid: string, 
@@ -504,8 +553,6 @@ export const saveUserPreferences = async (
     throw new Error(`儲存失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
   }
 };
-
-
 
 // 儲存使用者歷史記錄
 export const saveUserHistoryRecords = async (
