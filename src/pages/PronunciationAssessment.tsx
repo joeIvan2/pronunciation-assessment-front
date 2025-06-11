@@ -13,6 +13,7 @@ import ShareData from "../components/ShareData";
 import ResizableTextarea from "../components/ResizableTextarea";
 import LoginModal from "../components/LoginModal";
 import ShareImportModal from "../components/ShareImportModal";
+import AndroidChromeModal from "../components/AndroidChromeModal";
 
 import { Tooltip } from 'react-tooltip';
 
@@ -141,6 +142,9 @@ const PronunciationAssessment: React.FC = () => {
   const [shareImportData, setShareImportData] = useState<any>(null);
   const [shareImportLoading, setShareImportLoading] = useState<boolean>(false);
 
+  // Android WebView 提示 Modal 狀態
+  const [showAndroidModal, setShowAndroidModal] = useState<boolean>(false);
+
   // 監聽 iOS Facebook 操作提示事件
   useEffect(() => {
     const handleShowFacebookTooltip = () => {
@@ -155,6 +159,19 @@ const PronunciationAssessment: React.FC = () => {
 
     return () => {
       window.removeEventListener('showFacebookTooltip', handleShowFacebookTooltip);
+    };
+  }, []);
+
+  // 監聽 Android WebView 跳轉提示事件
+  useEffect(() => {
+    const handleShowAndroidModal = () => {
+      setShowAndroidModal(true);
+    };
+
+    window.addEventListener('showAndroidChromeModal', handleShowAndroidModal);
+
+    return () => {
+      window.removeEventListener('showAndroidChromeModal', handleShowAndroidModal);
     };
   }, []);
 
@@ -1213,6 +1230,12 @@ const PronunciationAssessment: React.FC = () => {
     window.history.replaceState({}, document.title, newUrl);
   };
 
+  // Android WebView Modal 確認處理
+  const handleAndroidModalConfirm = () => {
+    const intentUrl = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end;`;
+    window.location.href = intentUrl;
+  };
+
   const handleDirectImport = async () => {
     if (!shareImportData) return;
     
@@ -1967,6 +1990,11 @@ const PronunciationAssessment: React.FC = () => {
             favorites: shareImportData.favorites || [],
             tags: shareImportData.tags || []
           } : undefined}
+        />
+
+        <AndroidChromeModal
+          isOpen={showAndroidModal}
+          onConfirm={handleAndroidModalConfirm}
         />
 
 

@@ -61,13 +61,11 @@ export const isMessengerInAppBrowser = (): boolean => {
 // 顯示瀏覽器引導訊息
 export const showBrowserGuideMessage = (): void => {
   const isAndroid = /android/.test(ua);
-  
+
   if (isAndroid) {
-    // Android 直接跳轉，不顯示通知訊息
-    console.log('Android WebView 檢測到，直接跳轉到外部瀏覽器');
-    // 直接執行跳轉邏輯
-    const intentUrl = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end`;
-    window.location.href = intentUrl;
+    // Android WebView 顯示跳轉提示 Modal
+    console.log('Android WebView 檢測到，顯示跳轉 Chrome 的提示');
+    window.dispatchEvent(new Event('showAndroidChromeModal'));
     return;
   }
 
