@@ -1,24 +1,18 @@
+const ua = navigator.userAgent.toLowerCase();
+
 // 檢測是否為內建瀏覽器
 export const isInAppBrowser = (): boolean => {
-  const userAgent = navigator.userAgent || '';
-  const isInApp = 
-    userAgent.includes('FBAN') ||        // Facebook
-    userAgent.includes('FBAV') ||        // Facebook
-    userAgent.includes('Instagram') ||   // Instagram  
-    userAgent.includes('Line') ||        // LINE
-    userAgent.includes('Messenger');     // Messenger
-
-  return isInApp;
+  return /fban|fbav|fb_iab|line|instagram|messenger/i.test(ua);
 };
 
 // 檢測是否為 iPhone
 export const isIPhone = (): boolean => {
-  return /iPhone|iPod/.test(navigator.userAgent);
+  return /iphone|ipod/.test(ua);
 };
 
 // 檢測是否為 iOS 設備（包括 iPhone、iPad、iPod）
 export const isIOS = (): boolean => {
-  return /iPhone|iPad|iPod/.test(navigator.userAgent);
+  return /iphone|ipad|ipod/.test(ua);
 };
 
 // 檢測是否為 iPhone 在內建瀏覽器中（這種情況下 Google OAuth 有問題）
@@ -33,14 +27,12 @@ export const isIOSInAppBrowser = (): boolean => {
 
 // 檢測是否為 Facebook 內建瀏覽器
 export const isFacebookInAppBrowser = (): boolean => {
-  const userAgent = navigator.userAgent || '';
-  return userAgent.includes('FBAN') || userAgent.includes('FBAV');
+  return /fban|fbav|fb_iab/i.test(ua);
 };
 
 // 檢測是否為 LINE 內建瀏覽器
 export const isLineInAppBrowser = (): boolean => {
-  const userAgent = navigator.userAgent || '';
-  return userAgent.includes('Line');
+  return /line/i.test(ua);
 };
 
 // 檢測是否應該禁用 Google 登入（不再隱藏按鈕，統一採用引導方式）
@@ -63,14 +55,12 @@ export const appendOpenExternalBrowserParam = (originalURL: string): string => {
 
 // 檢測是否為 Messenger 內建瀏覽器
 export const isMessengerInAppBrowser = (): boolean => {
-  const userAgent = navigator.userAgent || '';
-  return userAgent.includes('Messenger');
+  return /messenger/i.test(ua);
 };
 
 // 顯示瀏覽器引導訊息
 export const showBrowserGuideMessage = (): void => {
-  const userAgent = navigator.userAgent || '';
-  const isAndroid = /Android/.test(userAgent);
+  const isAndroid = /android/.test(ua);
   
   if (isAndroid) {
     // Android 直接跳轉，不顯示通知訊息
@@ -112,7 +102,7 @@ export const showBrowserGuideMessage = (): void => {
 
 // 檢測是否在行動裝置上
 export const isMobile = (): boolean => {
-  return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
 };
 
 // 獲取當前網址並生成外部瀏覽器連結
@@ -120,7 +110,7 @@ export const getExternalBrowserLink = (): string => {
   const currentUrl = window.location.href;
   
   // 如果是 Android，使用 intent:// 強制用 Chrome 開啟
-  if (navigator.userAgent.includes('Android')) {
+  if (/android/.test(ua)) {
     return `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end;`;
   }
   
