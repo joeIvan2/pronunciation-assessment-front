@@ -16,9 +16,19 @@ export const isIPhone = (): boolean => {
   return /iPhone|iPod/.test(navigator.userAgent);
 };
 
+// 檢測是否為 iOS 設備（包括 iPhone、iPad、iPod）
+export const isIOS = (): boolean => {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent);
+};
+
 // 檢測是否為 iPhone 在內建瀏覽器中（這種情況下 Google OAuth 有問題）
 export const isIPhoneInAppBrowser = (): boolean => {
   return isIPhone() && isInAppBrowser();
+};
+
+// 檢測是否為 iOS 設備在內建瀏覽器中
+export const isIOSInAppBrowser = (): boolean => {
+  return isIOS() && isInAppBrowser();
 };
 
 // 檢測是否應該禁用 Google 登入（僅針對 iPhone 在內建瀏覽器）
@@ -26,13 +36,18 @@ export const shouldDisableGoogleAuth = (): boolean => {
   return isIPhoneInAppBrowser();
 };
 
-// 顯示瀏覽器引導訊息（現在只針對非 iPhone 或 Google OAuth 不可用時）
+// 檢測是否應該允許 Facebook 登入（iOS 設備在 FB/LINE/WEBVIEW 中都允許）
+export const shouldAllowFacebookAuth = (): boolean => {
+  return isIOSInAppBrowser();
+};
+
+// 顯示瀏覽器引導訊息（現在只針對非 iOS 或特定情況時）
 export const showBrowserGuideMessage = (): void => {
   const userAgent = navigator.userAgent || '';
   const isAndroid = /Android/.test(userAgent);
   
-  // iPhone 在內建瀏覽器時不顯示引導訊息，因為 Facebook 可以正常運作
-  if (isIPhoneInAppBrowser()) {
+  // iOS 設備在內建瀏覽器時不顯示引導訊息，因為 Facebook 可以正常運作
+  if (isIOSInAppBrowser()) {
     return;
   }
 

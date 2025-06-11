@@ -8,7 +8,7 @@ import {
   onAuthStateChanged,
   type User
 } from 'firebase/auth';
-import { isInAppBrowser, showBrowserGuideMessage, shouldDisableGoogleAuth } from '../utils/browserDetection';
+import { isInAppBrowser, showBrowserGuideMessage, shouldDisableGoogleAuth, shouldAllowFacebookAuth } from '../utils/browserDetection';
 
 interface UseFirebaseAuthReturn {
   user: User | null;
@@ -89,7 +89,32 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
 
   const signInWithFacebook = async (): Promise<void> => {
     try {
-      // 檢查是否在內建瀏覽器中
+      // 如果是 iOS 設備在內建瀏覽器中，直接嘗試 Facebook 登入，不顯示引導訊息
+      if (shouldAllowFacebookAuth()) {
+        console.log('iOS 設備在內建瀏覽器中，直接嘗試 Facebook 登入');
+        
+        try {
+          await signInWithPopup(auth, facebookProvider);
+          console.log('Facebook 彈出視窗登入成功');
+          return;
+        } catch (popupError: any) {
+          console.warn('Facebook 彈出視窗登入失敗，切換到重定向登入:', popupError.message);
+          
+          // 如果彈出視窗失敗，檢查是否為用戶關閉彈出視窗
+          if (popupError.code === 'auth/popup-closed-by-user') {
+            console.log('用戶關閉了 Facebook 登入彈出視窗');
+            return; // 不進行重定向，讓用戶再次嘗試
+          }
+          
+          // 其他錯誤則使用重定向登入
+          console.log('使用 Facebook 重定向登入作為備用方案');
+          await signInWithRedirect(auth, facebookProvider);
+          console.log('Facebook 重定向登入已啟動');
+          return;
+        }
+      }
+
+      // 非 iOS 內建瀏覽器的情況，檢查是否在內建瀏覽器中
       if (isInAppBrowser()) {
         console.log('檢測到內建瀏覽器，顯示引導訊息');
         showBrowserGuideMessage();
