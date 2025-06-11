@@ -16,11 +16,16 @@ service cloud.firestore {
       // 更新分享：任何登入用戶只要有正確密碼就可以修改
       allow update: if 
         request.auth != null &&
-        // 密碼驗證：更新的密碼必須與現有密碼匹配
+        
+        // 限制只能修改指定欄位，絕不能包含 editPassword
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'tags', 'favorites', 'updatedAt', 'lastUpdatedBy'
+        ]) &&
+        
+        // 確保來者提供的 editPassword 與現有資料一致（防止沒送密碼）
         request.resource.data.editPassword == resource.data.editPassword &&
-        // 限制可更新的字段
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tags', 'favorites', 'updatedAt', 'lastUpdatedBy']) &&
-        // 確保 lastUpdatedBy 是當前用戶
+        
+        // 操作者必須正確標示自己身份
         request.resource.data.lastUpdatedBy == request.auth.uid;
       
       // 刪除分享：只有創建者可以刪除
