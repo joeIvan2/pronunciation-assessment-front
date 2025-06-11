@@ -61,6 +61,12 @@ export const appendOpenExternalBrowserParam = (originalURL: string): string => {
   }
 };
 
+// 檢測是否為 Messenger 內建瀏覽器
+export const isMessengerInAppBrowser = (): boolean => {
+  const userAgent = navigator.userAgent || '';
+  return userAgent.includes('Messenger');
+};
+
 // 顯示瀏覽器引導訊息
 export const showBrowserGuideMessage = (): void => {
   const userAgent = navigator.userAgent || '';
@@ -84,11 +90,11 @@ export const showBrowserGuideMessage = (): void => {
     return;
   }
 
-  // 其他 iOS 設備才顯示引導訊息
+  // iOS 設備顯示引導訊息
   let message = '為了確保登入功能正常運作，建議您使用外部瀏覽器開啟此頁面。\n\n';
   
   // iOS 設備針對不同的內建瀏覽器提供具體的操作指導
-  if (isFacebookInAppBrowser()) {
+  if (isFacebookInAppBrowser() || isMessengerInAppBrowser()) {
     message += '請點擊右下角的選單，選擇「在瀏覽器中開啟」或「在 Safari 中開啟」。';
   } else {
     // 其他iOS內建瀏覽器的一般性指導
@@ -97,9 +103,10 @@ export const showBrowserGuideMessage = (): void => {
 
   alert(message);
 
-  // iOS Safari 跳轉
+  // 對於所有iOS瀏覽器，只重新整理頁面，不進行跳轉
   setTimeout(() => {
-    window.location.href = `x-web-search://?${encodeURIComponent(window.location.href)}`;
+    // 只是重新整理頁面，用戶需要手動點擊選單開啟外部瀏覽器
+    window.location.reload();
   }, 1000);
 };
 
