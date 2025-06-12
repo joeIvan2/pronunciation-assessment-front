@@ -872,6 +872,41 @@ const PronunciationAssessment: React.FC = () => {
 
     }
   };
+
+  const goToRandomSentence = async () => {
+    if (filteredFavorites.length === 0) {
+      return; // 沒有可用的收藏項目
+    }
+
+    // 生成隨機索引
+    const randomIndex = Math.floor(Math.random() * filteredFavorites.length);
+    const target = filteredFavorites[randomIndex];
+    
+    if (target) {
+      setReferenceText(target.text);
+      storage.saveReferenceText(target.text);
+      setHighlightedFavoriteId(target.id);
+      
+      // 直接播放選中的句子，使用目標文本而不是依賴狀態
+      setTimeout(async () => {
+        try {
+          setIsLoading(true);
+          setStreamLoading(true);
+          setError(null);
+          
+          // 統一使用流式TTS播放目標文本
+          const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
+          console.log("隨機句子流式TTS已完成", result);
+        } catch (error) {
+          console.error('播放隨機句子失敗:', error);
+          setError(`播放隨機句子失敗: ${error instanceof Error ? error.message : String(error)}`);
+        } finally {
+          setIsLoading(false);
+          setStreamLoading(false);
+        }
+      }, 100);
+    }
+  };
   
   // 保存 Azure key/region
   const saveAzureSettings = () => {
@@ -1657,51 +1692,67 @@ const PronunciationAssessment: React.FC = () => {
         
                 {/* 操作按钮区 */}
                 <div className="textarea-action-bar">
-                  {/* 評分按鈕 */}
-            <button
-              onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
-              disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
-                    className={`btn ${(isAssessing || recorder.recording) && buttonStyleDelayed ? "btn-danger" : "btn-primary"} btn-flex-1-5`}
-            >
-                    <i className="fas fa-microphone mic-icon-margin"></i>
-              {(isAssessing || recorder.recording) && buttonStyleDelayed
-                ? "停止錄音"
-                : isLoading
-                ? "處理中..."
-                      : `評分${useBackend ? ' ' : ''}`}
-            </button>
-            
-            {/* 發音按鈕 */}
-            <button
-              onClick={() => {
-                speakText();
-              }}
-              disabled={isLoading || streamLoading || !referenceText}
-                    className={`btn btn-success btn-flex-0-5 ${(isLoading || streamLoading || !referenceText) ? 'btn-disabled' : ''}`}
-                    title="使用AI語音播放"
-                  >
-                    <i className={`fas ${!useBackend ? 'fa-broadcast-tower' : 'fa-volume-up'}`}></i>
-                  </button>
+                  {/* 第一排：評分和發音按鈕 */}
+                  <div className="button-row">
+                    {/* 評分按鈕 */}
+                    <button
+                      onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
+                      disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
+                      className={`btn ${(isAssessing || recorder.recording) && buttonStyleDelayed ? "btn-danger" : "btn-primary"} btn-flex-half`}
+                    >
+                      <i className="fas fa-microphone mic-icon-margin"></i>
+                      {(isAssessing || recorder.recording) && buttonStyleDelayed
+                        ? "停止錄音"
+                        : isLoading
+                        ? "處理中..."
+                        : `評分${useBackend ? ' ' : ''}`}
+                    </button>
+                    
+                    {/* 發音按鈕 */}
+                    <button
+                      onClick={() => {
+                        speakText();
+                      }}
+                      disabled={isLoading || streamLoading || !referenceText}
+                      className={`btn btn-success btn-flex-half ${(isLoading || streamLoading || !referenceText) ? 'btn-disabled' : ''}`}
+                      title="使用AI語音播放"
+                    >
+                      <i className={`fas ${!useBackend ? 'fa-broadcast-tower' : 'fa-volume-up'}`}></i>
+                    </button>
+                  </div>
                   
-                  {/* 前一句按鈕 - 使用統一的按鈕寬度 */}
-                  <button
-                    onClick={goToPreviousSentence}
-                    disabled={filteredFavorites.length === 0}
-                    className={`btn btn-nav btn-flex-0-75 ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
-                    title="上一個收藏句子"
-                  >
-                    <i className="fas fa-chevron-left"></i>
-                  </button>
-                  
-                  {/* 下一句按鈕 - 使用統一的按鈕寬度 */}
-                  <button
-                    onClick={goToNextSentence}
-                    disabled={filteredFavorites.length === 0}
-                    className={`btn btn-nav btn-flex-0-75 ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
-                    title="下一個收藏句子"
-                  >
-                    <i className="fas fa-chevron-right"></i>
-            </button>
+                  {/* 第二排：導航按鈕 */}
+                  <div className="button-row">
+                    {/* 前一句按鈕 */}
+                    <button
+                      onClick={goToPreviousSentence}
+                      disabled={filteredFavorites.length === 0}
+                      className={`btn btn-nav btn-flex-third ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
+                      title="上一個收藏句子"
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </button>
+                    
+                    {/* 隨機按鈕 */}
+                    <button
+                      onClick={goToRandomSentence}
+                      disabled={filteredFavorites.length === 0 || isLoading || streamLoading}
+                      className={`btn btn-nav btn-flex-third ${(filteredFavorites.length === 0 || isLoading || streamLoading) ? 'btn-disabled' : ''}`}
+                      title="隨機選擇並播放收藏句子"
+                    >
+                      <i className="fas fa-random"></i>
+                    </button>
+                    
+                    {/* 下一句按鈕 */}
+                    <button
+                      onClick={goToNextSentence}
+                      disabled={filteredFavorites.length === 0}
+                      className={`btn btn-nav btn-flex-third ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
+                      title="下一個收藏句子"
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
                 </div>
             
             {isAssessing && <div className="recording-indicator">錄音中... (最長30秒)</div>}

@@ -1092,6 +1092,28 @@ h4 {
   flex: 0.75;
 }
 
+/* 新的按鈕布局樣式 */
+.button-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.button-row:last-child {
+  margin-bottom: 0;
+}
+
+.btn-flex-half {
+  flex: 1;
+  width: calc(50% - 4px);
+}
+
+.btn-flex-third {
+  flex: 1;
+  width: calc(33.333% - 5.33px);
+}
+
 /* 麥克風圖標右邊距 */
 .mic-icon-margin {
   margin-right: 5px;
@@ -1120,10 +1142,10 @@ h4 {
 /* 替代原有行內設置的 textarea-action-bar 樣式 */
 .textarea-action-bar {
   display: flex;
+  flex-direction: column;
   margin-top: 10px;
-  gap: 5px;
+  gap: 0;
   width: 100%;
-  flex-wrap: nowrap;
 }
 
 /* 導航按鈕（左右箭頭）樣式 */
