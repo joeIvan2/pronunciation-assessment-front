@@ -167,6 +167,10 @@ const PronunciationAssessment: React.FC = () => {
 
   // AI prompt from URL parameter
   const [aiPromptFromURL, setAiPromptFromURL] = useState<string>('');
+  
+  // 甩動偵測相關狀態
+  const [shakeDetectionEnabled, setShakeDetectionEnabled] = useState(false);
+  const [lastShakeTime, setLastShakeTime] = useState(0);
 
   // 監聽 iOS Facebook 操作提示事件
   useEffect(() => {
@@ -238,6 +242,46 @@ const PronunciationAssessment: React.FC = () => {
       storage.saveTopActiveTab('ai');
     }
   }, []);
+
+  // 甩動偵測事件監聽器
+  useEffect(() => {
+    if (!shakeDetectionEnabled) return;
+
+    let lastX = 0, lastY = 0, lastZ = 0;
+    let shakeThreshold = 15; // 甩動閾值
+
+    const handleDeviceMotion = (event: DeviceMotionEvent) => {
+      const acceleration = event.accelerationIncludingGravity;
+      if (!acceleration) return;
+
+      const { x = 0, y = 0, z = 0 } = acceleration;
+      
+      // 計算加速度變化
+      const deltaX = Math.abs(x - lastX);
+      const deltaY = Math.abs(y - lastY);
+      const deltaZ = Math.abs(z - lastZ);
+      
+      // 更新上次記錄的值
+      lastX = x;
+      lastY = y;
+      lastZ = z;
+      
+      // 檢測甩動（任一軸超過閾值）
+      if (deltaX > shakeThreshold || deltaY > shakeThreshold || deltaZ > shakeThreshold) {
+        handleShake();
+      }
+    };
+
+    // 添加事件監聽器
+    window.addEventListener('devicemotion', handleDeviceMotion);
+    console.log('甩動偵測已啟用');
+
+    // 清理函數
+    return () => {
+      window.removeEventListener('devicemotion', handleDeviceMotion);
+      console.log('甩動偵測已禁用');
+    };
+  }, [shakeDetectionEnabled, filteredFavorites.length, isLoading, streamLoading]);
 
   // 登入後載入 Firestore 收藏並在更新時同步
   useEffect(() => {
@@ -905,6 +949,58 @@ const PronunciationAssessment: React.FC = () => {
           setStreamLoading(false);
         }
       }, 100);
+    }
+  };
+
+  // 甩動偵測功能
+  const handleShake = () => {
+    const now = Date.now();
+    // 防止重複觸發，至少間隔1秒
+    if (now - lastShakeTime < 1000) {
+      return;
+    }
+    
+    setLastShakeTime(now);
+    console.log('偵測到甩動！觸發隨機播放');
+    
+    // 觸發隨機按鈕功能
+    if (filteredFavorites.length > 0 && !isLoading && !streamLoading) {
+      goToRandomSentence();
+    }
+  };
+
+  const requestMotionPermission = async () => {
+    if (typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+      // iOS 13+ 需要請求權限
+      try {
+        const permission = await (DeviceMotionEvent as any).requestPermission();
+        if (permission === 'granted') {
+          setShakeDetectionEnabled(true);
+          return true;
+        } else {
+          alert('需要允許訪問動作和方向權限才能使用甩動功能');
+          return false;
+        }
+      } catch (error) {
+        console.error('請求動作權限失敗:', error);
+        return false;
+      }
+    } else if ('DeviceMotionEvent' in window) {
+      // Android 或較舊的 iOS 版本
+      setShakeDetectionEnabled(true);
+      return true;
+    } else {
+      alert('您的設備不支援甩動偵測功能');
+      return false;
+    }
+  };
+
+  const toggleShakeDetection = async () => {
+    if (!shakeDetectionEnabled) {
+      const granted = await requestMotionPermission();
+      if (!granted) return;
+    } else {
+      setShakeDetectionEnabled(false);
     }
   };
   
@@ -1687,6 +1783,15 @@ const PronunciationAssessment: React.FC = () => {
               className={!referenceText ? "control-button favorite-button-disabled" : "control-button favorite-button-dynamic"}
                   >
                     <i className="fas fa-star"></i>
+              </button>
+              
+              {/* 甩動偵測開關 */}
+              <button
+                onClick={toggleShakeDetection}
+                title={shakeDetectionEnabled ? "關閉甩動偵測" : "開啟甩動偵測"}
+                className={`control-button ${shakeDetectionEnabled ? 'shake-enabled' : 'shake-disabled'}`}
+              >
+                <i className={`fas ${shakeDetectionEnabled ? 'fa-mobile-alt' : 'fa-mobile'}`}></i>
               </button>
         </div>
         

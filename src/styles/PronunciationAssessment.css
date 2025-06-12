@@ -1133,6 +1133,22 @@ h4 {
   color: var(--ios-gray);
 }
 
+/* 甩動偵測按鈕樣式 */
+.shake-enabled {
+  color: var(--ios-success);
+  animation: shakeAnimation 2s infinite;
+}
+
+.shake-disabled {
+  color: var(--ios-gray);
+}
+
+@keyframes shakeAnimation {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
 /* 按鈕禁用狀態 */
 .btn-disabled {
   opacity: 0.55;
