@@ -580,11 +580,14 @@ const PronunciationAssessment: React.FC = () => {
   const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);
   
   // 處理streaming錄音評估
-  const handleStreamingAssessment = useCallback(async () => {
+  const handleStreamingAssessment = useCallback(async (textToAssess?: string) => {
     if (!useBackend) {
       console.log('非後端模式，不支持streaming');
       return;
     }
+
+    // 使用傳入的文本或當前狀態文本
+    const assessmentText = textToAssess || referenceText;
 
     try {
       setError(null);
@@ -594,7 +597,7 @@ const PronunciationAssessment: React.FC = () => {
       
       // 啟動streaming評估
       const chunkHandler = await backendSpeech.startStreamingAssessment(
-        referenceText,
+        assessmentText,
         strictMode,
         (progress) => {
           console.log(`Streaming進度: ${progress}%`);
@@ -974,6 +977,8 @@ const PronunciationAssessment: React.FC = () => {
           setStreamLoading(true);
           setError(null);
           
+
+          
           // 統一使用流式TTS播放目標文本
           const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
           console.log("隨機句子流式TTS已完成", result);
@@ -999,24 +1004,20 @@ const PronunciationAssessment: React.FC = () => {
     const now = Date.now();
     // 防止重複觸發，增加間隔至5秒並添加更嚴格的檢查
     if (now - lastShakeTime < 5000) {
-      console.log('甩動過於頻繁，忽略此次觸發');
       return;
     }
     
     // 檢查是否正在播放或處理中
     if (isLoading || streamLoading) {
-      console.log('正在處理中，忽略甩動');
       return;
     }
     
     // 檢查是否有收藏句子
     if (filteredFavorites.length === 0) {
-      console.log('沒有收藏句子，忽略甩動');
       return;
     }
     
     setLastShakeTime(now);
-    console.log('偵測到甩動！觸發隨機播放');
     
     // 觸發隨機按鈕功能
     goToRandomSentence();
@@ -1097,7 +1098,6 @@ const PronunciationAssessment: React.FC = () => {
       const message = args.join(' ');
       if (message.includes('WebM播放完成') && !audioFinishedDetected) {
         audioFinishedDetected = true;
-        console.log('檢測到WebM播放完成，開始等待1秒');
         
         // 恢復原始console.log
         console.log = originalConsoleLog;
@@ -1113,7 +1113,6 @@ const PronunciationAssessment: React.FC = () => {
     setTimeout(() => {
       if (!audioFinishedDetected) {
         console.log = originalConsoleLog;
-        console.log('未檢測到WebM完成消息，使用備用檢測方法');
         
         const checkAudioFinished = () => {
           const audioElements = document.querySelectorAll('audio');
@@ -1141,31 +1140,24 @@ const PronunciationAssessment: React.FC = () => {
     waitForAudioToFinish(() => {
       if (!isAutoPracticeMode) return; // 再次確認模式還開著
       
-      console.log('音頻播放已完成，開始BEEP和錄音流程');
-      console.log('當前要錄音的文本:', targetText || referenceText);
+
       
       // 播放BEEP聲
       playBeepSound();
       
-      // BEEP聲後開始錄音
+              // BEEP聲後自動觸發按鈕點擊
               setTimeout(() => {
           if (isAutoPracticeMode && !isAssessing) {
-            // 如果有指定目標文本，確保使用正確的文本進行錄音
-            if (targetText && targetText !== referenceText) {
-              console.log('更新文本以匹配錄音內容:', targetText);
+            // 直接使用播放的文本進行錄音，確保完全一致
+            if (targetText) {
+              // 同時更新狀態供UI顯示
               setReferenceText(targetText);
               storage.saveReferenceText(targetText);
               
-              // 等待狀態更新後再開始錄音
-              setTimeout(() => {
-                if (isAutoPracticeMode && !isAssessing) {
-                  console.log('文本已更新，開始錄音評分');
-                  startAssessment(targetText);
-                }
-              }, 100);
+              // 直接用播放的文本錄音
+              handleAutoAssessment(targetText);
             } else {
-              // 文本已經正確，直接開始錄音
-              startAssessment(targetText);
+              handleAssessmentButtonClick();
             }
           }
         }, 300);
@@ -1397,6 +1389,11 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
+  // 自動錄音用的事件處理器，可以指定文本
+  const handleAutoAssessment = (textToUse: string) => {
+    startAssessment(textToUse);
+  };
+
   const startAssessment = async (targetText?: string) => {
     // 使用指定的文本或當前的referenceText
     const textToAssess = targetText || referenceText;
@@ -1406,7 +1403,7 @@ const PronunciationAssessment: React.FC = () => {
       setResult(null);
       setIsAssessing(true);
       
-      console.log('開始評估，使用文本:', textToAssess);
+  
       
       // 延遲0.5秒後改變按鈕CSS樣式
       setTimeout(() => {
@@ -1415,7 +1412,7 @@ const PronunciationAssessment: React.FC = () => {
       
       if (useBackend) {
         // 使用後端API - 直接使用streaming模式
-        await handleStreamingAssessment();
+        await handleStreamingAssessment(textToAssess);
       } else {
         // 直接使用Azure
         if (!azureSettings.key || !azureSettings.region) {
