@@ -980,8 +980,8 @@ const PronunciationAssessment: React.FC = () => {
           
           // 如果啟用了自動練習模式，播放完成後自動錄音
           if (isAutoPracticeMode) {
-            // 立即開始精確的音頻播放完成檢測
-            handleAutoPracticeAfterSpeak();
+            // 立即開始精確的音頻播放完成檢測，傳入目標文本
+            handleAutoPracticeAfterSpeak(target.text);
           }
         } catch (error) {
           console.error('播放隨機句子失敗:', error);
@@ -1135,23 +1135,40 @@ const PronunciationAssessment: React.FC = () => {
   };
 
   // 自動練習邏輯：在播放真正結束後自動開始錄音
-  const handleAutoPracticeAfterSpeak = () => {
+  const handleAutoPracticeAfterSpeak = (targetText?: string) => {
     if (!isAutoPracticeMode) return;
     
     waitForAudioToFinish(() => {
       if (!isAutoPracticeMode) return; // 再次確認模式還開著
       
       console.log('音頻播放已完成，開始BEEP和錄音流程');
+      console.log('當前要錄音的文本:', targetText || referenceText);
       
       // 播放BEEP聲
       playBeepSound();
       
       // BEEP聲後開始錄音
-      setTimeout(() => {
-        if (isAutoPracticeMode && !isAssessing) {
-          startAssessment();
-        }
-      }, 300);
+              setTimeout(() => {
+          if (isAutoPracticeMode && !isAssessing) {
+            // 如果有指定目標文本，確保使用正確的文本進行錄音
+            if (targetText && targetText !== referenceText) {
+              console.log('更新文本以匹配錄音內容:', targetText);
+              setReferenceText(targetText);
+              storage.saveReferenceText(targetText);
+              
+              // 等待狀態更新後再開始錄音
+              setTimeout(() => {
+                if (isAutoPracticeMode && !isAssessing) {
+                  console.log('文本已更新，開始錄音評分');
+                  startAssessment();
+                }
+              }, 100);
+            } else {
+              // 文本已經正確，直接開始錄音
+              startAssessment();
+            }
+          }
+        }, 300);
     });
   };
   
@@ -1445,8 +1462,8 @@ const PronunciationAssessment: React.FC = () => {
       
       // 播放完成後，如果啟用了自動練習模式，則開始精確的音頻檢測
       if (isAutoPracticeMode) {
-        // 立即開始精確的音頻播放完成檢測
-        handleAutoPracticeAfterSpeak();
+        // 立即開始精確的音頻播放完成檢測，使用當前文本
+        handleAutoPracticeAfterSpeak(referenceText);
       }
         
     } catch (err) {
