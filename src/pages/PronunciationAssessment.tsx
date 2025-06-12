@@ -982,7 +982,7 @@ const PronunciationAssessment: React.FC = () => {
           if (isAutoPracticeMode) {
             setTimeout(() => {
               handleAutoPracticeAfterSpeak();
-            }, 200);
+            }, 1000);
           }
         } catch (error) {
           console.error('播放隨機句子失敗:', error);
@@ -1089,18 +1089,15 @@ const PronunciationAssessment: React.FC = () => {
   const handleAutoPracticeAfterSpeak = () => {
     if (!isAutoPracticeMode) return;
     
-    // 等待1秒
+    // 播放BEEP聲（已經等過1秒了，直接BEEP）
+    playBeepSound();
+    
+    // BEEP聲後開始錄音
     setTimeout(() => {
-      // 播放BEEP聲
-      playBeepSound();
-      
-      // BEEP聲後開始錄音
-      setTimeout(() => {
-        if (isAutoPracticeMode && !isAssessing) { // 確保模式還是開啟且沒有在錄音
-          startAssessment();
-        }
-      }, 300);
-    }, 1000);
+      if (isAutoPracticeMode && !isAssessing) { // 確保模式還是開啟且沒有在錄音
+        startAssessment();
+      }
+    }, 300);
   };
   
   // 保存 Azure key/region
@@ -1395,7 +1392,7 @@ const PronunciationAssessment: React.FC = () => {
       if (isAutoPracticeMode) {
         setTimeout(() => {
           handleAutoPracticeAfterSpeak();
-        }, 200); // 稍等一下確保播放完全結束
+        }, 1000); // 等待1秒確保播放完全結束
       }
         
     } catch (err) {
