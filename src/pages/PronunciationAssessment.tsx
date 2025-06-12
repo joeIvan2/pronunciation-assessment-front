@@ -171,6 +171,7 @@ const PronunciationAssessment: React.FC = () => {
   // 甩動偵測相關狀態
   const [shakeDetectionEnabled, setShakeDetectionEnabled] = useState(false);
   const [lastShakeTime, setLastShakeTime] = useState(0);
+  const [shakeTip, setShakeTip] = useState<string | null>(null);
   
   // 自動練習模式狀態
   const [isAutoPracticeMode, setIsAutoPracticeMode] = useState(false);
@@ -1018,6 +1019,8 @@ const PronunciationAssessment: React.FC = () => {
     }
     
     setLastShakeTime(now);
+    setShakeTip(`已偵測到搖晃，隨機撥放啟動，下次啟動需等待5秒`);
+    setTimeout(() => setShakeTip(null), 3000);
     
     // 觸發隨機按鈕功能
     goToRandomSentence();
@@ -1053,8 +1056,12 @@ const PronunciationAssessment: React.FC = () => {
     if (!shakeDetectionEnabled) {
       const granted = await requestMotionPermission();
       if (!granted) return;
+      setShakeTip('已開啟甩動偵測');
+      setTimeout(() => setShakeTip(null), 3000);
     } else {
       setShakeDetectionEnabled(false);
+      setShakeTip('已關閉甩動偵測');
+      setTimeout(() => setShakeTip(null), 3000);
     }
   };
 
@@ -1079,6 +1086,12 @@ const PronunciationAssessment: React.FC = () => {
   // 切換自動練習模式（狀態開關）
   const toggleAutoPracticeMode = () => {
     setIsAutoPracticeMode(!isAutoPracticeMode);
+    if (!isAutoPracticeMode) {
+      setShakeTip('已開啟自動播放後錄音');
+    } else {
+      setShakeTip('已關閉自動播放後錄音');
+    }
+    setTimeout(() => setShakeTip(null), 3000);
     if (isAutoPracticeMode && isAssessing) {
       // 如果正在錄音且關閉模式，停止錄音
       stopAssessment();
@@ -1813,7 +1826,13 @@ const PronunciationAssessment: React.FC = () => {
             src="/nicetone.webp" 
             alt="NiceTone" 
             className="pa-title-logo" 
-            onClick={() => setShowAzureSettings(true)}
+            onClick={() => {
+              if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                window.location.href = '/';
+              } else {
+                window.open('https://nicetone.ai', '_blank');
+              }
+            }}
             style={{ cursor: 'pointer' }}
           />
           <div className="pa-subtitle">
@@ -2079,6 +2098,7 @@ const PronunciationAssessment: React.FC = () => {
             {streamLoading && <div className="loading-indicator stream-loading">流式處理中...</div>}
             
             {cacheTipVisible && <div className="cache-tip">使用已緩存的語音</div>}
+            {shakeTip && <div className="shake-tip">{shakeTip}</div>}
           </div>
             </>
           )}
