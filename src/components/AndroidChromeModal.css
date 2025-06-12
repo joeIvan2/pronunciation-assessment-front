@@ -8,11 +8,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
 }
 
 .android-modal {
-  /* background: white; *
+  /* background: white; */
   border-radius: 16px;
   max-width: 400px;
   width: 90%;
