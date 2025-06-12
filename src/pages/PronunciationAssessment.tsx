@@ -251,7 +251,7 @@ const PronunciationAssessment: React.FC = () => {
     if (!shakeDetectionEnabled) return;
 
     let lastX = 0, lastY = 0, lastZ = 0;
-    let shakeThreshold = 20; // 提高甩動閾值，減少誤觸
+    let shakeThreshold = 12; // 降低甩動閾值，提高靈敏度
     let isShaking = false; // 甩動狀態標記
     let shakeCount = 0; // 甩動計數
     let shakeTimeout: NodeJS.Timeout | null = null;
@@ -283,12 +283,12 @@ const PronunciationAssessment: React.FC = () => {
           
           // 設置一個短暫的等待期，確保是持續的甩動動作
           shakeTimeout = setTimeout(() => {
-            if (shakeCount >= 2) { // 需要至少2次連續的高加速度變化
+            if (shakeCount >= 1) { // 降低要求，1次高加速度變化即可
               handleShake();
             }
             isShaking = false;
             shakeCount = 0;
-          }, 300); // 300ms 内必須有連續動作
+          }, 200); // 縮短至200ms
         } else {
           shakeCount++;
         }
@@ -980,9 +980,8 @@ const PronunciationAssessment: React.FC = () => {
           
           // 如果啟用了自動練習模式，播放完成後自動錄音
           if (isAutoPracticeMode) {
-            setTimeout(() => {
-              handleAutoPracticeAfterSpeak();
-            }, 1000);
+            // 立即開始精確的音頻播放完成檢測
+            handleAutoPracticeAfterSpeak();
           }
         } catch (error) {
           console.error('播放隨機句子失敗:', error);
@@ -998,8 +997,8 @@ const PronunciationAssessment: React.FC = () => {
   // 甩動偵測功能
   const handleShake = () => {
     const now = Date.now();
-    // 防止重複觸發，增加間隔至2秒並添加更嚴格的檢查
-    if (now - lastShakeTime < 2000) {
+    // 防止重複觸發，增加間隔至5秒並添加更嚴格的檢查
+    if (now - lastShakeTime < 5000) {
       console.log('甩動過於頻繁，忽略此次觸發');
       return;
     }
@@ -1085,19 +1084,75 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  // 自動練習邏輯：在播放結束後自動開始錄音
+  // 精確檢測音頻播放完成
+  const waitForAudioToFinish = (callback: () => void) => {
+    // 監聽控制台日誌中的WebM播放完成消息
+    const originalConsoleLog = console.log;
+    let audioFinishedDetected = false;
+    
+    // 重寫console.log來檢測WebM播放完成
+    console.log = function(...args) {
+      originalConsoleLog.apply(console, args);
+      
+      const message = args.join(' ');
+      if (message.includes('WebM播放完成') && !audioFinishedDetected) {
+        audioFinishedDetected = true;
+        console.log('檢測到WebM播放完成，開始等待1秒');
+        
+        // 恢復原始console.log
+        console.log = originalConsoleLog;
+        
+        // 等待1秒後執行回調
+        setTimeout(() => {
+          callback();
+        }, 1000);
+      }
+    };
+    
+    // 備用檢測機制：如果5秒後還沒檢測到WebM完成消息，使用原來的方法
+    setTimeout(() => {
+      if (!audioFinishedDetected) {
+        console.log = originalConsoleLog;
+        console.log('未檢測到WebM完成消息，使用備用檢測方法');
+        
+        const checkAudioFinished = () => {
+          const audioElements = document.querySelectorAll('audio');
+          const hasPlayingAudio = Array.from(audioElements).some(audio => !audio.paused && !audio.ended);
+          const isSpeaking = speechSynthesis.speaking;
+          
+          if (!hasPlayingAudio && !isSpeaking) {
+            setTimeout(() => {
+              callback();
+            }, 1000);
+          } else {
+            setTimeout(checkAudioFinished, 100);
+          }
+        };
+        
+        checkAudioFinished();
+      }
+    }, 5000);
+  };
+
+  // 自動練習邏輯：在播放真正結束後自動開始錄音
   const handleAutoPracticeAfterSpeak = () => {
     if (!isAutoPracticeMode) return;
     
-    // 播放BEEP聲（已經等過1秒了，直接BEEP）
-    playBeepSound();
-    
-    // BEEP聲後開始錄音
-    setTimeout(() => {
-      if (isAutoPracticeMode && !isAssessing) { // 確保模式還是開啟且沒有在錄音
-        startAssessment();
-      }
-    }, 300);
+    waitForAudioToFinish(() => {
+      if (!isAutoPracticeMode) return; // 再次確認模式還開著
+      
+      console.log('音頻播放已完成，開始BEEP和錄音流程');
+      
+      // 播放BEEP聲
+      playBeepSound();
+      
+      // BEEP聲後開始錄音
+      setTimeout(() => {
+        if (isAutoPracticeMode && !isAssessing) {
+          startAssessment();
+        }
+      }, 300);
+    });
   };
   
   // 保存 Azure key/region
@@ -1388,11 +1443,10 @@ const PronunciationAssessment: React.FC = () => {
       const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice, voiceSettings.rate);
       console.log("流式TTS已完成", result);
       
-      // 播放完成後，如果啟用了自動練習模式，則開始自動錄音流程
+      // 播放完成後，如果啟用了自動練習模式，則開始精確的音頻檢測
       if (isAutoPracticeMode) {
-        setTimeout(() => {
-          handleAutoPracticeAfterSpeak();
-        }, 1000); // 等待1秒確保播放完全結束
+        // 立即開始精確的音頻播放完成檢測
+        handleAutoPracticeAfterSpeak();
       }
         
     } catch (err) {
