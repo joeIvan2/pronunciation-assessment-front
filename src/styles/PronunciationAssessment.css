@@ -1149,6 +1149,25 @@ h4 {
   75% { transform: translateX(2px); }
 }
 
+/* 自動練習按鈕樣式 */
+.auto-practice-ready {
+  color: var(--ios-primary);
+}
+
+.auto-practice-active {
+  color: var(--ios-danger);
+  animation: pulseAnimation 1.5s infinite;
+}
+
+.auto-practice-disabled {
+  color: var(--ios-gray);
+}
+
+@keyframes pulseAnimation {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 /* 按鈕禁用狀態 */
 .btn-disabled {
   opacity: 0.55;

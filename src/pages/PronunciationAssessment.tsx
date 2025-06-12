@@ -171,6 +171,9 @@ const PronunciationAssessment: React.FC = () => {
   // 甩動偵測相關狀態
   const [shakeDetectionEnabled, setShakeDetectionEnabled] = useState(false);
   const [lastShakeTime, setLastShakeTime] = useState(0);
+  
+  // 自動練習模式狀態
+  const [isAutoPracticeMode, setIsAutoPracticeMode] = useState(false);
 
   // 監聽 iOS Facebook 操作提示事件
   useEffect(() => {
@@ -248,7 +251,10 @@ const PronunciationAssessment: React.FC = () => {
     if (!shakeDetectionEnabled) return;
 
     let lastX = 0, lastY = 0, lastZ = 0;
-    let shakeThreshold = 15; // 甩動閾值
+    let shakeThreshold = 20; // 提高甩動閾值，減少誤觸
+    let isShaking = false; // 甩動狀態標記
+    let shakeCount = 0; // 甩動計數
+    let shakeTimeout: NodeJS.Timeout | null = null;
 
     const handleDeviceMotion = (event: DeviceMotionEvent) => {
       const acceleration = event.accelerationIncludingGravity;
@@ -263,25 +269,55 @@ const PronunciationAssessment: React.FC = () => {
       
       // 更新上次記錄的值
       lastX = x;
-      lastY = y;
+      lastY = y; 
       lastZ = z;
       
-      // 檢測甩動（任一軸超過閾值）
-      if (deltaX > shakeThreshold || deltaY > shakeThreshold || deltaZ > shakeThreshold) {
-        handleShake();
+      // 計算總變化量
+      const totalDelta = deltaX + deltaY + deltaZ;
+      
+      // 檢測甩動（需要更明顯的動作）
+      if (totalDelta > shakeThreshold) {
+        if (!isShaking) {
+          isShaking = true;
+          shakeCount = 1;
+          
+          // 設置一個短暫的等待期，確保是持續的甩動動作
+          shakeTimeout = setTimeout(() => {
+            if (shakeCount >= 2) { // 需要至少2次連續的高加速度變化
+              handleShake();
+            }
+            isShaking = false;
+            shakeCount = 0;
+          }, 300); // 300ms 内必須有連續動作
+        } else {
+          shakeCount++;
+        }
+      } else if (isShaking && totalDelta < shakeThreshold / 2) {
+        // 如果動作停止，重置狀態
+        if (shakeTimeout) {
+          clearTimeout(shakeTimeout);
+          shakeTimeout = null;
+        }
+        isShaking = false;
+        shakeCount = 0;
       }
     };
 
     // 添加事件監聽器
     window.addEventListener('devicemotion', handleDeviceMotion);
-    console.log('甩動偵測已啟用');
+    console.log('甩動偵測已啟用（優化版）');
 
     // 清理函數
     return () => {
       window.removeEventListener('devicemotion', handleDeviceMotion);
+      if (shakeTimeout) {
+        clearTimeout(shakeTimeout);
+      }
       console.log('甩動偵測已禁用');
     };
   }, [shakeDetectionEnabled, filteredFavorites.length, isLoading, streamLoading]);
+
+  // 自動練習模式不需要自動清理，保持開關狀態
 
   // 登入後載入 Firestore 收藏並在更新時同步
   useEffect(() => {
@@ -941,6 +977,13 @@ const PronunciationAssessment: React.FC = () => {
           // 統一使用流式TTS播放目標文本
           const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
           console.log("隨機句子流式TTS已完成", result);
+          
+          // 如果啟用了自動練習模式，播放完成後自動錄音
+          if (isAutoPracticeMode) {
+            setTimeout(() => {
+              handleAutoPracticeAfterSpeak();
+            }, 200);
+          }
         } catch (error) {
           console.error('播放隨機句子失敗:', error);
           setError(`播放隨機句子失敗: ${error instanceof Error ? error.message : String(error)}`);
@@ -955,8 +998,21 @@ const PronunciationAssessment: React.FC = () => {
   // 甩動偵測功能
   const handleShake = () => {
     const now = Date.now();
-    // 防止重複觸發，至少間隔1秒
-    if (now - lastShakeTime < 1000) {
+    // 防止重複觸發，增加間隔至2秒並添加更嚴格的檢查
+    if (now - lastShakeTime < 2000) {
+      console.log('甩動過於頻繁，忽略此次觸發');
+      return;
+    }
+    
+    // 檢查是否正在播放或處理中
+    if (isLoading || streamLoading) {
+      console.log('正在處理中，忽略甩動');
+      return;
+    }
+    
+    // 檢查是否有收藏句子
+    if (filteredFavorites.length === 0) {
+      console.log('沒有收藏句子，忽略甩動');
       return;
     }
     
@@ -964,9 +1020,7 @@ const PronunciationAssessment: React.FC = () => {
     console.log('偵測到甩動！觸發隨機播放');
     
     // 觸發隨機按鈕功能
-    if (filteredFavorites.length > 0 && !isLoading && !streamLoading) {
-      goToRandomSentence();
-    }
+    goToRandomSentence();
   };
 
   const requestMotionPermission = async () => {
@@ -1002,6 +1056,51 @@ const PronunciationAssessment: React.FC = () => {
     } else {
       setShakeDetectionEnabled(false);
     }
+  };
+
+  // 播放BEEP聲
+  const playBeepSound = () => {
+    // 創建一個短暫的BEEP聲（440Hz，持續200ms）
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // 高音BEEP
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
+  };
+
+  // 切換自動練習模式（狀態開關）
+  const toggleAutoPracticeMode = () => {
+    setIsAutoPracticeMode(!isAutoPracticeMode);
+    if (isAutoPracticeMode && isAssessing) {
+      // 如果正在錄音且關閉模式，停止錄音
+      stopAssessment();
+    }
+  };
+
+  // 自動練習邏輯：在播放結束後自動開始錄音
+  const handleAutoPracticeAfterSpeak = () => {
+    if (!isAutoPracticeMode) return;
+    
+    // 等待1秒
+    setTimeout(() => {
+      // 播放BEEP聲
+      playBeepSound();
+      
+      // BEEP聲後開始錄音
+      setTimeout(() => {
+        if (isAutoPracticeMode && !isAssessing) { // 確保模式還是開啟且沒有在錄音
+          startAssessment();
+        }
+      }, 300);
+    }, 1000);
   };
   
   // 保存 Azure key/region
@@ -1291,6 +1390,13 @@ const PronunciationAssessment: React.FC = () => {
       // 統一使用流式TTS
       const result = await azureSpeech.speakWithAIServerStream(referenceText, selectedAIVoice, voiceSettings.rate);
       console.log("流式TTS已完成", result);
+      
+      // 播放完成後，如果啟用了自動練習模式，則開始自動錄音流程
+      if (isAutoPracticeMode) {
+        setTimeout(() => {
+          handleAutoPracticeAfterSpeak();
+        }, 200); // 稍等一下確保播放完全結束
+      }
         
     } catch (err) {
       console.error('流式語音合成失敗:', err);
@@ -1792,6 +1898,15 @@ const PronunciationAssessment: React.FC = () => {
                 className={`control-button ${shakeDetectionEnabled ? 'shake-enabled' : 'shake-disabled'}`}
               >
                 <i className={`fas ${shakeDetectionEnabled ? 'fa-mobile-alt' : 'fa-mobile'}`}></i>
+              </button>
+              
+              {/* 自動練習按鈕 */}
+              <button
+                onClick={toggleAutoPracticeMode}
+                title={isAutoPracticeMode ? "關閉自動練習模式" : "開啟自動練習模式（播放後自動錄音）"}
+                className={`control-button ${isAutoPracticeMode ? 'auto-practice-active' : 'auto-practice-ready'}`}
+              >
+                <i className={`fas ${isAutoPracticeMode ? 'fa-toggle-on' : 'fa-toggle-off'}`}></i>
               </button>
         </div>
         
