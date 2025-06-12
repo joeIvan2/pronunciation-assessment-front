@@ -7,6 +7,24 @@ interface IOSLINEModalProps {
 }
 
 const IOSLINEModal: React.FC<IOSLINEModalProps> = ({ isOpen, onClose }) => {
+  // 自動跳轉邏輯 - 只在LINE環境下執行跳轉
+  React.useEffect(() => {
+    // 檢查是否在LINE環境中
+    const isLineInApp = /line/i.test(navigator.userAgent.toLowerCase());
+    
+    if (isLineInApp) {
+      // 延遲一秒後自動跳轉
+      const timer = setTimeout(() => {
+        const currentUrl = window.location.href;
+        const separator = currentUrl.includes('?') ? '&' : '?';
+        const newUrl = `${currentUrl}${separator}openExternalBrowser=1`;
+        window.location.replace(newUrl);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []); // 空依賴陣列，只在組件掛載時執行一次
+
   if (!isOpen) return null;
 
   const handleOpenExternalBrowser = () => {

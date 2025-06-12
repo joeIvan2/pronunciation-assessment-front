@@ -7,6 +7,22 @@ interface AndroidChromeModalProps {
 }
 
 const AndroidChromeModal: React.FC<AndroidChromeModalProps> = ({ isOpen, onConfirm }) => {
+  // 自動跳轉邏輯 - 只在Android + LINE環境下執行跳轉
+  React.useEffect(() => {
+    // 檢查是否在Android + LINE環境中
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isLineInApp = /line/i.test(navigator.userAgent.toLowerCase());
+    
+    if (isAndroid && isLineInApp) {
+      // 延遲一秒後自動跳轉
+      const timer = setTimeout(() => {
+        window.location.replace('https://nicetone.ai/?openExternalBrowser=1');
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []); // 空依賴陣列，只在組件掛載時執行一次
+
   if (!isOpen) return null;
 
   return (
