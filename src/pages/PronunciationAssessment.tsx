@@ -14,10 +14,11 @@ import ResizableTextarea from "../components/ResizableTextarea";
 import LoginModal from "../components/LoginModal";
 import ShareImportModal from "../components/ShareImportModal";
 import AndroidChromeModal from "../components/AndroidChromeModal";
+import IOSFacebookModal from "../components/IOSFacebookModal";
+import IOSLINEModal from "../components/IOSLINEModal";
 
 // 瀏覽器環境檢測
 import { isAndroidWebView } from "../utils/browserDetection";
-
 import { Tooltip } from 'react-tooltip';
 
 // 鉤子導入
@@ -28,12 +29,24 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 
 // 工具導入
 import * as storage from "../utils/storage";
-
 import { getPracticeIdFromUrl, redirectToNewFormat, isPracticePage } from "../utils/urlUtils";
 import { useParams } from "react-router-dom";
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
+
+// iOS和Facebook檢測函數
+const isIOS = () => {
+  return /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+};
+
+const isFacebookInApp = () => {
+  return /fban|fbav|fb_iab/i.test(navigator.userAgent.toLowerCase());
+};
+
+const isLineInApp = () => {
+  return /line/i.test(navigator.userAgent.toLowerCase());
+};
 
 // 我們在storage.ts中已經更新了TabName類型，所以這裡不需要再定義
 
@@ -138,6 +151,10 @@ const PronunciationAssessment: React.FC = () => {
 
   // iOS Facebook 操作提示狀態
   const [showFacebookTooltip, setShowFacebookTooltip] = useState<boolean>(false);
+  const [showIOSFacebookModal, setShowIOSFacebookModal] = useState<boolean>(false);
+
+  // iOS LINE Modal 狀態
+  const [showIOSLINEModal, setShowIOSLINEModal] = useState<boolean>(false);
 
   // 分享導入 Modal 相關狀態
   const [showShareImportModal, setShowShareImportModal] = useState<boolean>(false);
@@ -151,11 +168,15 @@ const PronunciationAssessment: React.FC = () => {
   // 監聽 iOS Facebook 操作提示事件
   useEffect(() => {
     const handleShowFacebookTooltip = () => {
-      setShowFacebookTooltip(true);
-      // 5秒後自動關閉
-      setTimeout(() => {
-        setShowFacebookTooltip(false);
-      }, 8000);
+      if (isIOS() && isFacebookInApp()) {
+        setShowIOSFacebookModal(true);
+      } else {
+        setShowFacebookTooltip(true);
+        // 5秒後自動關閉
+        setTimeout(() => {
+          setShowFacebookTooltip(false);
+        }, 8000);
+      }
     };
 
     window.addEventListener('showFacebookTooltip', handleShowFacebookTooltip);
@@ -163,6 +184,20 @@ const PronunciationAssessment: React.FC = () => {
     return () => {
       window.removeEventListener('showFacebookTooltip', handleShowFacebookTooltip);
     };
+  }, []);
+
+  // 初次載入時若為 iOS Facebook In-App 直接顯示 Modal
+  useEffect(() => {
+    if (isIOS() && isFacebookInApp()) {
+      setShowIOSFacebookModal(true);
+    }
+  }, []);
+
+  // 初次載入時若為 iOS LINE In-App 直接顯示 Modal
+  useEffect(() => {
+    if (isIOS() && isLineInApp()) {
+      setShowIOSLINEModal(true);
+    }
   }, []);
 
   // 監聽 Android WebView 跳轉提示事件
@@ -1246,6 +1281,16 @@ const PronunciationAssessment: React.FC = () => {
     window.location.href = intentUrl;
   };
 
+  // iOS Facebook Modal 關閉處理
+  const handleIOSFacebookModalClose = () => {
+    setShowIOSFacebookModal(false);
+  };
+
+  // iOS LINE Modal 關閉處理
+  const handleIOSLINEModalClose = () => {
+    setShowIOSLINEModal(false);
+  };
+
   const handleDirectImport = async () => {
     if (!shareImportData) return;
     
@@ -1420,8 +1465,9 @@ const PronunciationAssessment: React.FC = () => {
 
   // JSX 渲染部分
   return (
-    <div className="pa-container">
-      <div className="pa-title">
+    <>
+      <div className="pa-container">
+        <div className="pa-title">
         <div className="logo-container">
           <img 
             src="/nicetone.webp" 
@@ -1988,28 +2034,41 @@ const PronunciationAssessment: React.FC = () => {
           </div>
         )}
 
-        {/* 分享導入 Modal */}
-        <ShareImportModal
-          isOpen={showShareImportModal}
-          onClose={handleShareImportModalClose}
-          onDirectImport={handleDirectImport}
-          onLoginAndImport={handleLoginAndImport}
-          isLoading={shareImportLoading}
-          shareId={shareImportId}
-          previewData={shareImportData ? {
-            favorites: shareImportData.favorites || [],
-            tags: shareImportData.tags || []
-          } : undefined}
-        />
-
         <AndroidChromeModal
           isOpen={showAndroidModal}
           onConfirm={handleAndroidModalConfirm}
         />
 
+        {/* iOS Facebook Modal */}
+        <IOSFacebookModal
+          isOpen={showIOSFacebookModal}
+          onClose={handleIOSFacebookModalClose}
+        />
+
+        {/* iOS LINE Modal */}
+        <IOSLINEModal
+          isOpen={showIOSLINEModal}
+          onClose={handleIOSLINEModalClose}
+        />
+
 
       </div>
     </div>
+    
+    {/* 分享導入 Modal - 移到最外層避免受到任何容器樣式影響 */}
+    <ShareImportModal
+      isOpen={showShareImportModal}
+      onClose={handleShareImportModalClose}
+      onDirectImport={handleDirectImport}
+      onLoginAndImport={handleLoginAndImport}
+      isLoading={shareImportLoading}
+      shareId={shareImportId}
+      previewData={shareImportData ? {
+        favorites: shareImportData.favorites || [],
+        tags: shareImportData.tags || []
+      } : undefined}
+    />
+    </>
   );
 };
 
