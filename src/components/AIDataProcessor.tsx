@@ -447,9 +447,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   };
 
   return (
-    <div>
-      {/* 將textarea移到最前面 */}
-      <div className="input-container">
+        <div className="input-container">
+        {/* 將textarea移到最前面 */}
+        <div>
         <ResizableTextarea
           value={prompt || ''}
           onChange={handlePromptChange}
@@ -487,7 +487,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         alignItems: "flex-start"
       }}>
         {/* 左側：請AI幫忙造句按鈕區域 */}
-        <div style={{ flex: "1", minWidth: "50%" }}>
+        <div style={{ flex: "1" }}>
           <div className="button-controls">
             <button
               onClick={processDataWithAI}
@@ -516,7 +516,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         </div>
 
         {/* 右側：拖曳圖片區域 */}
-        <div style={{ flex: "1", minWidth: "50%" }}>
+        <div style={{ flex: "1" }}>
           <div
             className={`drop-zone ${isDragging ? 'dragging' : ''}`}
             onDragOver={handleDragOver}
