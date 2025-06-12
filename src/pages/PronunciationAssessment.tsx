@@ -165,6 +165,9 @@ const PronunciationAssessment: React.FC = () => {
   // Android WebView 提示 Modal 狀態
   const [showAndroidModal, setShowAndroidModal] = useState<boolean>(false);
 
+  // AI prompt from URL parameter
+  const [aiPromptFromURL, setAiPromptFromURL] = useState<string>('');
+
   // 監聽 iOS Facebook 操作提示事件
   useEffect(() => {
     const handleShowFacebookTooltip = () => {
@@ -217,6 +220,22 @@ const PronunciationAssessment: React.FC = () => {
   useEffect(() => {
     if (isAndroidWebView()) {
       setShowAndroidModal(true);
+    }
+  }, []);
+
+  // 檢查URL參數是否包含ai參數
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const aiParam = urlParams.get('ai');
+    
+    if (aiParam) {
+      // 解碼URL參數
+      const decodedPrompt = decodeURIComponent(aiParam);
+      setAiPromptFromURL(decodedPrompt);
+      // 切換到AI造句幫手tab
+      setTopActiveTab('ai');
+      // 儲存到storage
+      storage.saveTopActiveTab('ai');
     }
   }, []);
 
@@ -1722,6 +1741,13 @@ const PronunciationAssessment: React.FC = () => {
               setAiResponse={setAiResponse}
               onAIResponseReceived={handleAIResponseReceived}
               addToFavorites={addToFavorites}
+              initialPrompt={aiPromptFromURL}
+              user={user}
+              onLoginRequired={(actionName, message) => {
+                setLoginModalAction(actionName);
+                setLoginModalMessage(message || '');
+                setShowLoginModal(true);
+              }}
             />
           )}
         </div>
@@ -1959,7 +1985,7 @@ const PronunciationAssessment: React.FC = () => {
         {showAzureSettings && (
           <div className="azure-settings-container">
             <div className="azure-settings-content">
-              <h3 className="azure-settings-title">Azure 設定</h3>
+              <h3 className="azure-settings-title">工程模式(看不懂可以按取消)</h3>
               <div className="azure-settings-form">
                 <div className="form-group">
                   <label className="form-label">Speech Key：</label>

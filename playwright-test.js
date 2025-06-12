@@ -219,7 +219,7 @@ async function runTests() {
     }
     
     // 檢查發送按鈕是否啟用
-    const sendButton = await page.locator('button:has-text("發送給AI助理")');
+    const sendButton = await page.locator('button:has-text("AI造句")');
     const isEnabled = await sendButton.isEnabled();
     if (isEnabled) {
       console.log('✅ AI助理發送按鈕正確啟用');

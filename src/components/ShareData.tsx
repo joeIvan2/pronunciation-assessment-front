@@ -1034,10 +1034,64 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           </div>
         </div>
         
-        {/* Tooltip 組件 */}
-        <Tooltip id="share-name-tooltip" />
-        <Tooltip id="update-data-tooltip" />
-        <Tooltip id="export-import-tooltip" />
+              {/* Tooltip 組件 */}
+      <Tooltip 
+        id="share-name-tooltip"
+        openOnClick
+        clickable
+        style={{
+          backgroundColor: 'var(--ios-background-secondary, #f2f2f7)',
+          color: 'var(--ios-text-primary, #000000)',
+          border: '1px solid var(--ios-border-color, #c6c6c8)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          lineHeight: '1.5',
+          maxWidth: '300px',
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          zIndex: 9999,
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+        }}
+      />
+      <Tooltip 
+        id="update-data-tooltip"
+        openOnClick
+        clickable
+        style={{
+          backgroundColor: 'var(--ios-background-secondary, #f2f2f7)',
+          color: 'var(--ios-text-primary, #000000)',
+          border: '1px solid var(--ios-border-color, #c6c6c8)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          lineHeight: '1.5',
+          maxWidth: '300px',
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          zIndex: 9999,
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+        }}
+      />
+      <Tooltip 
+        id="export-import-tooltip"
+        openOnClick
+        clickable
+        style={{
+          backgroundColor: 'var(--ios-background-secondary, #f2f2f7)',
+          color: 'var(--ios-text-primary, #000000)',
+          border: '1px solid var(--ios-border-color, #c6c6c8)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          lineHeight: '1.5',
+          maxWidth: '300px',
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+          zIndex: 9999,
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+        }}
+      />
     </div>
   );
 };

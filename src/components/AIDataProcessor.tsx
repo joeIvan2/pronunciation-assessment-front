@@ -81,6 +81,9 @@ interface AIDataProcessorProps {
   setAiResponse: (response: string | null) => void;
   onAIResponseReceived: () => void;
   addToFavorites: (text: string | string[]) => void;
+  initialPrompt?: string;
+  user?: any;
+  onLoginRequired?: (actionName: string, message?: string) => void;
 }
 
 const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
@@ -93,11 +96,18 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   aiResponse,
   setAiResponse,
   onAIResponseReceived,
-  addToFavorites
+  addToFavorites,
+  initialPrompt,
+  user,
+  onLoginRequired
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState<string>(() => {
+    // 如果有initialPrompt，優先使用它
+    if (initialPrompt && typeof initialPrompt === 'string') {
+      return initialPrompt;
+    }
     const savedPrompt = storage.getAIPrompt();
     return typeof savedPrompt === 'string' ? savedPrompt : '';
   });
@@ -109,10 +119,10 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   // 定義範例提示句
   const examplePrompts = [
     
+    "針對圖片產生3個跟圖片內容有關的句子",
+    "幫我產生5個高中三年級英文考100的人會寫出的短文(不要只有一句話)",
     "客製化發音糾正：分析我的發音歷史記錄，幫我用這些字做一個短文",
-    "虛實轉換，圖生文情境：產生3個跟圖片內容有關的句子",
-    "指定英語能力：幫我產生1個IELTS等級8分的人會寫出的短文(不要只有一句話)",
-    "指定生活情境：幫我創造在百貨公司腳踏車專櫃，例如購買捷安特登山車情境時會講到的句子，以對話的形式，可以忽略人名，一個情境，5個來回對話句子"
+    "幫我創造在腳踏車店，會講到的5個來回對話句子"
   ];
   
   // 處理範例提示點擊
@@ -123,6 +133,13 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   
   // 自動保存計時器引用
   const autoSaveTimerRef = React.useRef<number | null>(null);
+
+  // 當initialPrompt變化時更新prompt
+  useEffect(() => {
+    if (initialPrompt && typeof initialPrompt === 'string' && initialPrompt !== prompt) {
+      setPrompt(initialPrompt);
+    }
+  }, [initialPrompt]);
 
   // 當組件卸載時清理計時器
   useEffect(() => {
@@ -306,6 +323,12 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
 
   // 將數據發送給AI進行處理
   const processDataWithAI = async () => {
+    // 檢查用戶是否已登入
+    if (!user) {
+      onLoginRequired?.('AI造句功能', '使用AI造句功能需要先登入');
+      return;
+    }
+
     // 確保 prompt 是字符串並且不為空
     const currentPrompt = typeof prompt === 'string' ? prompt : '';
     
@@ -456,111 +479,128 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         </div>
       </div>
 
-      <div
-        className={`drop-zone ${isDragging ? 'dragging' : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {isCompressing && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            marginBottom: "8px",
-            padding: "8px",
-            backgroundColor: "rgba(0, 122, 255, 0.1)",
-            borderRadius: "8px"
-          }}>
-            <div style={{
-              width: "16px",
-              height: "16px",
-              border: "2px solid var(--ios-primary)",
-              borderTop: "2px solid transparent",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite"
-            }}></div>
-            <span style={{ fontSize: "14px", color: "var(--ios-primary)" }}>
-              正在壓縮圖片...
+      {/* 並排佈局：按鈕區域和拖曳區域 */}
+      <div style={{ 
+        display: "flex", 
+        gap: "16px", 
+        marginBottom: "16px",
+        alignItems: "flex-start"
+      }}>
+        {/* 左側：請AI幫忙造句按鈕區域 */}
+        <div style={{ flex: "1", minWidth: "50%" }}>
+          <div className="button-controls">
+            <button
+              onClick={processDataWithAI}
+              disabled={isLoading || !prompt.trim() || isCompressing}
+              className="btn btn-primary"
+              style={{ 
+                opacity: isLoading || !prompt.trim() || isCompressing ? 0.55 : 1, 
+                cursor: isLoading || !prompt.trim() || isCompressing ? "not-allowed" : "pointer",
+                width: "100%"
+              }}
+            >
+              {isLoading ? "處理中..." : isCompressing ? "圖片壓縮中..." : "AI造句"}
+            </button>
+            <span 
+              data-tooltip-id="ai-processor-tooltip"
+              data-tooltip-content="想要造句麼? 除了可以輸入您的造句指令之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的過往發音紀錄發送給AI。注意：發音歷史為最新十次發音紀錄。"
+              style={{
+                color: 'var(--ios-text-secondary)',
+                marginLeft: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              <i className="fas fa-question-circle" />
             </span>
           </div>
-        )}
-        
-        {previewUrls.length > 0 && (
-          <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "8px",
-            marginBottom: "8px"
-          }}>
-            {previewUrls.map((url, index) => (
-              <div key={index} style={{
-                position: "relative",
-                width: "100px",
-                height: "100px"
+        </div>
+
+        {/* 右側：拖曳圖片區域 */}
+        <div style={{ flex: "1", minWidth: "50%" }}>
+          <div
+            className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            {isCompressing && (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                marginBottom: "8px",
+                padding: "8px",
+                backgroundColor: "rgba(0, 122, 255, 0.1)",
+                borderRadius: "8px"
               }}>
-                <img
-                  src={url}
-                  alt={`上傳圖片 ${index + 1}`}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    borderRadius: "8px"
-                  }}
-                />
-                <button
-                  onClick={() => removeImage(index)}
-                  style={{
-                    position: "absolute",
-                    top: "4px",
-                    right: "4px",
-                    background: "rgba(0, 0, 0, 0.5)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: "24px",
-                    height: "24px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "14px"
-                  }}
-                >
-                  ×
-                </button>
+                <div style={{
+                  width: "16px",
+                  height: "16px",
+                  border: "2px solid var(--ios-primary)",
+                  borderTop: "2px solid transparent",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite"
+                }}></div>
+                <span style={{ fontSize: "14px", color: "var(--ios-primary)" }}>
+                  正在壓縮圖片...
+                </span>
               </div>
-            ))}
+            )}
+            
+            {previewUrls.length > 0 && (
+              <div style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+                marginBottom: "8px"
+              }}>
+                {previewUrls.map((url, index) => (
+                  <div key={index} style={{
+                    position: "relative",
+                    width: "100px",
+                    height: "100px"
+                  }}>
+                    <img
+                      src={url}
+                      alt={`上傳圖片 ${index + 1}`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "8px"
+                      }}
+                    />
+                    <button
+                      onClick={() => removeImage(index)}
+                      style={{
+                        position: "absolute",
+                        top: "4px",
+                        right: "4px",
+                        background: "rgba(0, 0, 0, 0.5)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "24px",
+                        height: "24px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px"
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <span style={{ fontSize: "14px", color: "var(--ios-text-secondary)" }}>
+              將圖片拖曳到此或點擊上方按鈕上傳
+            </span>
           </div>
-        )}
-        <span style={{ fontSize: "14px", color: "var(--ios-text-secondary)" }}>
-          將圖片拖曳到此或點擊上方按鈕上傳
-        </span>
-      </div>
-      
-      {/* 將發送按鈕移到第二位 */}
-      <div className="button-controls" style={{ marginBottom: "16px" }}>
-        <button
-          onClick={processDataWithAI}
-          disabled={isLoading || !prompt.trim() || isCompressing}
-          className="btn btn-primary"
-          style={{ opacity: isLoading || !prompt.trim() || isCompressing ? 0.55 : 1, cursor: isLoading || !prompt.trim() || isCompressing ? "not-allowed" : "pointer" }}
-        >
-          {isLoading ? "處理中..." : isCompressing ? "圖片壓縮中..." : "發送給AI助理"}
-        </button>
-        <span 
-          data-tooltip-id="ai-processor-tooltip"
-          data-tooltip-content="想要造句麼? 除了可以輸入您的造句指令之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的過往發音紀錄發送給AI。注意：發音歷史為最新十次發音紀錄。"
-          style={{
-            color: 'var(--ios-text-secondary)',
-            marginLeft: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          <i className="fas fa-question-circle" />
-        </span>
+        </div>
       </div>
       
       {error && (
@@ -653,12 +693,22 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         </div>
       )}
       <Tooltip 
-        id="ai-processor-tooltip" 
+        id="ai-processor-tooltip"
+        openOnClick
+        clickable
         style={{
+          backgroundColor: 'var(--ios-background-secondary, #f2f2f7)',
+          color: 'var(--ios-text-primary, #000000)',
+          border: '1px solid var(--ios-border-color, #c6c6c8)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          lineHeight: '1.5',
           maxWidth: '300px',
           whiteSpace: 'normal',
           wordWrap: 'break-word',
-          lineHeight: '1.4'
+          zIndex: 9999,
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
         }}
       />
     </div>

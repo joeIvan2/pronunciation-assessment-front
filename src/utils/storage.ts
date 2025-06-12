@@ -150,12 +150,7 @@ export const saveVoiceSettings = (
 // 获取标签
 export const getTags = (): Tag[] => {
   const defaultTags: Tag[] = [
-    { tagId: "1", name: "IELTS8分", color: "#1e90ff", createdAt: 1747713791965 },
-    { tagId: "2", name: "小學3年級", color: "#ff6347", createdAt: 1747715000000 },
-    { tagId: "3", name: "國中2年級", color: "#3cb371", createdAt: 1747715000001 },
-    { tagId: "4", name: "高中3年級", color: "#ffa500", createdAt: 1747715000002 },
-    { tagId: "5", name: "IELTS7分", color: "#4682b4", createdAt: 1747716000000 },
-    { tagId: "6", name: "IELTS9分", color: "#006400", createdAt: 1747716000001 }
+    { tagId: "1", name: "範例標籤", color: "#1e90ff", createdAt: 1747713791965 }
   ];
 
   return getItem<Tag[]>('tags', defaultTags);
@@ -182,75 +177,9 @@ export const getFavorites = (): Favorite[] => {
   const defaultFavorites: Favorite[] = [
     {
       "id": "0",
-      "text": "The philosophical implications of artificial intelligence challenge traditional concepts of consciousness.",
-      "tagIds": ["6"],
-      "createdAt": 1747716000600
-    },
-    {
-      "id": "1",
-      "text": "Advancements in nanotechnology enable unprecedented manipulation of matter at atomic scales.",
-      "tagIds": ["6"],
-      "createdAt": 1747716000500
-    },
-    {
-      "id": "2",
-      "text": "Socioeconomic disparities significantly impact access to quality education and healthcare.",
+      "text": "Hi, How are you?",
       "tagIds": ["1"],
-      "createdAt": 1747716000400
-    },
-    {
-      "id": "3",
-      "text": "The confluence of quantum mechanics and relativity presents profound challenges in physics.",
-      "tagIds": ["1"],
-      "createdAt": 1747716000300
-    },
-    {
-      "id": "4",
-      "text": "Innovative renewable energy technologies are transforming global power generation.",
-      "tagIds": ["5"],
-      "createdAt": 1747716000200
-    },
-    {
-      "id": "5",
-      "text": "The intricate balance of ecosystems depends on biodiversity and environmental stability.",
-      "tagIds": ["5"],
-      "createdAt": 1747716000100
-    },
-    {
-      "id": "6",
-      "text": "Economic factors influence the supply and demand of goods in a marketplace.",
-      "tagIds": ["4"],
-      "createdAt": 1747715000600
-    },
-    {
-      "id": "7",
-      "text": "The theory of relativity changed how scientists understand time and space.",
-      "tagIds": ["4"],
-      "createdAt": 1747715000500
-    },
-    {
-      "id": "8",
-      "text": "Photosynthesis allows plants to convert sunlight into energy for growth.",
-      "tagIds": ["3"],
-      "createdAt": 1747715000400
-    },
-    {
-      "id": "9",
-      "text": "Water changes its state from liquid to solid when cooled below zero degrees Celsius.",
-      "tagIds": ["3"],
-      "createdAt": 1747715000300
-    },
-    {
-      "id": "10",
-      "text": "Birds can fly high in the sky and build nests in trees.",
-      "tagIds": ["2"],
-      "createdAt": 1747715000200
-    },
-    {
-      "id": "11",
-      "text": "The sun rises in the east and sets in the west every day.",
-      "tagIds": ["2"],
-      "createdAt": 1747715000100
+      "createdAt": 1747713791965
     }
   ];
 

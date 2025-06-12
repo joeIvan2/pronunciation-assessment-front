@@ -39,13 +39,23 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
           <i className="fas fa-question-circle" />
         </span>
       </h3>
-      <Tooltip 
-        id="ai-voice-tooltip" 
+      <Tooltip
+        id="ai-voice-tooltip"
+        openOnClick
+        clickable
         style={{
+          backgroundColor: 'var(--ios-background-secondary, #f2f2f7)',
+          color: 'var(--ios-text-primary, #000000)',
+          border: '1px solid var(--ios-border-color, #c6c6c8)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          lineHeight: '1.5',
           maxWidth: '300px',
           whiteSpace: 'normal',
           wordWrap: 'break-word',
-          lineHeight: '1.4'
+          zIndex: 9999,
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
         }}
       />
 

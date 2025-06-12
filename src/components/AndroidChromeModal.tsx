@@ -14,10 +14,19 @@ const AndroidChromeModal: React.FC<AndroidChromeModalProps> = ({ isOpen, onConfi
     const isLineInApp = /line/i.test(navigator.userAgent.toLowerCase());
     
     if (isAndroid && isLineInApp) {
-      // 延遲一秒後自動跳轉
+      // 延遲100毫秒後自動跳轉
       const timer = setTimeout(() => {
-        window.location.replace('https://nicetone.ai/?openExternalBrowser=1');
-      }, 1000);
+        let currentUrl = window.location.href;
+
+        // 避免重複加參數
+        if (!currentUrl.includes('openExternalBrowser=1')) {
+          const separator = currentUrl.includes('?') ? '&' : '?';
+          currentUrl = `${currentUrl}${separator}openExternalBrowser=1`;
+        }
+
+        // 執行跳轉
+        window.location.replace(currentUrl);
+      }, 100);
       
       return () => clearTimeout(timer);
     }
