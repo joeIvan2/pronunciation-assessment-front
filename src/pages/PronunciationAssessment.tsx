@@ -1160,12 +1160,12 @@ const PronunciationAssessment: React.FC = () => {
               setTimeout(() => {
                 if (isAutoPracticeMode && !isAssessing) {
                   console.log('文本已更新，開始錄音評分');
-                  startAssessment();
+                  startAssessment(targetText);
                 }
               }, 100);
             } else {
               // 文本已經正確，直接開始錄音
-              startAssessment();
+              startAssessment(targetText);
             }
           }
         }, 300);
@@ -1383,11 +1383,30 @@ const PronunciationAssessment: React.FC = () => {
 
 
   // 統一的開始評估入口 - 更新以支持streaming
-  const startAssessment = async () => {
+  // 包裝函數用於按鈕點擊事件
+  const handleStartAssessment = () => {
+    startAssessment();
+  };
+
+  // 統一的評估按鈕事件處理器
+  const handleAssessmentButtonClick = () => {
+    if (isAssessing || recorder.recording) {
+      stopAssessment();
+    } else {
+      handleStartAssessment();
+    }
+  };
+
+  const startAssessment = async (targetText?: string) => {
+    // 使用指定的文本或當前的referenceText
+    const textToAssess = targetText || referenceText;
+    
     try {
       setError(null);
       setResult(null);
       setIsAssessing(true);
+      
+      console.log('開始評估，使用文本:', textToAssess);
       
       // 延遲0.5秒後改變按鈕CSS樣式
       setTimeout(() => {
@@ -1408,7 +1427,7 @@ const PronunciationAssessment: React.FC = () => {
         setIsLoading(true);
         
         const result = await azureSpeech.assessWithAzure(
-          referenceText, 
+          textToAssess, 
           strictMode,
           azureSettings
         );
@@ -1984,7 +2003,7 @@ const PronunciationAssessment: React.FC = () => {
                   <div className="button-row">
                     {/* 評分按鈕 */}
                     <button
-                      onClick={isAssessing || recorder.recording ? stopAssessment : startAssessment}
+                      onClick={handleAssessmentButtonClick}
                       disabled={(isLoading && !isAssessing && !recorder.recording) || (!isAssessing && !recorder.recording && !referenceText)}
                       className={`btn ${(isAssessing || recorder.recording) && buttonStyleDelayed ? "btn-danger" : "btn-primary"} btn-flex-half`}
                     >
