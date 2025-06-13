@@ -3,6 +3,7 @@ import { Favorite, Tag } from '../types/speech';
 import '../styles/PronunciationAssessment.css';
 import * as storage from '../utils/storage';
 import ShareData from './ShareData';
+import { saveUserFavorites } from '../utils/firebaseStorage';
 
 interface FavoriteListProps {
   favorites: Favorite[];
@@ -24,6 +25,7 @@ interface FavoriteListProps {
   onEditTag: (tagId: string, newName: string, newColor?: string) => void;
   onDeleteTag: (tagId: string) => void;
   onDataImported?: (newTags: Tag[], newFavorites: Favorite[]) => void;
+  setFavorites: React.Dispatch<React.SetStateAction<Favorite[]>>;
 }
 
 const FavoriteList: React.FC<FavoriteListProps> = ({
@@ -45,7 +47,8 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onAddTag,
   onEditTag,
   onDeleteTag,
-  onDataImported
+  onDataImported,
+  setFavorites
 }) => {
   // 數據規範化 - 確保每個收藏項目都有正確的數據結構
   const normalizedFavorites: Favorite[] = favorites.map((fav: any) => {
@@ -276,6 +279,23 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     }
   }, [lastAddedFavoriteId, scrolledItemId]);
   
+  // 清空所有收藏
+  const handleClearAllFavorites = async () => {
+    if (!user || !user.uid) {
+      alert('請先登入才能清空收藏');
+      return;
+    }
+    if (!window.confirm('確定要清空所有收藏句子嗎？此操作無法復原。')) return;
+    try {
+      await saveUserFavorites(user.uid, []);
+      storage.saveFavorites([]); // 清空本地
+      setFavorites([]); // 立即清空畫面
+      alert('已清空所有收藏！');
+    } catch (e) {
+      alert('清空失敗，請檢查網路或稍後再試。');
+    }
+  };
+  
   return (
     <div>
       {/* 移除標題 */}
@@ -343,6 +363,24 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
           {/* 句子TAB內容 */}
           {activeSubTab === 'sentences' && (
             <>
+              {/* 清空所有句子按鈕 */}
+              <div style={{ marginBottom: 8, textAlign: 'right' }}>
+                <button
+                  onClick={handleClearAllFavorites}
+                  style={{
+                    background: '#d9534f',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 16px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                  disabled={normalizedFavorites.length === 0}
+                >
+                  清空所有句子
+                </button>
+              </div>
               {/* 新增收藏 */}
               <div style={{ marginBottom: 16 }}>
                 <div style={{ 
@@ -466,7 +504,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                       onClick={() => onLoadFavorite(fav.id)} 
                       style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee", fontSize: 16 }}
                     >
-                      {fav.text}
+                      <span style={{ color: '#aaa', marginRight: 4 }}>{fav.id}.</span>{fav.text}
                     </span>
                     <button 
                       onClick={() => onRemoveFavorite(fav.id)} 

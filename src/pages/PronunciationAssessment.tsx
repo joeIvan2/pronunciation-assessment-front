@@ -728,13 +728,14 @@ const PronunciationAssessment: React.FC = () => {
         // 如果存在且不是批次新增，更新標籤並提示
         if (!Array.isArray(text)) {
           updateFavoriteTags(existingFavorite.id, tagIds.length ? tagIds : selectedTags);
-          alert("此句子已在我的最愛！已更新標籤。");
-          
+          // 顯示 shakeTip 系統提醒
+          setShakeTip("此句子已在我的最愛！已更新標籤。");
+          setTimeout(() => setShakeTip(null), 3000);
           // 切換到我的最愛標籤頁
           handleTabChange('favorites');
           // 設置最後新增的ID為此已存在項目
           setLastAddedFavoriteId(existingFavorite.id);
-          }
+        }
         continue; // 跳過已存在的文本
       }
       
@@ -790,6 +791,11 @@ const PronunciationAssessment: React.FC = () => {
     // 如果是批次新增，顯示新增成功的提示
     if (Array.isArray(text) && newFavorites.length > 0) {
       console.log(`成功新增 ${newFavorites.length} 個句子到收藏`);
+      setShakeTip(`已成功將 ${newFavorites.length} 個句子加入收藏！`);
+      setTimeout(() => setShakeTip(null), 3000);
+    } else if (!Array.isArray(text) && newFavorites.length > 0) {
+      setShakeTip('已新增到收藏');
+      setTimeout(() => setShakeTip(null), 3000);
     }
     
     // 切換到我的最愛標籤頁
@@ -2226,6 +2232,7 @@ const PronunciationAssessment: React.FC = () => {
                   onEditTag={editTag}
                   onDeleteTag={deleteTag}
                   onDataImported={handleDataImported}
+                  setFavorites={setFavorites}
                 />
               )}
               
