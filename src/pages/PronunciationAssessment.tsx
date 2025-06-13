@@ -168,13 +168,11 @@ const PronunciationAssessment: React.FC = () => {
   // AI prompt from URL parameter
   const [aiPromptFromURL, setAiPromptFromURL] = useState<string>('');
   
-  // 甩動偵測相關狀態
-  const [shakeDetectionEnabled, setShakeDetectionEnabled] = useState(false);
-  const [lastShakeTime, setLastShakeTime] = useState(0);
-  const [shakeTip, setShakeTip] = useState<string | null>(null);
-  
   // 自動練習模式狀態
   const [isAutoPracticeMode, setIsAutoPracticeMode] = useState(false);
+
+  // 系統提醒顯示
+  const [systemTip, setSystemTip] = useState<string | null>(null);
 
   // 監聽 iOS Facebook 操作提示事件
   useEffect(() => {
@@ -246,77 +244,6 @@ const PronunciationAssessment: React.FC = () => {
       storage.saveTopActiveTab('ai');
     }
   }, []);
-
-  // 甩動偵測事件監聽器
-  useEffect(() => {
-    if (!shakeDetectionEnabled) return;
-
-    let lastX = 0, lastY = 0, lastZ = 0;
-    let shakeThreshold = 12; // 降低甩動閾值，提高靈敏度
-    let isShaking = false; // 甩動狀態標記
-    let shakeCount = 0; // 甩動計數
-    let shakeTimeout: NodeJS.Timeout | null = null;
-
-    const handleDeviceMotion = (event: DeviceMotionEvent) => {
-      const acceleration = event.accelerationIncludingGravity;
-      if (!acceleration) return;
-
-      const { x = 0, y = 0, z = 0 } = acceleration;
-      
-      // 計算加速度變化
-      const deltaX = Math.abs(x - lastX);
-      const deltaY = Math.abs(y - lastY);
-      const deltaZ = Math.abs(z - lastZ);
-      
-      // 更新上次記錄的值
-      lastX = x;
-      lastY = y; 
-      lastZ = z;
-      
-      // 計算總變化量
-      const totalDelta = deltaX + deltaY + deltaZ;
-      
-      // 檢測甩動（需要更明顯的動作）
-      if (totalDelta > shakeThreshold) {
-        if (!isShaking) {
-          isShaking = true;
-          shakeCount = 1;
-          
-          // 設置一個短暫的等待期，確保是持續的甩動動作
-          shakeTimeout = setTimeout(() => {
-            if (shakeCount >= 1) { // 降低要求，1次高加速度變化即可
-              handleShake();
-            }
-            isShaking = false;
-            shakeCount = 0;
-          }, 200); // 縮短至200ms
-        } else {
-          shakeCount++;
-        }
-      } else if (isShaking && totalDelta < shakeThreshold / 2) {
-        // 如果動作停止，重置狀態
-        if (shakeTimeout) {
-          clearTimeout(shakeTimeout);
-          shakeTimeout = null;
-        }
-        isShaking = false;
-        shakeCount = 0;
-      }
-    };
-
-    // 添加事件監聽器
-    window.addEventListener('devicemotion', handleDeviceMotion);
-    console.log('甩動偵測已啟用（優化版）');
-
-    // 清理函數
-    return () => {
-      window.removeEventListener('devicemotion', handleDeviceMotion);
-      if (shakeTimeout) {
-        clearTimeout(shakeTimeout);
-      }
-      console.log('甩動偵測已禁用');
-    };
-  }, [shakeDetectionEnabled, filteredFavorites.length, isLoading, streamLoading]);
 
   // 自動練習模式不需要自動清理，保持開關狀態
 
@@ -698,9 +625,9 @@ const PronunciationAssessment: React.FC = () => {
     }
     // 處理空輸入
     if (!text || (Array.isArray(text) && text.length === 0)) {
-      alert("請先輸入句子再加入我的最愛！");
-        return;
-      }
+      setSystemTip("請先輸入句子再加入我的最愛！");
+      return;
+    }
 
     // 確保 text 為數組形式以統一處理
     const textsToAdd = Array.isArray(text) ? text : [text];
@@ -729,8 +656,8 @@ const PronunciationAssessment: React.FC = () => {
         if (!Array.isArray(text)) {
           updateFavoriteTags(existingFavorite.id, tagIds.length ? tagIds : selectedTags);
           // 顯示 shakeTip 系統提醒
-          setShakeTip("此句子已在我的最愛！已更新標籤。");
-          setTimeout(() => setShakeTip(null), 3000);
+          setSystemTip("此句子已在我的最愛！已更新標籤。");
+          setTimeout(() => setSystemTip(null), 3000);
           // 切換到我的最愛標籤頁
           handleTabChange('favorites');
           // 設置最後新增的ID為此已存在項目
@@ -791,11 +718,11 @@ const PronunciationAssessment: React.FC = () => {
     // 如果是批次新增，顯示新增成功的提示
     if (Array.isArray(text) && newFavorites.length > 0) {
       console.log(`成功新增 ${newFavorites.length} 個句子到收藏`);
-      setShakeTip(`已成功將 ${newFavorites.length} 個句子加入收藏！`);
-      setTimeout(() => setShakeTip(null), 3000);
+      setSystemTip(`已成功將 ${newFavorites.length} 個句子加入收藏！`);
+      setTimeout(() => setSystemTip(null), 3000);
     } else if (!Array.isArray(text) && newFavorites.length > 0) {
-      setShakeTip('已新增到收藏');
-      setTimeout(() => setShakeTip(null), 3000);
+      setSystemTip('已新增到收藏');
+      setTimeout(() => setSystemTip(null), 3000);
     }
     
     // 切換到我的最愛標籤頁
@@ -1006,151 +933,66 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  // 甩動偵測功能
-  const handleShake = () => {
-    const now = Date.now();
-    // 防止重複觸發，增加間隔至5秒並添加更嚴格的檢查
-    if (now - lastShakeTime < 5000) {
-      return;
-    }
-    
-    // 檢查是否正在播放或處理中
-    if (isLoading || streamLoading) {
-      return;
-    }
-    
-    // 檢查是否有收藏句子
-    if (filteredFavorites.length === 0) {
-      return;
-    }
-    
-    setLastShakeTime(now);
-    setShakeTip(`已偵測到搖晃，隨機撥放啟動，下次啟動需等待5秒`);
-    setTimeout(() => setShakeTip(null), 3000);
-    
-    // 觸發隨機按鈕功能
-    goToRandomSentence();
-  };
-
-  const requestMotionPermission = async () => {
-    if (typeof (DeviceMotionEvent as any).requestPermission === 'function') {
-      // iOS 13+ 需要請求權限
-      try {
-        const permission = await (DeviceMotionEvent as any).requestPermission();
-        if (permission === 'granted') {
-          setShakeDetectionEnabled(true);
-          return true;
-        } else {
-          alert('需要允許訪問動作和方向權限才能使用甩動功能');
-          return false;
-        }
-      } catch (error) {
-        console.error('請求動作權限失敗:', error);
-        return false;
-      }
-    } else if ('DeviceMotionEvent' in window) {
-      // Android 或較舊的 iOS 版本
-      setShakeDetectionEnabled(true);
-      return true;
-    } else {
-      alert('您的設備不支援甩動偵測功能');
-      return false;
-    }
-  };
-
-  const toggleShakeDetection = async () => {
-    if (!shakeDetectionEnabled) {
-      const granted = await requestMotionPermission();
-      if (!granted) return;
-      setShakeTip('已開啟甩動偵測');
-      setTimeout(() => setShakeTip(null), 3000);
-    } else {
-      setShakeDetectionEnabled(false);
-      setShakeTip('已關閉甩動偵測');
-      setTimeout(() => setShakeTip(null), 3000);
-    }
-  };
-
+  // === 補上三個函式 ===
   // 播放BEEP聲
   const playBeepSound = () => {
-    // 創建一個短暫的BEEP聲（440Hz，持續200ms）
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // 高音BEEP
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-    
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.2);
   };
 
-  // 切換自動練習模式（狀態開關）
-  const toggleAutoPracticeMode = () => {
-    setIsAutoPracticeMode(!isAutoPracticeMode);
-    if (!isAutoPracticeMode) {
-      setShakeTip('已開啟自動播放後錄音');
-    } else {
-      setShakeTip('已關閉自動播放後錄音');
-    }
-    setTimeout(() => setShakeTip(null), 3000);
-    if (isAutoPracticeMode && isAssessing) {
-      // 如果正在錄音且關閉模式，停止錄音
-      stopAssessment();
-    }
-  };
-
   // 精確檢測音頻播放完成
   const waitForAudioToFinish = (callback: () => void) => {
-    // 監聽控制台日誌中的WebM播放完成消息
     const originalConsoleLog = console.log;
     let audioFinishedDetected = false;
-    
-    // 重寫console.log來檢測WebM播放完成
     console.log = function(...args) {
       originalConsoleLog.apply(console, args);
-      
       const message = args.join(' ');
       if (message.includes('WebM播放完成') && !audioFinishedDetected) {
         audioFinishedDetected = true;
-        
-        // 恢復原始console.log
         console.log = originalConsoleLog;
-        
-        // 等待1秒後執行回調
-        setTimeout(() => {
-          callback();
-        }, 1000);
+        setTimeout(() => { callback(); }, 1000);
       }
     };
-    
-    // 備用檢測機制：如果5秒後還沒檢測到WebM完成消息，使用原來的方法
     setTimeout(() => {
       if (!audioFinishedDetected) {
         console.log = originalConsoleLog;
-        
         const checkAudioFinished = () => {
           const audioElements = document.querySelectorAll('audio');
           const hasPlayingAudio = Array.from(audioElements).some(audio => !audio.paused && !audio.ended);
           const isSpeaking = speechSynthesis.speaking;
-          
           if (!hasPlayingAudio && !isSpeaking) {
-            setTimeout(() => {
-              callback();
-            }, 1000);
+            setTimeout(() => { callback(); }, 1000);
           } else {
             setTimeout(checkAudioFinished, 100);
           }
         };
-        
         checkAudioFinished();
       }
     }, 5000);
   };
+
+  // 切換自動練習模式
+  const toggleAutoPracticeMode = () => {
+    setIsAutoPracticeMode(!isAutoPracticeMode);
+    if (!isAutoPracticeMode) {
+      setSystemTip('已開啟自動播放後錄音');
+    } else {
+      setSystemTip('已關閉自動播放後錄音');
+    }
+    setTimeout(() => setSystemTip(null), 3000);
+    if (isAutoPracticeMode && isAssessing) {
+      stopAssessment();
+    }
+  };
+  // === 補上三個函式結束 ===
 
   // 自動練習邏輯：在播放真正結束後自動開始錄音
   const handleAutoPracticeAfterSpeak = (targetText?: string) => {
@@ -1188,12 +1030,12 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveAzureSettings(azureSettings.key, azureSettings.region);
     setShowAzureSettings(false);
     if (!useBackend) {
-      alert("Azure 設定已保存！");
+      setSystemTip("Azure 設定已保存！");
     } else {
       // 如果原本在後端模式，保存完直接切到直連模式
       setUseBackend(false);
       storage.saveUseBackend(false);
-      alert("已切換至直連 Azure 模式");
+      setSystemTip("已切換至直連 Azure 模式");
     }
   };
 
@@ -1483,7 +1325,7 @@ const PronunciationAssessment: React.FC = () => {
   const speakText = async () => {
     try {
       if (!referenceText) {
-        alert("請先輸入要發音的文字！");
+        setSystemTip("請先輸入要發音的文字！");
         return;
       }
       
@@ -1668,7 +1510,7 @@ const PronunciationAssessment: React.FC = () => {
         });
         
         if (textsToAdd.length === 0) {
-          alert('所有句子都已經在您的收藏中了！');
+          setSystemTip('所有句子都已經在您的收藏中了！');
           setShowShareImportModal(false);
           handleShareImportModalClose();
           return;
@@ -1708,7 +1550,7 @@ const PronunciationAssessment: React.FC = () => {
         setShowShareImportModal(false);
         
         // 顯示成功訊息
-        alert(`已成功將 ${newFavorites.length} 個句子加入本地收藏！`);
+        setSystemTip(`已成功將 ${newFavorites.length} 個句子加入本地收藏！`);
         
         // 清理狀態
         handleShareImportModalClose();
@@ -1777,7 +1619,7 @@ const PronunciationAssessment: React.FC = () => {
       });
       
       if (textsToAdd.length === 0) {
-        alert('所有句子都已經在您的收藏中了！');
+        setSystemTip('所有句子都已經在您的收藏中了！');
         setShowShareImportModal(false);
         handleShareImportModalClose();
         return;
@@ -1814,7 +1656,7 @@ const PronunciationAssessment: React.FC = () => {
       
       // 只有在雲端導入（用戶已登入）時才顯示成功訊息
       if (isCloudImport && user) {
-        alert(`已成功將 ${newFavorites.length} 個句子加入我的最愛！`);
+        setSystemTip(`已成功將 ${newFavorites.length} 個句子加入我的最愛！`);
       }
       
       // 清理狀態
@@ -1999,23 +1841,13 @@ const PronunciationAssessment: React.FC = () => {
                   >
                     <i className="fas fa-star"></i>
               </button>
-              
-              {/* 甩動偵測開關 */}
-              <button
-                onClick={toggleShakeDetection}
-                title={shakeDetectionEnabled ? "關閉甩動偵測" : "開啟甩動偵測"}
-                className={`control-button ${shakeDetectionEnabled ? 'shake-enabled' : 'shake-disabled'}`}
-              >
-                <i className={`fas ${shakeDetectionEnabled ? 'fa-mobile-alt' : 'fa-mobile'}`}></i>
-              </button>
-              
-              {/* 自動練習按鈕 */}
+              {/* 撥放後自動錄音按鈕 */}
               <button
                 onClick={toggleAutoPracticeMode}
                 title={isAutoPracticeMode ? "關閉自動練習模式" : "開啟自動練習模式（播放後自動錄音）"}
                 className={`control-button ${isAutoPracticeMode ? 'auto-practice-active' : 'auto-practice-ready'}`}
               >
-                <i className={`fas ${isAutoPracticeMode ? 'fa-toggle-on' : 'fa-toggle-off'}`}></i>
+                <i className="fas fa-magic"></i>
               </button>
         </div>
         
@@ -2104,7 +1936,6 @@ const PronunciationAssessment: React.FC = () => {
             {streamLoading && <div className="loading-indicator stream-loading">流式處理中...</div>}
             
             {cacheTipVisible && <div className="cache-tip">使用已緩存的語音</div>}
-            {shakeTip && <div className="shake-tip">{shakeTip}</div>}
           </div>
             </>
           )}
@@ -2459,6 +2290,8 @@ const PronunciationAssessment: React.FC = () => {
           onClose={handleIOSLINEModalClose}
         />
 
+        {/* 系統提醒顯示 */}
+        {systemTip && <div className="shake-tip">{systemTip}</div>}
 
       </div>
     </div>
