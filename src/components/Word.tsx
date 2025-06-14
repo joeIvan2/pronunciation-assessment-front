@@ -107,13 +107,37 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
         }}>
           {/* 音素列表或提示 */}
           {word.Phonemes && word.Phonemes.length > 0 ? (
-            word.Phonemes.map((p: Phoneme, i: number) => (
-              <div key={i} style={{ color: '#ddd', margin: '6px 0', textAlign: 'left' }}>
-                {p.Phoneme}: <span style={{ color: getScoreColor(p.PronunciationAssessment?.AccuracyScore) }}>
-                  {p.PronunciationAssessment?.AccuracyScore ?? '-'}
-                </span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+              <button
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: 40
+                }}
+                title="查字典2"
+                onClick={e => {
+                  e.stopPropagation();
+                  setShowDictModal(true);
+                  if (onClick) onClick();
+                }}
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 7H20"/><path d="M6.5 7v10"/><rect x="2" y="2" width="20" height="20" rx="2.5"/></svg>
+              </button>
+              <div>
+                {word.Phonemes.map((p: Phoneme, i: number) => (
+                  <div key={i} style={{ color: '#ddd', margin: '6px 0', textAlign: 'left' }}>
+                    {p.Phoneme}: <span style={{ color: getScoreColor(p.PronunciationAssessment?.AccuracyScore) }}>
+                      {p.PronunciationAssessment?.AccuracyScore ?? '-'}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))
+            </div>
           ) : (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
               <button
@@ -127,7 +151,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
                   justifyContent: 'center',
                   height: 80
                 }}
-                title="查字典"
+                title="查字典3"
                 onClick={e => {
                   e.stopPropagation();
                   setShowDictModal(true);
@@ -161,29 +185,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
         document.body
       )}
 
-      {/* 書本 LOGO 按鈕（有 Phonemes 時 popup 右上角） */}
-      {word.Phonemes && word.Phonemes.length > 0 && (
-        <button
-          style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
-            zIndex: 10000
-          }}
-          title="查字典"
-          onClick={e => {
-            e.stopPropagation();
-            setShowDictModal(true);
-            if (onClick) onClick();
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 7H20"/><path d="M6.5 7v10"/><rect x="2" y="2" width="20" height="20" rx="2.5"/></svg>
-        </button>
-      )}
+
     </div>
   );
 };
