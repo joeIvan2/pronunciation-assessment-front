@@ -90,6 +90,11 @@
 }
 
 /* Buttons */
+.btn, .btn-nav, .random-draggable-btn {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
 .btn {
   padding: 11px 18px;
   border: none;
@@ -122,6 +127,11 @@
 .btn:hover:not(:disabled) {
   filter: brightness(110%);
   transform: translateY(-1px);
+}
+
+.btn:active, .btn-nav:active, .random-draggable-btn:active {
+  background: inherit !important;
+  box-shadow: none !important;
 }
 
 .btn-primary { background: var(--ios-primary); }

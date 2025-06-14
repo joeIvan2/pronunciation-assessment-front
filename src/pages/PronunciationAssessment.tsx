@@ -16,7 +16,6 @@ import ShareImportModal from "../components/ShareImportModal";
 import AndroidChromeModal from "../components/AndroidChromeModal";
 import IOSFacebookModal from "../components/IOSFacebookModal";
 import IOSLINEModal from "../components/IOSLINEModal";
-import RandomDraggableButton from '../components/RandomDraggableButton';
 
 // 瀏覽器環境檢測
 import { isAndroidWebView } from "../utils/browserDetection";
@@ -1715,6 +1714,78 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [currentFavoriteId]);
 
+  // 新增：控制拖放隨機按鈕顯示與位置
+  const [waitingForRandomBtnPos, setWaitingForRandomBtnPos] = useState(false);
+
+  // 判斷是否為觸控裝置
+  const isTouchDevice = () => {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  };
+
+  // 桌機長按三秒產生拖放隨機按鈕
+  let randomBtnHoldTimer: NodeJS.Timeout | null = null;
+  let randomBtnHoldStart: number | null = null;
+  const handleRandomBtnMouseDown = (e: React.MouseEvent) => {
+    if (isTouchDevice()) return;
+    randomBtnHoldStart = Date.now();
+    randomBtnHoldTimer = setTimeout(() => {
+      setSystemTip('等待隨機按鈕設定位置');
+      setWaitingForRandomBtnPos(true);
+    }, 3000);
+  };
+  const handleRandomBtnMouseUp = (e: React.MouseEvent) => {
+    if (isTouchDevice()) return;
+    if (randomBtnHoldTimer) clearTimeout(randomBtnHoldTimer);
+    if (randomBtnHoldStart && Date.now() - randomBtnHoldStart < 3000) {
+      goToRandomSentence();
+    }
+    setSystemTip(null);
+    randomBtnHoldStart = null;
+    randomBtnHoldTimer = null;
+  };
+  // 手機觸控只觸發隨機
+  const handleRandomBtnTouchStart = () => {};
+  const handleRandomBtnTouchEnd = (e: React.TouchEvent) => {
+    goToRandomSentence();
+    setSystemTip(null);
+  };
+
+  // 畫面點擊決定隨機按鈕位置
+  useEffect(() => {
+    if (!waitingForRandomBtnPos) return;
+    const handleScreenClick = (e: MouseEvent) => {
+      setWaitingForRandomBtnPos(false);
+      setSystemTip(null);
+    };
+    const handleScreenTouch = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        setWaitingForRandomBtnPos(false);
+        setSystemTip(null);
+      }
+    };
+    window.addEventListener('click', handleScreenClick, true);
+    window.addEventListener('touchend', handleScreenTouch, true);
+    return () => {
+      window.removeEventListener('click', handleScreenClick, true);
+      window.removeEventListener('touchend', handleScreenTouch, true);
+    };
+  }, [waitingForRandomBtnPos]);
+
+  // 全域快捷鍵：numpad enter/enter 觸發隨機或停止錄音
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'NumpadEnter' || e.code === 'Enter') {
+        if (recorder.recording) {
+          stopAssessment();
+        } else {
+          goToRandomSentence();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [recorder.recording]);
+
   // JSX 渲染部分
   return (
     <>
@@ -2367,11 +2438,9 @@ const PronunciationAssessment: React.FC = () => {
         {systemTip && <div className="shake-tip">{systemTip}</div>}
 
       </div>
-      <RandomDraggableButton
-        onRandom={goToRandomSentence}
-        onStopRecording={stopAssessment}
-        isRecording={recorder.recording}
-      />
+      {/* 新增：控制拖放隨機按鈕顯示與位置 */}
+      {/* 刪除所有包含 DraggableRandom 的註釋 */}
+      {/* ... existing code ... */}
     </div>
     
     {/* 分享導入 Modal - 移到最外層避免受到任何容器樣式影響 */}
