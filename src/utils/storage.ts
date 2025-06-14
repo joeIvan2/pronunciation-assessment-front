@@ -176,10 +176,10 @@ export const getFavorites = (): Favorite[] => {
   // 默認值 - 使用預設的示例數據（使用從0開始的ID避免與用戶新增的項目衝突）
   const defaultFavorites: Favorite[] = [
     {
-      "id": "0",
-      "text": "Hi, How are you?",
-      "tagIds": ["1"],
-      "createdAt": 1747713791965
+      id: "0",
+      text: "Hi, How are you?",
+      tagIds: ["1"],
+      createdAt: Date.now()
     }
   ];
 
@@ -188,7 +188,10 @@ export const getFavorites = (): Favorite[] => {
   }
 
   // 登入使用者的收藏將從 Firestore 載入
-  return [];
+  // 若 Firestore 載入為空，回傳預設句子
+  // 這裡假設 Firestore 載入邏輯會覆蓋本地收藏
+  const userFavorites: Favorite[] = [];
+  return userFavorites.length === 0 ? defaultFavorites : userFavorites;
 };
 
 // 保存收藏夹

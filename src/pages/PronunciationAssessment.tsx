@@ -679,7 +679,7 @@ const PronunciationAssessment: React.FC = () => {
         tagIds: tagIds.length ? tagIds : selectedTags, // 使用當前選中的標籤或指定的標籤
         createdAt: Date.now() + i // 新增索引偏移確保順序正確
       };
-      
+      console.log(`[addToFavorites] 新增 favorite id=${newId}, text=${trimmedText}`);
       newFavorites.push(newFavorite);
       currentNextId++;
     }
@@ -687,30 +687,9 @@ const PronunciationAssessment: React.FC = () => {
     // 如果沒有新增項目則直接返回
     if (newFavorites.length === 0) return;
     
-    // 合併所有收藏項目
+    // 合併所有收藏項目（不排序，保證傳入順序）
     const allFavorites = [...favorites, ...newFavorites];
-    
-    // 手動按 ID 數字大小排序，ID 數字大的排在前面
-    const sortedFavorites = allFavorites.sort((a, b) => {
-      // 將 ID 轉換為數字進行比較
-      const idA = parseInt(a.id, 10);
-      const idB = parseInt(b.id, 10);
-      
-      // 如果都是有效數字，按數字大小排序（降序）
-      if (!isNaN(idA) && !isNaN(idB)) {
-        return idB - idA; // 降序排列，數字大的在前
-      }
-      
-      // 如果一個是數字一個不是，數字的排在前面
-      if (!isNaN(idA) && isNaN(idB)) return -1;
-      if (isNaN(idA) && !isNaN(idB)) return 1;
-      
-      // 如果都不是數字，按字符串排序
-      return b.id.localeCompare(a.id);
-    });
-    
-    // 設置狀態和保存
-    setFavorites(sortedFavorites);
+    setFavorites(allFavorites);
     
     // 更新 nextFavoriteId
     setNextFavoriteId(currentNextId);
@@ -741,21 +720,37 @@ const PronunciationAssessment: React.FC = () => {
     setFavorites(updatedFavorites);
   };
   
+  // 取得 localStorage key
+  const getCurrentFavoriteIdKey = (user: any) => user && user.uid ? `currentFavoriteId_${user.uid}` : 'currentFavoriteId_guest';
+  
+  // 初始化 currentFavoriteId 狀態，優先讀 localStorage
+  const getInitialCurrentFavoriteId = (favorites: Favorite[], user: any) => {
+    const key = getCurrentFavoriteIdKey(user);
+    const storedId = localStorage.getItem(key);
+    if (storedId && favorites.some(f => f.id === storedId)) {
+      return storedId;
+    }
+    if (favorites.length > 0) {
+      return favorites.reduce((min, f) => (f.id < min.id ? f : min), favorites[0]).id;
+    }
+    return null;
+  };
+  const setCurrentFavoriteIdWithLog = (id: string | null) => {
+    console.log('currentFavoriteId:', id);
+    setCurrentFavoriteId(id);
+    const key = getCurrentFavoriteIdKey(user);
+    if (id) localStorage.setItem(key, id);
+  };
+  const [currentFavoriteId, setCurrentFavoriteId] = useState<string | null>(() => getInitialCurrentFavoriteId(favorites, user));
+  
   const loadFavorite = (id: string) => {
     const favorite = favorites.find(fav => fav.id === id);
     if (favorite) {
       setReferenceText(favorite.text);
-      // 不再更新选中的标签
-      // setSelectedTags(favorite.tagIds);
+      setCurrentFavoriteIdWithLog(favorite.id);
       storage.saveReferenceText(favorite.text);
-
-      // 設定當前高亮的收藏項目
       setHighlightedFavoriteId(id);
-      
-      // 切換到發音評分標籤頁
       handleTabChange('input');
-      
-      // 聚焦到textarea的父容器(避免手機端跳出鍵盤)
       if (inputContainerRef.current) {
         inputContainerRef.current.focus();
       }
@@ -832,94 +827,67 @@ const PronunciationAssessment: React.FC = () => {
   
   // 前一條和下一條句子功能
   const goToPreviousSentence = () => {
-    // 尋找當前顯示文本在過濾後列表中的位置
     const currentIndex = filteredFavorites.findIndex(
       fav => fav.text === referenceText
     );
-
     if (filteredFavorites.length === 0) {
-      return; // 沒有可用的收藏項目
+      return;
     }
-
     let newIndex;
     if (currentIndex === -1) {
-      // 如果當前文本不在列表中，載入最後一個
       newIndex = filteredFavorites.length - 1;
     } else {
-      // 循環到上一個
-      newIndex =
-        (currentIndex - 1 + filteredFavorites.length) % filteredFavorites.length;
+      newIndex = (currentIndex - 1 + filteredFavorites.length) % filteredFavorites.length;
     }
-
-    // 加載選中的句子
     const target = filteredFavorites[newIndex];
     if (target) {
       setReferenceText(target.text);
+      setCurrentFavoriteIdWithLog(target.id);
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
     }
   };
   
   const goToNextSentence = () => {
-    // 尋找當前顯示文本在過濾後列表中的位置
     const currentIndex = filteredFavorites.findIndex(
       fav => fav.text === referenceText
     );
-
     if (filteredFavorites.length === 0) {
-      return; // 沒有可用的收藏項目
+      return;
     }
-
     let newIndex;
     if (currentIndex === -1) {
-      // 如果當前文本不在列表中，載入第一個
       newIndex = 0;
     } else {
-      // 循環到下一個
       newIndex = (currentIndex + 1) % filteredFavorites.length;
     }
-
-    // 加載選中的句子
     const target = filteredFavorites[newIndex];
     if (target) {
       setReferenceText(target.text);
+      setCurrentFavoriteIdWithLog(target.id);
       storage.saveReferenceText(target.text);
-
       setHighlightedFavoriteId(target.id);
-
     }
   };
 
   const goToRandomSentence = async () => {
     if (filteredFavorites.length === 0) {
-      return; // 沒有可用的收藏項目
+      return;
     }
-
-    // 生成隨機索引
     const randomIndex = Math.floor(Math.random() * filteredFavorites.length);
     const target = filteredFavorites[randomIndex];
-    
     if (target) {
       setReferenceText(target.text);
+      setCurrentFavoriteIdWithLog(target.id);
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
-      
-      // 直接播放選中的句子，使用目標文本而不是依賴狀態
       setTimeout(async () => {
         try {
           setIsLoading(true);
           setStreamLoading(true);
           setError(null);
-          
-
-          
-          // 統一使用流式TTS播放目標文本
           const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
-          console.log("隨機句子流式TTS已完成", result);
-          
-          // 如果啟用了自動練習模式，播放完成後自動錄音
           if (isAutoPracticeMode) {
-            // 立即開始精確的音頻播放完成檢測，傳入目標文本
             handleAutoPracticeAfterSpeak(target.text);
           }
         } catch (error) {
@@ -1664,6 +1632,88 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
+  const handleEditCurrentReference = () => {
+    if (!referenceText) return;
+    if (!currentFavoriteId) {
+      setSystemTip('請先選擇收藏句子');
+      setTimeout(() => setSystemTip(null), 2000);
+      return;
+    }
+    const fav = favorites.find(f => f.id === currentFavoriteId);
+    if (fav) {
+      const updatedFavorites = favorites.map(f =>
+        f.id === fav.id ? { ...f, text: referenceText } : f
+      );
+      setFavorites(updatedFavorites);
+      // 不要自動跳回第一句，維持 currentFavoriteId 與 textarea 內容
+      setSystemTip('已修改該句子');
+      setTimeout(() => setSystemTip(null), 2000);
+    } else {
+      setSystemTip('該句子不在收藏中');
+      setTimeout(() => setSystemTip(null), 2000);
+    }
+  };
+
+  const handleRemoveCurrentReference = () => {
+    if (!referenceText) return;
+    if (!currentFavoriteId) {
+      setSystemTip('請先選擇收藏句子');
+      setTimeout(() => setSystemTip(null), 2000);
+      return;
+    }
+    const fav = favorites.find(f => f.id === currentFavoriteId);
+    if (fav) {
+      removeFromFavorite(fav.id);
+      const idx = filteredFavorites.findIndex(f => f.id === fav.id);
+      let nextIdx = (idx + 1) % filteredFavorites.length;
+      if (filteredFavorites.length === 1) nextIdx = -1;
+      setTimeout(() => {
+        if (nextIdx >= 0 && filteredFavorites[nextIdx]) {
+          setReferenceText(filteredFavorites[nextIdx].text);
+          setCurrentFavoriteIdWithLog(filteredFavorites[nextIdx].id);
+        } else {
+          setReferenceText('');
+          setCurrentFavoriteIdWithLog(null);
+        }
+      }, 100);
+      setSystemTip('已刪除該句子');
+      setTimeout(() => setSystemTip(null), 2000);
+    } else {
+      setSystemTip('該句子不在收藏中');
+      setTimeout(() => setSystemTip(null), 2000);
+    }
+  };
+
+  useEffect(() => {
+    const key = getCurrentFavoriteIdKey(user);
+    const storedId = localStorage.getItem(key);
+    console.log('[useEffect] user:', user, 'currentFavoriteId:', currentFavoriteId, 'storedId:', storedId, 'filteredFavorites:', filteredFavorites.map(f=>f.id));
+    if (
+      filteredFavorites.length > 0 &&
+      (currentFavoriteId === null || !filteredFavorites.some(f => f.id === currentFavoriteId))
+    ) {
+      if (storedId && filteredFavorites.some(f => f.id === storedId)) {
+        // localStorage 有且有效，直接跳到這一句
+        const fav = filteredFavorites.find(f => f.id === storedId)!;
+        setReferenceText(fav.text);
+        setCurrentFavoriteIdWithLog(fav.id);
+        storage.saveReferenceText(fav.text);
+      } else {
+        // id 最小的那一句
+        const minIdFavorite = filteredFavorites.reduce((min, f) => (f.id < min.id ? f : min), filteredFavorites[0]);
+        setReferenceText(minIdFavorite.text);
+        setCurrentFavoriteIdWithLog(minIdFavorite.id);
+        storage.saveReferenceText(minIdFavorite.text);
+      }
+    }
+  }, [user, filteredFavorites]);
+
+  useEffect(() => {
+    if (currentFavoriteId) {
+      localStorage.setItem('currentFavoriteId', currentFavoriteId);
+    }
+  }, [currentFavoriteId]);
+
   // JSX 渲染部分
   return (
     <>
@@ -1841,13 +1891,35 @@ const PronunciationAssessment: React.FC = () => {
                   >
                     <i className="fas fa-star"></i>
               </button>
+              {/* 修改按鈕 */}
+              <button
+                onClick={handleEditCurrentReference}
+                disabled={!referenceText}
+                title="修改這句"
+                className={!referenceText ? "control-button favorite-button-disabled" : "control-button favorite-button-dynamic"}
+                style={{ marginLeft: 4 }}
+              >
+                <i className="fas fa-edit"></i>
+              </button>
+              {/* 刪除按鈕 */}
+              <button
+                onClick={handleRemoveCurrentReference}
+                disabled={!referenceText}
+                title="刪除這一句"
+                className={!referenceText ? "control-button favorite-button-disabled" : "control-button favorite-button-dynamic"}
+                style={{ marginLeft: 4 }}
+              >
+                <i className="fas fa-trash"></i>
+              </button>
               {/* 撥放後自動錄音按鈕 */}
               <button
                 onClick={toggleAutoPracticeMode}
                 title={isAutoPracticeMode ? "關閉自動練習模式" : "開啟自動練習模式（播放後自動錄音）"}
-                className={`control-button ${isAutoPracticeMode ? 'auto-practice-active' : 'auto-practice-ready'}`}
+                className={`control-button auto-practice-btn ${isAutoPracticeMode ? 'auto-practice-active' : 'auto-practice-inactive'}`}
+                style={{ marginLeft: 4 }}
               >
-                <i className="fas fa-magic"></i>
+                {/* 機器人 LOGO，使用 FontAwesome fa-robot */}
+                <i className="fas fa-robot"></i>
               </button>
         </div>
         

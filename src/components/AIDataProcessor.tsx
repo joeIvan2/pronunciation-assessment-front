@@ -402,9 +402,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
             
             // 如果有文本要新增，將順序反轉後一次性調用 addToFavorites 函數（從最後往前加）
             if (textsToAdd.length > 0) {
-              addToFavorites(textsToAdd.reverse());
+              addToFavorites(textsToAdd); // 保持原順序加入收藏
               // 記錄新增了多少條收藏
-              console.log(`已新增 ${textsToAdd.length} 條新收藏（從後往前）`);
+              console.log(`已新增 ${textsToAdd.length} 條新收藏（保持原順序）`);
             }
           }
         } else {
@@ -667,10 +667,18 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
                   ? JSON.parse(aiResponse) 
                   : aiResponse;
                 
+                // 假設有一個陣列 aiSentences 代表 AI 產生的句子
+                // 輸出時反轉順序，防呆處理
+                const reversedAiSentences = Array.isArray(response.sentences)
+                  ? response.sentences.slice().reverse()
+                  : [];
+                
                 return (
                   <>
                     <div style={{ marginBottom: "8px" }}>
-                      {renderContent(response.message)}
+                      {reversedAiSentences.map((sentence, index) => (
+                        <div key={index}>{sentence}</div>
+                      ))}
                     </div>
                     {response.processedAt && (
                       <div style={{ 

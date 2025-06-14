@@ -114,6 +114,12 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
     return createdAtB - createdAtA; // 降序排列，最新的在前
   });
   
+  // 排序用 collator（模組頂層）
+  const collator = new Intl.Collator(undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  });
+  
   // 獲取帶標籤篩選的收藏列表
   const getFilteredFavorites = () => {
     if (selectedTags.length === 0) {
@@ -489,93 +495,96 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
           {/* 收藏列表 */}
           {normalizedFavorites.length > 0 ? (
             <ul style={{ listStyle: "none", padding: 0 }}>
-              {filteredFavorites.map((fav) => (
-                <li
-                  key={fav.id}
-                  id={`favorite-item-${fav.id}`}
-                  className={`favorite-item ${
-                    fav.id === highlightedFavoriteId ? 'favorite-selected' : ''
-                  } ${
-                    fav.id === searchHighlightId ? 'search-highlighted' : ''
-                  }`}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <span 
-                      onClick={() => onLoadFavorite(fav.id)} 
-                      style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee", fontSize: 16 }}
-                    >
-                      <span style={{ color: '#aaa', marginRight: 4 }}>{fav.id}.</span>{fav.text}
-                    </span>
-                    <button 
-                      onClick={() => onRemoveFavorite(fav.id)} 
-                      className="btn-delete"
-                      title="刪除"
-                    >
-                      <span>×</span>
-                    </button>
-                  </div>
-                  
-                  {/* 標籤展示 */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {sortedTags
-                      .filter(tag => fav.tagIds.includes(tag.tagId))
-                      .map(tag => (
-                        <span
-                          key={tag.tagId}
-                          onClick={() => onToggleTag(fav.id, tag.tagId)}
-                          style={{
-                            padding: "2px 6px",
-                            background: tag.color,
-                            color: "#fff",
-                            borderRadius: 4,
-                            fontSize: 12,
-                            cursor: "pointer"
-                          }}
-                        >
-                          {tag.name} ✓
-                        </span>
-                      ))}
-                    
-                    {/* 新增標籤按鈕 */}
-                    {sortedTags
-                      .filter(tag => !fav.tagIds.includes(tag.tagId))
-                      .slice(0, 3) // 只顯示前3個未新增的標籤
-                      .map(tag => (
-                        <span
-                          key={tag.tagId}
-                          onClick={() => onToggleTag(fav.id, tag.tagId)}
-                          style={{
-                            padding: "2px 6px",
-                            background: "#444",
-                            color: "#ccc",
-                            borderRadius: 4,
-                            fontSize: 12,
-                            cursor: "pointer"
-                          }}
-                        >
-                          + {tag.name}
-                        </span>
-                      ))}
-                    
-                    {/* 更多標籤選項 */}
-                    {sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length > 3 && (
-                      <span
-                        style={{
-                          padding: "2px 6px",
-                          background: "#333",
-                          color: "#aaa",
-                          borderRadius: 4,
-                          fontSize: 12,
-                          cursor: "pointer"
-                        }}
-                        onClick={() => openTagSelector(fav.id)}
+              {filteredFavorites
+                .slice() // 複製一份避免破壞原資料
+                .sort((a, b) => collator.compare(String(a.id), String(b.id)))
+                .map((fav) => (
+                  <li
+                    key={fav.id}
+                    id={`favorite-item-${fav.id}`}
+                    className={`favorite-item ${
+                      fav.id === highlightedFavoriteId ? 'favorite-selected' : ''
+                    } ${
+                      fav.id === searchHighlightId ? 'search-highlighted' : ''
+                    }`}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span 
+                        onClick={() => onLoadFavorite(fav.id)} 
+                        style={{ cursor: "pointer", flexGrow: 1, marginRight: 8, color: "#eee", fontSize: 16 }}
                       >
-                        +{sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length - 3} 更多...
+                        <span style={{ color: '#aaa', marginRight: 4 }}>{fav.id}.</span>{fav.text}
                       </span>
-                    )}
-                  </div>
-                </li>
-              ))}
+                      <button 
+                        onClick={() => onRemoveFavorite(fav.id)} 
+                        className="btn-delete"
+                        title="刪除"
+                      >
+                        <span>×</span>
+                      </button>
+                    </div>
+                    
+                    {/* 標籤展示 */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {sortedTags
+                        .filter(tag => fav.tagIds.includes(tag.tagId))
+                        .map(tag => (
+                          <span
+                            key={tag.tagId}
+                            onClick={() => onToggleTag(fav.id, tag.tagId)}
+                            style={{
+                              padding: "2px 6px",
+                              background: tag.color,
+                              color: "#fff",
+                              borderRadius: 4,
+                              fontSize: 12,
+                              cursor: "pointer"
+                            }}
+                          >
+                            {tag.name} ✓
+                          </span>
+                        ))}
+                      
+                      {/* 新增標籤按鈕 */}
+                      {sortedTags
+                        .filter(tag => !fav.tagIds.includes(tag.tagId))
+                        .slice(0, 3) // 只顯示前3個未新增的標籤
+                        .map(tag => (
+                          <span
+                            key={tag.tagId}
+                            onClick={() => onToggleTag(fav.id, tag.tagId)}
+                            style={{
+                              padding: "2px 6px",
+                              background: "#444",
+                              color: "#ccc",
+                              borderRadius: 4,
+                              fontSize: 12,
+                              cursor: "pointer"
+                            }}
+                          >
+                            + {tag.name}
+                          </span>
+                        ))}
+                      
+                      {/* 更多標籤選項 */}
+                      {sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length > 3 && (
+                        <span
+                          style={{
+                            padding: "2px 6px",
+                            background: "#333",
+                            color: "#aaa",
+                            borderRadius: 4,
+                            fontSize: 12,
+                            cursor: "pointer"
+                          }}
+                          onClick={() => openTagSelector(fav.id)}
+                        >
+                          +{sortedTags.filter(tag => !fav.tagIds.includes(tag.tagId)).length - 3} 更多...
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
             </ul>
           ) : (
             // 收藏列表為空時顯示提示
