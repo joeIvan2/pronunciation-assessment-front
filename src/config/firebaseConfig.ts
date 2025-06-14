@@ -1,7 +1,7 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence, clearIndexedDbPersistence, terminate, setLogLevel } from 'firebase/firestore';
 
 // Firebase配置
 const firebaseConfig = {
@@ -14,8 +14,8 @@ const firebaseConfig = {
   measurementId: "G-3BDGQQR6VL"
 };
 
-// 初始化Firebase
-const app = initializeApp(firebaseConfig);
+// 單例初始化 Firebase App
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // 初始化服務
 export const auth = getAuth(app);
@@ -50,12 +50,17 @@ facebookProvider.addScope('public_profile');
 // 初始化 Firestore，連接到 nicetone 資料庫
 export const db = getFirestore(app, 'nicetone');
 
+// 只啟用一次 IndexedDB 持久化
+if (typeof window !== 'undefined' && !(window as any)._persistenceEnabled) {
+  (window as any)._persistenceEnabled = true;
+  enableIndexedDbPersistence(db).catch(() => {/* tab 衝突可忽略 */});
+}
+
 // 添加 Firestore 設置，改善連接穩定性
 try {
   // 在開發環境中啟用詳細日誌記錄（僅用於調試）
   if (process.env.NODE_ENV === 'development') {
-    // 可以啟用詳細日誌記錄
-    // 注意：這可能會在某些瀏覽器中與廣告攔截器衝突
+    setLogLevel('debug');
   }
 } catch (error) {
   console.warn('Firestore 配置警告:', error);
@@ -75,3 +80,17 @@ console.log('Firebase 配置完成，連接到 nicetone 資料庫');
 
 export { analytics };
 export default app;
+
+// 提供全域 debug 快取清除函式
+if (typeof window !== 'undefined') {
+  (window as any).clearFirestoreCache = async () => {
+    try {
+      await terminate(db);
+      await clearIndexedDbPersistence(db);
+      alert('Firestore IndexedDB 快取已清除，將自動重新整理頁面');
+      location.reload();
+    } catch (e) {
+      alert('清除快取失敗：' + (e?.message || e));
+    }
+  };
+}

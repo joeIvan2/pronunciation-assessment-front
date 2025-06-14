@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Favorite, Tag } from '../types/speech';
+import { fetchFavorites, saveFavorites } from './firestoreUtils';
 
 // 生成隨機ID (5位小寫英文加數字)
 const generateId = (): string => {
@@ -260,28 +261,17 @@ export const updateSharedData = async (
   }
 };
 
-// 刪除分享的數據
-
 // 讀取使用者收藏
 export const loadUserFavorites = async (uid: string): Promise<Favorite[]> => {
   if (!uid) return [];
-
-  await checkNetworkConnection();
-
-  const { collection, getDocs } = await import('firebase/firestore');
-
-  const colRef = collection(db, 'users', uid, 'favorites');
-  const snap = await retryOperation(() => getDocs(colRef));
-
-  return snap.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      text: data.text as string,
-      tagIds: Array.isArray(data.tagIds) ? data.tagIds : [],
-      createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
-    } as Favorite;
-  });
+  const favMap = await fetchFavorites(uid);
+  console.log('[loadUserFavorites] 讀取到的 favMap:', favMap);
+  return Object.entries(favMap).map(([id, value]) => ({
+    id,
+    text: value.text,
+    tagIds: [],
+    createdAt: Date.now()
+  }));
 };
 
 // 儲存使用者收藏
@@ -290,29 +280,10 @@ export const saveUserFavorites = async (
   favorites: Favorite[]
 ): Promise<void> => {
   if (!uid) return;
-
-  await checkNetworkConnection();
-
-  const { collection, doc, getDocs, writeBatch } = await import('firebase/firestore');
-
-  const colRef = collection(db, 'users', uid, 'favorites');
-  const existing = await retryOperation(() => getDocs(colRef));
-
-  const batch = writeBatch(db);
-  const newIds = favorites.map(f => f.id);
-
-  favorites.forEach(f => {
-    const docRef = doc(db, 'users', uid, 'favorites', f.id);
-    batch.set(docRef, f);
-  });
-
-  existing.docs.forEach(d => {
-    if (!newIds.includes(d.id)) {
-      batch.delete(d.ref);
-    }
-  });
-
-  await retryOperation(() => batch.commit());
+  console.log('[saveUserFavorites] 即將寫入的 favorites:', favorites);
+  const favMap = Object.fromEntries(favorites.map(f => [f.id, { text: f.text }]));
+  console.log('[saveUserFavorites] 轉換後的 favMap:', favMap);
+  await saveFavorites(uid, favMap);
 };
 
 // 讀取使用者標籤
@@ -413,7 +384,7 @@ export const loadUserProfile = async (uid: string): Promise<{
       return docSnap.data();
     });
 
-    console.log('使用者資料載入成功:', uid);
+    console.log('使用者資料載入成功:', uid, 'favorites:', result?.favorites);
     return result;
   } catch (error) {
     console.error('載入使用者資料失敗:', error);

@@ -218,4 +218,25 @@ export const handleFirestoreError = (error: any, operationName: string): string 
   }
 };
 
+// ================== Favorites 物件存取 ==================
+export interface FavoriteSentence {
+  text: string;
+  note?: string;
+}
+
+export type FavoritesMap = Record<string, FavoriteSentence>;
+
+/** 取得整包 favorites */
+export async function fetchFavorites(uid: string): Promise<FavoritesMap> {
+  const snap = await getDoc(doc(db, "users", uid));
+  const data = snap.data()?.favorites ?? {};
+  console.log('[fetchFavorites] Firestore 讀到的 favorites:', data);
+  return data as FavoritesMap;
+}
+
+/** 整包寫回 favorites（覆蓋） */
+export async function saveFavorites(uid: string, data: FavoritesMap) {
+  await updateDoc(doc(db, "users", uid), { favorites: data });
+}
+
 export default firestoreUtils; 

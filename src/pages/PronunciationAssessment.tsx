@@ -249,29 +249,30 @@ const PronunciationAssessment: React.FC = () => {
 
   // 登入後載入 Firestore 收藏並在更新時同步
   useEffect(() => {
+    let isCancelled = false;
     if (user) {
       setFavoritesLoaded(false);
       (async () => {
         try {
           const { loadUserFavorites } = await import('../utils/firebaseStorage');
           const favs = await loadUserFavorites(user.uid);
-          if (favs.length) {
-            setFavorites(favs);
-            setNextFavoriteId(storage.getNextFavoriteId(favs));
-          } else {
-            setFavorites([]);
-            // 如果是新用戶（沒有收藏），設定為首次用戶
-            setIsFirstTimeUser(true);
-            setShowAITooltip(true);
-            // 5秒後自動關閉 tooltip
-            setTimeout(() => {
-              setShowAITooltip(false);
-            }, 5000);
+          if (!isCancelled) {
+            if (favs.length) {
+              setFavorites(favs);
+              setNextFavoriteId(storage.getNextFavoriteId(favs));
+            } else {
+              setFavorites([]);
+              setIsFirstTimeUser(true);
+              setShowAITooltip(true);
+              setTimeout(() => setShowAITooltip(false), 5000);
+            }
           }
         } catch (err) {
-          console.error('載入使用者收藏失敗:', err);
+          if (!isCancelled) {
+            console.error('載入使用者收藏失敗:', err);
+          }
         } finally {
-          setFavoritesLoaded(true);
+          if (!isCancelled) setFavoritesLoaded(true);
         }
       })();
     } else {
@@ -279,6 +280,7 @@ const PronunciationAssessment: React.FC = () => {
       setFavoritesLoaded(false);
       setIsFirstTimeUser(false);
     }
+    return () => { isCancelled = true; };
   }, [user]);
 
   // 登入後載入 Firestore 標籤並在更新時同步
