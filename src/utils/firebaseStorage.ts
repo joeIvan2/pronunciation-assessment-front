@@ -268,20 +268,26 @@ export const loadUserFavorites = async (uid: string): Promise<Favorite[]> => {
 
   await checkNetworkConnection();
 
-  const { collection, getDocs } = await import('firebase/firestore');
+  const userDocRef = doc(db, 'users', uid);
+  const userSnap = await retryOperation(() => getDoc(userDocRef));
 
-  const colRef = collection(db, 'users', uid, 'favorites');
-  const snap = await retryOperation(() => getDocs(colRef));
+  if (!userSnap.exists()) {
+    return [];
+  }
 
-  return snap.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      text: data.text as string,
-      tagIds: Array.isArray(data.tagIds) ? data.tagIds : [],
-      createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
-    } as Favorite;
-  });
+  const data = userSnap.data();
+  const favorites2 = (data as any).favorites2;
+
+  if (!Array.isArray(favorites2)) {
+    return [];
+  }
+
+  return favorites2.map(fav => ({
+    id: String(fav.id),
+    text: String(fav.text),
+    tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : [],
+    createdAt: typeof fav.createdAt === 'number' ? fav.createdAt : Date.now()
+  })) as Favorite[];
 };
 
 // 儲存使用者收藏
@@ -293,26 +299,17 @@ export const saveUserFavorites = async (
 
   await checkNetworkConnection();
 
-  const { collection, doc, getDocs, writeBatch } = await import('firebase/firestore');
-
-  const colRef = collection(db, 'users', uid, 'favorites');
-  const existing = await retryOperation(() => getDocs(colRef));
-
-  const batch = writeBatch(db);
-  const newIds = favorites.map(f => f.id);
-
-  favorites.forEach(f => {
-    const docRef = doc(db, 'users', uid, 'favorites', f.id);
-    batch.set(docRef, f);
-  });
-
-  existing.docs.forEach(d => {
-    if (!newIds.includes(d.id)) {
-      batch.delete(d.ref);
-    }
-  });
-
-  await retryOperation(() => batch.commit());
+  const userDocRef = doc(db, 'users', uid);
+  await retryOperation(() =>
+    setDoc(
+      userDocRef,
+      {
+        favorites2: favorites,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    )
+  );
 };
 
 // 讀取使用者標籤

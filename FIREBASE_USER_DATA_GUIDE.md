@@ -4,7 +4,7 @@
 
 當使用者登入後，系統會自動載入並管理以下資料：
 
-1. **個人收藏** (`favorites` 子集合)
+1. **個人收藏** (`favorites2` 欄位)
 2. **分享歷史** (`shareHistory` 欄位)
 3. **編輯密碼記錄** (包含在分享歷史中)
 4. **個人偏好設定** (`preferences` 欄位)
@@ -66,19 +66,20 @@ await saveUserPreferences(uid, {
     strictMode: false,
     language: "zh-TW"
   },
+  favorites2: [
+    {
+      id: "fav_001",
+      text: "Hello, how are you?",
+      tagIds: ["tag_001"],
+      createdAt: 1640995200000
+    }
+  ],
   updatedAt: serverTimestamp()
 }
 ```
 
-### 使用者收藏子集合 (`users/{uid}/favorites/{favoriteId}`)
-```javascript
-{
-  id: "fav_001",
-  text: "Hello, how are you?",
-  tagIds: ["tag_001", "tag_002"],
-  createdAt: 1640995200000
-}
-```
+### 收藏欄位範例
+`favorites2` 儲存為 JSON 陣列，每個項目包含 `id`、`text`、`tagIds` 及 `createdAt`。
 
 ## 🚀 使用方式
 
@@ -139,10 +140,6 @@ match /users/{userId} {
   // 只有該使用者本人可以讀寫自己的文檔
   allow read, write: if request.auth != null && request.auth.uid == userId;
   
-  // 使用者收藏子集合
-  match /favorites/{favoriteId} {
-    allow read, write: if request.auth != null && request.auth.uid == userId;
-  }
 }
 ```
 
