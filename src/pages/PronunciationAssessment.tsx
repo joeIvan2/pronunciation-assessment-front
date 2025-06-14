@@ -1786,6 +1786,24 @@ const PronunciationAssessment: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [recorder.recording]);
 
+  // 全域快捷鍵：空白鍵觸發撥放聲音（非輸入狀態）
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName.toLowerCase();
+      const isInput = tag === 'input' || tag === 'textarea' || (e.target as HTMLElement).isContentEditable;
+      if (!isInput && e.code === 'Space') {
+        e.preventDefault();
+        if (recorder.recording) {
+          stopAssessment();
+        } else {
+          speakText();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [speakText, recorder.recording, stopAssessment]);
+
   // JSX 渲染部分
   return (
     <>
