@@ -16,6 +16,7 @@ import ShareImportModal from "../components/ShareImportModal";
 import AndroidChromeModal from "../components/AndroidChromeModal";
 import IOSFacebookModal from "../components/IOSFacebookModal";
 import IOSLINEModal from "../components/IOSLINEModal";
+import RandomDraggableButton from '../components/RandomDraggableButton';
 
 // 瀏覽器環境檢測
 import { isAndroidWebView } from "../utils/browserDetection";
@@ -2366,6 +2367,11 @@ const PronunciationAssessment: React.FC = () => {
         {systemTip && <div className="shake-tip">{systemTip}</div>}
 
       </div>
+      <RandomDraggableButton
+        onRandom={goToRandomSentence}
+        onStopRecording={stopAssessment}
+        isRecording={recorder.recording}
+      />
     </div>
     
     {/* 分享導入 Modal - 移到最外層避免受到任何容器樣式影響 */}
