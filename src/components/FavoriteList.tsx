@@ -369,24 +369,7 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
           {/* 句子TAB內容 */}
           {activeSubTab === 'sentences' && (
             <>
-              {/* 清空所有句子按鈕 */}
-              <div style={{ marginBottom: 8, textAlign: 'right' }}>
-                <button
-                  onClick={handleClearAllFavorites}
-                  style={{
-                    background: '#d9534f',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '6px 16px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                  disabled={normalizedFavorites.length === 0}
-                >
-                  清空所有句子
-                </button>
-              </div>
+    
               {/* 新增收藏 */}
               <div style={{ marginBottom: 16 }}>
                 <div style={{ 
@@ -461,15 +444,27 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
                   gap: 8, 
                   marginBottom: 8 
                 }}>
-            <button
-              onClick={onClearTagSelection}
-              className={`tag-button ${selectedTags.length === 0 ? 'active' : ''}`}
+                  <button
+                    onClick={onClearTagSelection}
+                    className={`tag-button ${selectedTags.length === 0 ? 'active' : ''}`}
                     style={{
                       background: selectedTags.length === 0 ? 'var(--ios-primary)' : '',
                     }}
-            >
-              全部
-            </button>
+                  >
+                    全部
+                  </button>
+                  <button
+                    onClick={handleClearAllFavorites}
+                    className={`tag-button`}
+                    style={{
+                      background: '#d9534f',
+                      color: '#fff',
+                      marginLeft: 0
+                    }}
+                    disabled={normalizedFavorites.length === 0}
+                  >
+                    清空所有句子
+                  </button>
                 </div>
             
                 <div style={{ 

@@ -78,7 +78,7 @@
   box-shadow: 0 2px 8px var(--ios-shadow);
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .pa-main-content h3 {
@@ -1389,31 +1389,20 @@ h4 {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: background 0.2s, border 0.2s, color 0.2s, box-shadow 0.2s;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  transition: background 0.2s, color 0.2s;
+}
+.auto-practice-btn .fa-robot {
+  font-size: 1.15em;
+  color: #aaa;
 }
 .auto-practice-btn.auto-practice-active {
   background: #fff;
-  color: #007bff;
-  border: 2px solid #007bff;
-  box-shadow: 0 0 8px #007bff33;
-  animation: robot-blink 1s infinite alternate;
 }
 .auto-practice-btn.auto-practice-active .fa-robot {
-  font-size: 1.15em;
   color: #007bff;
-}
-@keyframes robot-blink {
-  0% { box-shadow: 0 0 8px #007bff33; }
-  100% { box-shadow: 0 0 24px #007bff99; }
-}
-.auto-practice-btn.auto-practice-inactive {
-  background: #f0f0f0;
-  color: #aaa;
-  border: 2px solid #ccc;
-  box-shadow: none;
-}
-.auto-practice-btn.auto-practice-inactive .fa-robot {
-  font-size: 1.15em;
-  color: #aaa;
 } 
