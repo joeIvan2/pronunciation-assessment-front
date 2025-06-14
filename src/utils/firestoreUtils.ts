@@ -62,6 +62,11 @@ const isRetryableError = (error: any): boolean => {
     'timeout',
     'fetch'
   ];
+
+  // Firebase 特定錯誤訊息
+  if (errorMessage.includes('Target ID already exists')) {
+    return true;
+  }
   
   // 檢查是否為廣告攔截器導致的錯誤
   const isBlockedByClient = errorMessage.includes('ERR_BLOCKED_BY_CLIENT') ||
@@ -228,7 +233,11 @@ export type FavoritesMap = Record<string, FavoriteSentence>;
 
 /** 取得整包 favorites */
 export async function fetchFavorites(uid: string): Promise<FavoritesMap> {
-  const snap = await getDoc(doc(db, "users", uid));
+  const docRef = doc(db, 'users', uid);
+  const snap = await withRetry(
+    () => getDoc(docRef),
+    `取得 favorites ${uid}`
+  );
   const data = snap.data()?.favorites ?? {};
   console.log('[fetchFavorites] Firestore 讀到的 favorites:', data);
   return data as FavoritesMap;
@@ -236,7 +245,11 @@ export async function fetchFavorites(uid: string): Promise<FavoritesMap> {
 
 /** 整包寫回 favorites（覆蓋） */
 export async function saveFavorites(uid: string, data: FavoritesMap) {
-  await updateDoc(doc(db, "users", uid), { favorites: data });
+  const docRef = doc(db, 'users', uid);
+  await withRetry(
+    () => updateDoc(docRef, { favorites: data }),
+    `保存 favorites ${uid}`
+  );
 }
 
 export default firestoreUtils; 
