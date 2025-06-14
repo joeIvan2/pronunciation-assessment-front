@@ -3,13 +3,13 @@
 // 導入語音配置
 
 // 後端API基礎URL
-const BACKEND_URL = 'https://pronunciation-assessment-app-1.onrender.com';
+const BACKEND_URL = 'https://pronunciation-assessment-app-jxea.onrender.com';
 
 // 導出BACKEND_URL供其他模組使用
 export { BACKEND_URL };
 
 // 新增AI服務器API地址
-export const AI_SERVER_URL = "https://pronunciation-ai-server.onrender.com";
+export const AI_SERVER_URL = "https://pronunciation-ai-server-439s.onrender.com";
 
 // 新增 nicetone.ai TTS API 地址
 export const NICETONE_API_URL = "https://tts.nicetone.ai";
