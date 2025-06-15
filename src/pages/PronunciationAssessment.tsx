@@ -926,18 +926,17 @@ const PronunciationAssessment: React.FC = () => {
       if (message.includes('WebM播放完成') && !audioFinishedDetected) {
         audioFinishedDetected = true;
         console.log = originalConsoleLog;
-        setTimeout(() => { callback(); }, 1000);
+        setTimeout(() => { callback(); }, 3000);
       }
     };
     setTimeout(() => {
       if (!audioFinishedDetected) {
         console.log = originalConsoleLog;
         const checkAudioFinished = () => {
-          const audioElements = document.querySelectorAll('audio');
-          const hasPlayingAudio = Array.from(audioElements).some(audio => !audio.paused && !audio.ended);
+          const hasPlayingAudio = azureSpeech.isAudioPlaying();
           const isSpeaking = speechSynthesis.speaking;
           if (!hasPlayingAudio && !isSpeaking) {
-            setTimeout(() => { callback(); }, 1000);
+            setTimeout(() => { callback(); }, 3000);
           } else {
             setTimeout(checkAudioFinished, 100);
           }

@@ -133,8 +133,8 @@ export const sendTTSRequest = async (text: string): Promise<Response> => {
  * @returns Promise<any> - 包含 audioUrl（blob URL）的響應
  */
 export const generateSpeechWithNicetone = async (
-  text: string, 
-  character: string = "bella", 
+  text: string,
+  character: string = "bella",
   speed: number = 1.0
 ): Promise<any> => {
   try {
@@ -145,7 +145,8 @@ export const generateSpeechWithNicetone = async (
     const params = new URLSearchParams({
       text: text,
       character: character,
-      file: 'true'  // 啟用WebM流式播放，直接返回二進制文件
+      file: 'true', // 啟用WebM流式播放，直接返回二進制文件
+      speed: speed.toString()
     });
     
     const fullUrl = `${apiUrl}?${params.toString()}`;

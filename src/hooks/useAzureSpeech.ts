@@ -58,6 +58,9 @@ interface AzureSpeechResult extends AzureSpeechState {
   ) => Promise<{ audio: HTMLAudioElement }>;
   
   cancelAzureSpeech: () => void;
+
+  // Check if the internal audio element is currently playing
+  isAudioPlaying: () => boolean;
 }
 
 export const useAzureSpeech = (): AzureSpeechResult => {
@@ -239,7 +242,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     rate?: number
   ): Promise<{ audio: HTMLAudioElement }> => {
     const startTime = getPerformanceTime();
-    console.log(`[${getTimeStamp()}] 開始WebM流式TTS: "${text.substring(0, 30)}..." 語音:${voice}`);
+    console.log(`[${getTimeStamp()}] 開始WebM流式TTS: "${text.substring(0, 30)}..." 語音:${voice} 速率:${rate ?? 1}`);
     
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
@@ -276,10 +279,10 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       // 如果沒有任何緩存，調用遠端API
       if (!audioUrl) {
         const apiStartTime = getPerformanceTime();
-        console.log(`[${getTimeStamp()}] 發送 nicetone.ai WebM API 請求: ${voice}`);
-        
+        console.log(`[${getTimeStamp()}] 發送 nicetone.ai WebM API 請求: ${voice} 速率:${rate ?? 1}`);
+
         try {
-          const data = await generateSpeechWithNicetone(text, voice);
+          const data = await generateSpeechWithNicetone(text, voice, rate ?? 1);
           const apiEndTime = getPerformanceTime();
           console.log(`[${getTimeStamp()}] nicetone.ai WebM API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
           
@@ -350,7 +353,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             
             try {
               // 重新調用API獲取遠端URL
-              const fallbackData = await generateSpeechWithNicetone(text, voice);
+              const fallbackData = await generateSpeechWithNicetone(text, voice, rate ?? 1);
               if (fallbackData.success && fallbackData.audioUrl) {
                 console.log(`[${getTimeStamp()}] 遠端TTS重試成功，切換音頻源`);
                 
@@ -461,12 +464,19 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     
     setState(prev => ({ ...prev, isLoading: false }));
   };
-  
+
+  // Expose audio playing status for external checks
+  const isAudioPlaying = () => {
+    const audio = audioRef.current;
+    return !!audio && !audio.paused && !audio.ended;
+  };
+
   return {
     ...state,
     assessWithAzure,
     speakWithAzure,
     speakWithAIServerStream,
-    cancelAzureSpeech
+    cancelAzureSpeech,
+    isAudioPlaying
   };
-}; 
+};
