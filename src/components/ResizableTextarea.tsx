@@ -6,6 +6,9 @@ interface ResizableTextareaProps {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
+  onClick?: (e: React.MouseEvent<HTMLTextAreaElement>) => void;
+  onSelect?: (e: React.SyntheticEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   fontSize?: number;
   className?: string;
@@ -21,6 +24,9 @@ export const ResizableTextarea = forwardRef<HTMLTextAreaElement, ResizableTextar
   onChange,
   onPaste,
   onBlur,
+  onFocus,
+  onClick,
+  onSelect,
   placeholder,
   fontSize = 16,
   className = "",
@@ -40,6 +46,9 @@ export const ResizableTextarea = forwardRef<HTMLTextAreaElement, ResizableTextar
       onChange={onChange}
       onPaste={onPaste}
       onBlur={onBlur}
+      onFocus={onFocus}
+      onClick={onClick}
+      onSelect={onSelect}
       className={className}
       style={{
         ...textareaProps.style,

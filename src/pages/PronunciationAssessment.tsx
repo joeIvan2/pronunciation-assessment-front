@@ -997,11 +997,18 @@ const PronunciationAssessment: React.FC = () => {
     });
   };
 
-  // 點擊字典按鈕時，根據 textarea 當前焦點位置取得單字並開啟字典
+  // 點擊字典按鈕時，根據 localStorage 取得最後一次 focus 的單字並開啟字典
   const openDictionaryAtCaret = () => {
-    let word = '';
+    let word = localStorage.getItem('lastFocusedWord') || '';
+    setDictWord(word);
+    setShowDictModal(true);
+  };
+
+  // 當 textarea 被 focus/click/select 時，記錄當前游標位置的單字到 localStorage
+  const handleTextareaWordUpdate = () => {
     const textarea = textareaRef.current;
-    if (textarea && document.activeElement === textarea) {
+    let word = '';
+    if (textarea) {
       const text = textarea.value;
       const start = textarea.selectionStart || 0;
       const end = textarea.selectionEnd || start;
@@ -1016,10 +1023,9 @@ const PronunciationAssessment: React.FC = () => {
       }
       word = word.replace(/^[^A-Za-z'-]+|[^A-Za-z'-]+$/g, '');
     }
-    setDictWord(word);
-    setShowDictModal(true);
+    localStorage.setItem('lastFocusedWord', word);
   };
-  
+
   // 保存 Azure key/region
   const saveAzureSettings = () => {
     storage.saveAzureSettings(azureSettings.key, azureSettings.region);
@@ -1971,6 +1977,9 @@ const PronunciationAssessment: React.FC = () => {
               value={referenceText}
               onChange={handleReferenceTextChange}
               onPaste={handlePaste}
+              onFocus={handleTextareaWordUpdate}
+              onClick={handleTextareaWordUpdate}
+              onSelect={handleTextareaWordUpdate}
               className="textarea-input"
                   fontSize={fontSize}
               placeholder="輸入或粘貼要練習的文本..."
@@ -2045,7 +2054,7 @@ const PronunciationAssessment: React.FC = () => {
                 className="control-button"
                 style={{ marginLeft: 4 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M4 4.5A2.5 2.5 0 0 1 6.5 7H20" />
                   <path d="M6.5 7v10" />
