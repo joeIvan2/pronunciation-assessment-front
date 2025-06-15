@@ -346,25 +346,14 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       // 準備發送給AI的數據
       const formData = new FormData();
       
-      // 只使用最新的10條發音記錄
-      const latestHistoryRecords = [...historyRecords].sort((a, b) => 
-        (b.timestamp || 0) - (a.timestamp || 0)
-      ).slice(0, 10);
-      
-      // 過濾 historyRecords，將 words 只保留單字層級（去除 Phonemes）
-      const filteredHistoryRecords = latestHistoryRecords.map(item => {
-        if (!item.words || !Array.isArray(item.words)) return item;
-        return {
-          ...item,
-          words: item.words.map((w: any) => {
-            // 僅保留 Word 和 PronunciationAssessment
-            const { Word, PronunciationAssessment } = w;
-            return { Word, PronunciationAssessment };
-          })
-        };
-      });
+      // 只使用最新的10條發音記錄（已壓縮格式）
+      const latestHistoryRecords = storage
+        .getCompressedHistoryRecords()
+        .sort((a, b) => (b.g || 0) - (a.g || 0))
+        .slice(0, 10);
+
       const jsonData = JSON.stringify({
-        historyRecords: filteredHistoryRecords,
+        historyRecords: latestHistoryRecords,
         prompt: currentPrompt
       });
       formData.append('data', jsonData);
@@ -671,7 +660,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
                 // 輸出時反轉順序，防呆處理
                 const reversedAiSentences = Array.isArray(response.sentences)
                   ? response.sentences.slice().reverse()
-                  : [];
+                  : response.message
+                    ? [String(response.message)]
+                    : [];
                 
                 return (
                   <>
