@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import ReactDOM from 'react-dom';
 import "../styles/PronunciationAssessment.css";
 
 // 組件導入
@@ -170,6 +171,10 @@ const PronunciationAssessment: React.FC = () => {
   
   // 自動練習模式狀態
   const [isAutoPracticeMode, setIsAutoPracticeMode] = useState(false);
+
+  // 字典 Modal 狀態
+  const [showDictModal, setShowDictModal] = useState(false);
+  const [dictWord, setDictWord] = useState('');
 
   // 系統提醒顯示
   const [systemTip, setSystemTip] = useState<string | null>(null);
@@ -926,18 +931,17 @@ const PronunciationAssessment: React.FC = () => {
       if (message.includes('WebM播放完成') && !audioFinishedDetected) {
         audioFinishedDetected = true;
         console.log = originalConsoleLog;
-        setTimeout(() => { callback(); }, 1000);
+        setTimeout(() => { callback(); }, 3000);
       }
     };
     setTimeout(() => {
       if (!audioFinishedDetected) {
         console.log = originalConsoleLog;
         const checkAudioFinished = () => {
-          const audioElements = document.querySelectorAll('audio');
-          const hasPlayingAudio = Array.from(audioElements).some(audio => !audio.paused && !audio.ended);
+          const hasPlayingAudio = azureSpeech.isAudioPlaying();
           const isSpeaking = speechSynthesis.speaking;
           if (!hasPlayingAudio && !isSpeaking) {
-            setTimeout(() => { callback(); }, 1000);
+            setTimeout(() => { callback(); }, 3000);
           } else {
             setTimeout(checkAudioFinished, 100);
           }
@@ -991,6 +995,29 @@ const PronunciationAssessment: React.FC = () => {
           }
         }, 300);
     });
+  };
+
+  // 點擊字典按鈕時，根據 textarea 當前焦點位置取得單字並開啟字典
+  const openDictionaryAtCaret = () => {
+    let word = '';
+    const textarea = textareaRef.current;
+    if (textarea && document.activeElement === textarea) {
+      const text = textarea.value;
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || start;
+      if (start !== end) {
+        word = text.slice(start, end).trim();
+      } else {
+        const left = text.slice(0, start);
+        const right = text.slice(start);
+        const leftMatch = left.match(/[A-Za-z'-]+$/);
+        const rightMatch = right.match(/^[A-Za-z'-]+/);
+        word = `${leftMatch ? leftMatch[0] : ''}${rightMatch ? rightMatch[0] : ''}`;
+      }
+      word = word.replace(/^[^A-Za-z'-]+|[^A-Za-z'-]+$/g, '');
+    }
+    setDictWord(word);
+    setShowDictModal(true);
   };
   
   // 保存 Azure key/region
@@ -2011,6 +2038,20 @@ const PronunciationAssessment: React.FC = () => {
                 {/* 機器人 LOGO，使用 FontAwesome fa-robot */}
                 <i className="fas fa-robot"></i>
               </button>
+              {/* 查字典按鈕 */}
+              <button
+                onClick={openDictionaryAtCaret}
+                title="查字典"
+                className="control-button"
+                style={{ marginLeft: 4 }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M4 4.5A2.5 2.5 0 0 1 6.5 7H20" />
+                  <path d="M6.5 7v10" />
+                  <rect x="2" y="2" width="20" height="20" rx="2.5" />
+                </svg>
+              </button>
         </div>
         
                 {/* 操作按钮区 */}
@@ -2454,6 +2495,26 @@ const PronunciationAssessment: React.FC = () => {
 
         {/* 系統提醒顯示 */}
         {systemTip && <div className="shake-tip">{systemTip}</div>}
+
+        {/* 字典 Modal（用 Portal 保證永遠在最上層） */}
+        {showDictModal && ReactDOM.createPortal(
+          <div className="login-modal-overlay" style={{ zIndex: 99999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }} onClick={() => setShowDictModal(false)}>
+            <div className="login-modal-content" style={{ zIndex: 99999, width: 420, maxWidth: '90vw', height: 600, maxHeight: '90vh', padding: 0, position: 'relative', margin: 'auto', top: 0, left: 0, right: 0, bottom: 0 }} onClick={e => e.stopPropagation()}>
+              <button className="login-modal-close" style={{ position: 'absolute', top: 8, right: 8, zIndex: 100000 }} onClick={() => setShowDictModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+              <iframe
+                src={`https://mobile.youdao.com/dict?le=eng&q=${encodeURIComponent(dictWord)}`}
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ border: 0, borderRadius: 12, minHeight: 580 }}
+                title="Youdao Dictionary"
+              />
+            </div>
+          </div>,
+          document.body
+        )}
 
       </div>
       {/* 新增：控制拖放隨機按鈕顯示與位置 */}
