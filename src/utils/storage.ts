@@ -282,10 +282,15 @@ interface CompressedWordAssessment {
   e?: string; // ErrorType
 }
 
+interface CompressedPhoneme {
+  p: string; // Phoneme text
+  a?: number; // AccuracyScore
+}
+
 interface CompressedWord {
   w: string; // Word
   p?: CompressedWordAssessment; // PronunciationAssessment
-  m?: any[]; // Phonemes
+  m?: CompressedPhoneme[]; // Phonemes
 }
 
 // 壓縮後的歷史記錄結構，使用更短的欄位名稱以節省空間
@@ -309,7 +314,12 @@ const compressWord = (word: any): CompressedWord => ({
         e: word.PronunciationAssessment.ErrorType
       }
     : undefined,
-  m: word.Phonemes
+  m: Array.isArray(word.Phonemes)
+    ? word.Phonemes.map((ph: any) => ({
+        p: ph.Phoneme,
+        a: ph.PronunciationAssessment?.AccuracyScore
+      }))
+    : undefined
 });
 
 const decompressWord = (data: any): any => ({
@@ -320,7 +330,16 @@ const decompressWord = (data: any): any => ({
         ErrorType: data.p.e ?? data.p.ErrorType
       }
     : data.PronunciationAssessment,
-  Phonemes: data.m ?? data.Phonemes
+  Phonemes: Array.isArray(data.m)
+    ? data.m.map((ph: any) => ({
+        Phoneme: ph.p ?? ph.Phoneme,
+        PronunciationAssessment: ph.a !== undefined || ph.PronunciationAssessment
+          ? {
+              AccuracyScore: ph.a ?? ph.PronunciationAssessment?.AccuracyScore
+            }
+          : undefined
+      }))
+    : data.Phonemes
 });
 
 const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
