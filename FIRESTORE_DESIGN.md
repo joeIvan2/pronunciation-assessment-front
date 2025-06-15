@@ -12,10 +12,11 @@
 - `tokens`：剩餘可使用次數
 - `shareHistory`：陣列，記錄曾分享的 `shareId` 與 `editPassword`
 - `preferences`：物件，儲存字體大小、嚴格模式等設定
+- `favorites2`：JSON 陣列，儲存所有收藏句子
+- `tags2`：JSON 陣列，儲存所有自訂標籤
 
 ### 子集合
-- `tags`：自訂標籤，欄位包含 `tagId`、`name`、`color`、`createdAt`
-- `favorites`：收藏句子，欄位包含 `id`、`text`、`tagIds`、`createdAt`
+(目前僅 `history` 用於紀錄編輯歷史)
 
 ## 2. sharedData（集合）
 用於分享標籤與收藏，格式已在程式碼中實作。
@@ -32,8 +33,7 @@
 1. 以雲端資料取代 localStorage，使用 `getDoc` 與 `setDoc` 同步設定。
 2. 未登入時僅提供預設內容，不在 localStorage 儲存任何資料，收藏列表僅存在記憶體中。
 3. 在 AI 造句或其他服務消耗 token 時，更新 `tokens` 欄位。
-4. 對 `users/{uid}/favorites`、`users/{uid}/tags` 建立索引，以加速查詢。
-5. 透過 Firestore 安全規則，限制只有本人可讀寫 `users/{uid}` 下的資料。
+4. 透過 Firestore 安全規則，限制只有本人可讀寫 `users/{uid}` 下的資料。
 
 ## 4. 後端請求安全性
 AI 相關的 POST 與 GET 請求應一併帶上 `uid`，便於驗證與流量控管，避免遭到大量垃圾攻擊。建議保護的端點包含：

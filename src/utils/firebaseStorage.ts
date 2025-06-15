@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Favorite, Tag } from '../types/speech';
+import { toCompactHistory, fromCompactHistory } from './historyCompact';
 
 // 生成隨機ID (5位小寫英文加數字)
 const generateId = (): string => {
@@ -268,20 +269,26 @@ export const loadUserFavorites = async (uid: string): Promise<Favorite[]> => {
 
   await checkNetworkConnection();
 
-  const { collection, getDocs } = await import('firebase/firestore');
+  const userDocRef = doc(db, 'users', uid);
+  const userSnap = await retryOperation(() => getDoc(userDocRef));
 
-  const colRef = collection(db, 'users', uid, 'favorites');
-  const snap = await retryOperation(() => getDocs(colRef));
+  if (!userSnap.exists()) {
+    return [];
+  }
 
-  return snap.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      text: data.text as string,
-      tagIds: Array.isArray(data.tagIds) ? data.tagIds : [],
-      createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
-    } as Favorite;
-  });
+  const data = userSnap.data();
+  const favorites2 = (data as any).favorites2;
+
+  if (!Array.isArray(favorites2)) {
+    return [];
+  }
+
+  return favorites2.map(fav => ({
+    id: String(fav.id),
+    text: String(fav.text),
+    tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : [],
+    createdAt: typeof fav.createdAt === 'number' ? fav.createdAt : Date.now()
+  })) as Favorite[];
 };
 
 // 儲存使用者收藏
@@ -293,26 +300,17 @@ export const saveUserFavorites = async (
 
   await checkNetworkConnection();
 
-  const { collection, doc, getDocs, writeBatch } = await import('firebase/firestore');
-
-  const colRef = collection(db, 'users', uid, 'favorites');
-  const existing = await retryOperation(() => getDocs(colRef));
-
-  const batch = writeBatch(db);
-  const newIds = favorites.map(f => f.id);
-
-  favorites.forEach(f => {
-    const docRef = doc(db, 'users', uid, 'favorites', f.id);
-    batch.set(docRef, f);
-  });
-
-  existing.docs.forEach(d => {
-    if (!newIds.includes(d.id)) {
-      batch.delete(d.ref);
-    }
-  });
-
-  await retryOperation(() => batch.commit());
+  const userDocRef = doc(db, 'users', uid);
+  await retryOperation(() =>
+    setDoc(
+      userDocRef,
+      {
+        favorites2: favorites,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    )
+  );
 };
 
 // 讀取使用者標籤
@@ -322,20 +320,26 @@ export const loadUserTags = async (uid: string): Promise<Tag[]> => {
   try {
     await checkNetworkConnection();
 
-    const { collection, getDocs } = await import('firebase/firestore');
+    const userDocRef = doc(db, 'users', uid);
+    const userSnap = await retryOperation(() => getDoc(userDocRef));
 
-    const colRef = collection(db, 'users', uid, 'tags');
-    const snap = await retryOperation(() => getDocs(colRef));
+    if (!userSnap.exists()) {
+      return [];
+    }
 
-    const tags = snap.docs.map(doc => {
-      const data = doc.data();
-      return {
-        tagId: doc.id,
-        name: data.name as string,
-        color: data.color as string,
-        createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
-      } as Tag;
-    });
+    const data = userSnap.data();
+    const tags2 = (data as any).tags2;
+
+    if (!Array.isArray(tags2)) {
+      return [];
+    }
+
+    const tags = tags2.map(tag => ({
+      tagId: String(tag.tagId),
+      name: String(tag.name),
+      color: String(tag.color),
+      createdAt: typeof tag.createdAt === 'number' ? tag.createdAt : Date.now()
+    })) as Tag[];
 
     console.log('使用者標籤載入成功:', uid, tags.length);
     return tags;
@@ -355,32 +359,17 @@ export const saveUserTags = async (
   try {
     await checkNetworkConnection();
 
-    const { collection, doc, getDocs, writeBatch } = await import('firebase/firestore');
-
-    const colRef = collection(db, 'users', uid, 'tags');
-    const existing = await retryOperation(() => getDocs(colRef));
-
-    const batch = writeBatch(db);
-    const newIds = tags.map(t => t.tagId);
-
-    // 新增或更新標籤
-    tags.forEach(tag => {
-      const docRef = doc(db, 'users', uid, 'tags', tag.tagId);
-      batch.set(docRef, {
-        name: tag.name,
-        color: tag.color,
-        createdAt: tag.createdAt
-      });
-    });
-
-    // 刪除不存在的標籤
-    existing.docs.forEach(d => {
-      if (!newIds.includes(d.id)) {
-        batch.delete(d.ref);
-      }
-    });
-
-    await retryOperation(() => batch.commit());
+    const userDocRef = doc(db, 'users', uid);
+    await retryOperation(() =>
+      setDoc(
+        userDocRef,
+        {
+          tags2: tags,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      )
+    );
     console.log('使用者標籤儲存成功:', uid, tags.length);
   } catch (error) {
     console.error('儲存使用者標籤失敗:', error);
@@ -405,12 +394,18 @@ export const loadUserProfile = async (uid: string): Promise<{
     const result = await retryOperation(async () => {
       const docRef = doc(db, 'users', uid);
       const docSnap = await getDoc(docRef);
-      
+
       if (!docSnap.exists()) {
         return null;
       }
-      
-      return docSnap.data();
+
+      const data = docSnap.data();
+      if (Array.isArray((data as any).historyRecords)) {
+        (data as any).historyRecords = (data as any).historyRecords.map((r: any) =>
+          fromCompactHistory(r)
+        );
+      }
+      return data;
     });
 
     console.log('使用者資料載入成功:', uid);
@@ -564,12 +559,18 @@ export const saveUserHistoryRecords = async (
   try {
     await checkNetworkConnection();
     
+    const compact = historyRecords.map(r => toCompactHistory(r));
+
     await retryOperation(async () => {
       const userDocRef = doc(db, 'users', uid);
-      await setDoc(userDocRef, {
-        historyRecords,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      await setDoc(
+        userDocRef,
+        {
+          historyRecords: compact,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
     });
 
     console.log('使用者歷史記錄已儲存');

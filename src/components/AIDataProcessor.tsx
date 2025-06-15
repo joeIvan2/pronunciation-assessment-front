@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as storage from '../utils/storage';
 import { Tag, Favorite, Word } from '../types/speech';
+import { toCompactHistory } from '../utils/historyCompact';
 import ResizableTextarea from './ResizableTextarea';
 import { Tooltip } from 'react-tooltip';
 import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
@@ -351,17 +352,16 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         (b.timestamp || 0) - (a.timestamp || 0)
       ).slice(0, 10);
       
-      // 過濾 historyRecords，將 words 只保留單字層級（去除 Phonemes）
       const filteredHistoryRecords = latestHistoryRecords.map(item => {
-        if (!item.words || !Array.isArray(item.words)) return item;
-        return {
+        if (!item.words || !Array.isArray(item.words)) return toCompactHistory(item);
+        const simple = {
           ...item,
           words: item.words.map((w: any) => {
-            // 僅保留 Word 和 PronunciationAssessment
             const { Word, PronunciationAssessment } = w;
             return { Word, PronunciationAssessment };
           })
-        };
+        } as storage.HistoryItem;
+        return toCompactHistory(simple);
       });
       const jsonData = JSON.stringify({
         historyRecords: filteredHistoryRecords,
