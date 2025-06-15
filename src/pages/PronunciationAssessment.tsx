@@ -926,7 +926,7 @@ const PronunciationAssessment: React.FC = () => {
       if (message.includes('WebM播放完成') && !audioFinishedDetected) {
         audioFinishedDetected = true;
         console.log = originalConsoleLog;
-        setTimeout(() => { callback(); }, 1000);
+        setTimeout(() => { callback(); }, 3000);
       }
     };
     setTimeout(() => {
@@ -937,7 +937,7 @@ const PronunciationAssessment: React.FC = () => {
           const hasPlayingAudio = Array.from(audioElements).some(audio => !audio.paused && !audio.ended);
           const isSpeaking = speechSynthesis.speaking;
           if (!hasPlayingAudio && !isSpeaking) {
-            setTimeout(() => { callback(); }, 1000);
+            setTimeout(() => { callback(); }, 3000);
           } else {
             setTimeout(checkAudioFinished, 100);
           }
