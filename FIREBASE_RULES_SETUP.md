@@ -41,7 +41,7 @@ firebase deploy --only firestore:rules
 
 #### 使用者個人數據 (`users` 集合)
 - **讀寫**: 只有登入的使用者可以存取自己的數據
-- **子集合** (`tags`): 只有使用者本人可以存取
+- **標籤與收藏欄位**: `tags2`、`favorites2` 直接儲存在文件中
 
 ### 3. 測試權限
 
