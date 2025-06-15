@@ -346,7 +346,9 @@ const decompressHistoryItem = (data: any): HistoryItem => ({
   recognizedText: data.h ?? data.recognizedText,
   words: Array.isArray(data.i)
     ? data.i.map(decompressWord)
-    : (data.words as any[] | undefined)
+    : Array.isArray(data.words)
+      ? data.words.map(decompressWord)
+      : []
 });
 
 const saveHistoryRecordsToStorage = (records: HistoryItem[]): void => {
@@ -356,8 +358,11 @@ const saveHistoryRecordsToStorage = (records: HistoryItem[]): void => {
 
 // 获取历史记录
 export const getHistoryRecords = (): HistoryItem[] => {
-  const raw = getItem<any[]>('historyRecords', []);
-  if (Array.isArray(raw) && raw.length > 0 && (raw[0].a !== undefined || raw[0].b !== undefined)) {
+  const raw = getItem<any>('historyRecords', []);
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  if (raw.length > 0 && (raw[0].a !== undefined || raw[0].b !== undefined)) {
     return raw.map(item => decompressHistoryItem(item));
   }
   return raw as HistoryItem[];
