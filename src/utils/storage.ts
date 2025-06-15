@@ -276,6 +276,18 @@ export interface HistoryItem {
   words?: any[]; // 新增单词评分数据字段
 }
 
+// 壓縮後的單詞結構
+interface CompressedWordAssessment {
+  a?: number; // AccuracyScore
+  e?: string; // ErrorType
+}
+
+interface CompressedWord {
+  w: string; // Word
+  p?: CompressedWordAssessment; // PronunciationAssessment
+  m?: any[]; // Phonemes
+}
+
 // 壓縮後的歷史記錄結構，使用更短的欄位名稱以節省空間
 interface CompressedHistoryItem {
   a: string; // id
@@ -289,6 +301,28 @@ interface CompressedHistoryItem {
   i?: any[]; // words
 }
 
+const compressWord = (word: any): CompressedWord => ({
+  w: word.Word,
+  p: word.PronunciationAssessment
+    ? {
+        a: word.PronunciationAssessment.AccuracyScore,
+        e: word.PronunciationAssessment.ErrorType
+      }
+    : undefined,
+  m: word.Phonemes
+});
+
+const decompressWord = (data: any): any => ({
+  Word: data.w ?? data.Word,
+  PronunciationAssessment: data.p
+    ? {
+        AccuracyScore: data.p.a ?? data.p.AccuracyScore,
+        ErrorType: data.p.e ?? data.p.ErrorType
+      }
+    : data.PronunciationAssessment,
+  Phonemes: data.m ?? data.Phonemes
+});
+
 const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
   a: item.id,
   b: item.text,
@@ -298,7 +332,7 @@ const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
   f: item.scorePronunciation,
   g: item.timestamp,
   h: item.recognizedText,
-  i: item.words
+  i: item.words ? item.words.map(compressWord) : undefined
 });
 
 const decompressHistoryItem = (data: any): HistoryItem => ({
@@ -310,7 +344,9 @@ const decompressHistoryItem = (data: any): HistoryItem => ({
   scorePronunciation: data.f ?? data.scorePronunciation,
   timestamp: data.g ?? data.timestamp,
   recognizedText: data.h ?? data.recognizedText,
-  words: data.i ?? data.words
+  words: Array.isArray(data.i)
+    ? data.i.map(decompressWord)
+    : (data.words as any[] | undefined)
 });
 
 const saveHistoryRecordsToStorage = (records: HistoryItem[]): void => {
