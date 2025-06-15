@@ -277,24 +277,24 @@ export interface HistoryItem {
 }
 
 // 壓縮後的單詞結構
-interface CompressedWordAssessment {
+export interface CompressedWordAssessment {
   a?: number; // AccuracyScore
   e?: string; // ErrorType
 }
 
-interface CompressedPhoneme {
+export interface CompressedPhoneme {
   p: string; // Phoneme text
   a?: number; // AccuracyScore
 }
 
-interface CompressedWord {
+export interface CompressedWord {
   w: string; // Word
   p?: CompressedWordAssessment; // PronunciationAssessment
   m?: CompressedPhoneme[]; // Phonemes
 }
 
 // 壓縮後的歷史記錄結構，使用更短的欄位名稱以節省空間
-interface CompressedHistoryItem {
+export interface CompressedHistoryItem {
   a: string; // id
   b: string; // text
   c: number; // scoreAccuracy
@@ -306,7 +306,7 @@ interface CompressedHistoryItem {
   i?: any[]; // words
 }
 
-const compressWord = (word: any): CompressedWord => ({
+export const compressWord = (word: any): CompressedWord => ({
   w: word.Word,
   p: word.PronunciationAssessment
     ? {
@@ -322,7 +322,7 @@ const compressWord = (word: any): CompressedWord => ({
     : undefined
 });
 
-const decompressWord = (data: any): any => ({
+export const decompressWord = (data: any): any => ({
   Word: data.w ?? data.Word,
   PronunciationAssessment: data.p
     ? {
@@ -342,7 +342,7 @@ const decompressWord = (data: any): any => ({
     : data.Phonemes
 });
 
-const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
+export const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
   a: item.id,
   b: item.text,
   c: item.scoreAccuracy,
@@ -354,7 +354,7 @@ const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
   i: item.words ? item.words.map(compressWord) : undefined
 });
 
-const decompressHistoryItem = (data: any): HistoryItem => ({
+export const decompressHistoryItem = (data: any): HistoryItem => ({
   id: data.a ?? data.id,
   text: data.b ?? data.text,
   scoreAccuracy: data.c ?? data.scoreAccuracy,
@@ -385,6 +385,19 @@ export const getHistoryRecords = (): HistoryItem[] => {
     return raw.map(item => decompressHistoryItem(item));
   }
   return raw as HistoryItem[];
+};
+
+export const getCompressedHistoryRecords = (): CompressedHistoryItem[] => {
+  const raw = getItem<any>('historyRecords', []);
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  if (raw.length > 0 && (raw[0].a !== undefined || raw[0].b !== undefined)) {
+    return raw as CompressedHistoryItem[];
+  }
+  const compressed = (raw as HistoryItem[]).map(compressHistoryItem);
+  setItem('historyRecords', compressed);
+  return compressed;
 };
 
 // 保存历史记录

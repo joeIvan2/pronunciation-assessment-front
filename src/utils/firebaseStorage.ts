@@ -10,6 +10,11 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Favorite, Tag } from '../types/speech';
+import {
+  compressHistoryItem,
+  decompressHistoryItem,
+  CompressedHistoryItem
+} from './storage';
 
 // 生成隨機ID (5位小寫英文加數字)
 const generateId = (): string => {
@@ -393,13 +398,22 @@ export const loadUserProfile = async (uid: string): Promise<{
     const result = await retryOperation(async () => {
       const docRef = doc(db, 'users', uid);
       const docSnap = await getDoc(docRef);
-      
+
       if (!docSnap.exists()) {
         return null;
       }
-      
+
       return docSnap.data();
     });
+
+    if (result && Array.isArray(result.historyRecords)) {
+      const arr = result.historyRecords;
+      if (arr.length > 0 && (arr[0].a !== undefined || arr[0].b !== undefined)) {
+        result.historyRecords = arr.map((item: CompressedHistoryItem | any) =>
+          decompressHistoryItem(item)
+        );
+      }
+    }
 
     console.log('使用者資料載入成功:', uid);
     return result;
@@ -551,11 +565,16 @@ export const saveUserHistoryRecords = async (
 
   try {
     await checkNetworkConnection();
-    
+
     await retryOperation(async () => {
       const userDocRef = doc(db, 'users', uid);
+      const compressed = historyRecords.map(record =>
+        record.a !== undefined || record.b !== undefined
+          ? (record as CompressedHistoryItem)
+          : compressHistoryItem(record)
+      );
       await setDoc(userDocRef, {
-        historyRecords,
+        historyRecords: compressed,
         updatedAt: serverTimestamp()
       }, { merge: true });
     });
