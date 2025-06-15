@@ -933,8 +933,7 @@ const PronunciationAssessment: React.FC = () => {
       if (!audioFinishedDetected) {
         console.log = originalConsoleLog;
         const checkAudioFinished = () => {
-          const audioElements = document.querySelectorAll('audio');
-          const hasPlayingAudio = Array.from(audioElements).some(audio => !audio.paused && !audio.ended);
+          const hasPlayingAudio = azureSpeech.isAudioPlaying();
           const isSpeaking = speechSynthesis.speaking;
           if (!hasPlayingAudio && !isSpeaking) {
             setTimeout(() => { callback(); }, 3000);

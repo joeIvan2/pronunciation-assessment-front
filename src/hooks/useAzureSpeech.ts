@@ -58,6 +58,9 @@ interface AzureSpeechResult extends AzureSpeechState {
   ) => Promise<{ audio: HTMLAudioElement }>;
   
   cancelAzureSpeech: () => void;
+
+  // Check if the internal audio element is currently playing
+  isAudioPlaying: () => boolean;
 }
 
 export const useAzureSpeech = (): AzureSpeechResult => {
@@ -461,12 +464,19 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     
     setState(prev => ({ ...prev, isLoading: false }));
   };
-  
+
+  // Expose audio playing status for external checks
+  const isAudioPlaying = () => {
+    const audio = audioRef.current;
+    return !!audio && !audio.paused && !audio.ended;
+  };
+
   return {
     ...state,
     assessWithAzure,
     speakWithAzure,
     speakWithAIServerStream,
-    cancelAzureSpeech
+    cancelAzureSpeech,
+    isAudioPlaying
   };
-}; 
+};
