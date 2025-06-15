@@ -125,7 +125,7 @@ const PronunciationAssessment: React.FC = () => {
   const recorder = useRecorder();
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
-  const { user, signInWithGoogle, signOutUser } = useFirebaseAuth();
+  const { user, signInWithGoogle, signOutUser, loading: userLoading } = useFirebaseAuth();
 
   // Google 登入按鈕永遠顯示，不再隱藏
   const disableGoogle = false;
@@ -546,6 +546,7 @@ const PronunciationAssessment: React.FC = () => {
       
       // 開始streaming錄音
       await recorder.startStreamingRecording(chunkHandler);
+      playBeepSound();
       
     } catch (err) {
       console.error('Streaming評估失敗:', err);
@@ -876,6 +877,8 @@ const PronunciationAssessment: React.FC = () => {
   };
 
   const goToRandomSentence = async () => {
+    const currentUser = userRef.current;
+    // 已移除 debug log
     if (filteredFavorites.length === 0) {
       return;
     }
@@ -931,7 +934,7 @@ const PronunciationAssessment: React.FC = () => {
       if (message.includes('WebM播放完成') && !audioFinishedDetected) {
         audioFinishedDetected = true;
         console.log = originalConsoleLog;
-        setTimeout(() => { callback(); }, 3000);
+        setTimeout(() => { callback(); }, 1000);
       }
     };
     setTimeout(() => {
@@ -973,12 +976,6 @@ const PronunciationAssessment: React.FC = () => {
     waitForAudioToFinish(() => {
       if (!isAutoPracticeMode) return; // 再次確認模式還開著
       
-
-      
-      // 播放BEEP聲
-      playBeepSound();
-      
-              // BEEP聲後自動觸發按鈕點擊
               setTimeout(() => {
           if (isAutoPracticeMode && !isAssessing) {
             // 直接使用播放的文本進行錄音，確保完全一致
@@ -1836,6 +1833,13 @@ const PronunciationAssessment: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [speakText, recorder.recording, stopAssessment]);
+
+  useEffect(() => {
+    console.log('【useEffect:user/loading】user 狀態:', user, 'loading:', userLoading);
+  }, [user, userLoading]);
+
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
 
   // JSX 渲染部分
   return (
