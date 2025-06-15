@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Favorite, Tag } from '../types/speech';
+import { toCompactHistory, fromCompactHistory } from './historyCompact';
 
 // 生成隨機ID (5位小寫英文加數字)
 const generateId = (): string => {
@@ -393,12 +394,18 @@ export const loadUserProfile = async (uid: string): Promise<{
     const result = await retryOperation(async () => {
       const docRef = doc(db, 'users', uid);
       const docSnap = await getDoc(docRef);
-      
+
       if (!docSnap.exists()) {
         return null;
       }
-      
-      return docSnap.data();
+
+      const data = docSnap.data();
+      if (Array.isArray((data as any).historyRecords)) {
+        (data as any).historyRecords = (data as any).historyRecords.map((r: any) =>
+          fromCompactHistory(r)
+        );
+      }
+      return data;
     });
 
     console.log('使用者資料載入成功:', uid);
@@ -552,12 +559,18 @@ export const saveUserHistoryRecords = async (
   try {
     await checkNetworkConnection();
     
+    const compact = historyRecords.map(r => toCompactHistory(r));
+
     await retryOperation(async () => {
       const userDocRef = doc(db, 'users', uid);
-      await setDoc(userDocRef, {
-        historyRecords,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      await setDoc(
+        userDocRef,
+        {
+          historyRecords: compact,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
     });
 
     console.log('使用者歷史記錄已儲存');
