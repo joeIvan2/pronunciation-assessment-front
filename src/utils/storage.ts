@@ -276,9 +276,55 @@ export interface HistoryItem {
   words?: any[]; // 新增单词评分数据字段
 }
 
+// 壓縮後的歷史記錄結構，使用更短的欄位名稱以節省空間
+interface CompressedHistoryItem {
+  a: string; // id
+  b: string; // text
+  c: number; // scoreAccuracy
+  d: number; // scoreFluency
+  e: number; // scoreCompleteness
+  f: number; // scorePronunciation
+  g: number; // timestamp
+  h?: string; // recognizedText
+  i?: any[]; // words
+}
+
+const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
+  a: item.id,
+  b: item.text,
+  c: item.scoreAccuracy,
+  d: item.scoreFluency,
+  e: item.scoreCompleteness,
+  f: item.scorePronunciation,
+  g: item.timestamp,
+  h: item.recognizedText,
+  i: item.words
+});
+
+const decompressHistoryItem = (data: any): HistoryItem => ({
+  id: data.a ?? data.id,
+  text: data.b ?? data.text,
+  scoreAccuracy: data.c ?? data.scoreAccuracy,
+  scoreFluency: data.d ?? data.scoreFluency,
+  scoreCompleteness: data.e ?? data.scoreCompleteness,
+  scorePronunciation: data.f ?? data.scorePronunciation,
+  timestamp: data.g ?? data.timestamp,
+  recognizedText: data.h ?? data.recognizedText,
+  words: data.i ?? data.words
+});
+
+const saveHistoryRecordsToStorage = (records: HistoryItem[]): void => {
+  const compressed = records.map(compressHistoryItem);
+  setItem('historyRecords', compressed);
+};
+
 // 获取历史记录
 export const getHistoryRecords = (): HistoryItem[] => {
-  return getItem<HistoryItem[]>('historyRecords', []);
+  const raw = getItem<any[]>('historyRecords', []);
+  if (Array.isArray(raw) && raw.length > 0 && (raw[0].a !== undefined || raw[0].b !== undefined)) {
+    return raw.map(item => decompressHistoryItem(item));
+  }
+  return raw as HistoryItem[];
 };
 
 // 保存历史记录
@@ -291,24 +337,24 @@ export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>):
     id: Date.now().toString(),
     timestamp: Date.now()
   };
-  
+
   // 限制历史记录数量，只保留最近的20条
   const updatedRecords = [newRecord, ...records].slice(0, 20);
-  setItem('historyRecords', updatedRecords);
+  saveHistoryRecordsToStorage(updatedRecords);
 };
 
 // 删除单个历史记录
 export const deleteHistoryRecord = (id: string): void => {
   const records = getHistoryRecords();
   const updatedRecords = records.filter(record => record.id !== id);
-  setItem('historyRecords', updatedRecords);
+  saveHistoryRecordsToStorage(updatedRecords);
 };
 
 // 刪除歷史記錄（支援Firebase同步）
 export const deleteHistoryRecordWithSync = async (id: string, uid?: string): Promise<void> => {
   const records = getHistoryRecords();
   const updatedRecords = records.filter(record => record.id !== id);
-  setItem('historyRecords', updatedRecords);
+  saveHistoryRecordsToStorage(updatedRecords);
   
   // 如果用戶已登入，同步到Firebase
   if (uid) {
@@ -324,12 +370,12 @@ export const deleteHistoryRecordWithSync = async (id: string, uid?: string): Pro
 
 // 清空历史记录
 export const clearHistoryRecords = (): void => {
-  setItem('historyRecords', []);
+  saveHistoryRecordsToStorage([]);
 };
 
 // 清空歷史記錄（支援Firebase同步）
 export const clearHistoryRecordsWithSync = async (uid?: string): Promise<void> => {
-  setItem('historyRecords', []);
+  saveHistoryRecordsToStorage([]);
   
   // 如果用戶已登入，同步到Firebase
   if (uid) {
