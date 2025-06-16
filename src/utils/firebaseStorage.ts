@@ -9,7 +9,7 @@ import {
   disableNetwork
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
-import { Favorite, Tag } from '../types/speech';
+import { Favorite, Tag, PromptFavorite } from '../types/speech';
 import {
   compressHistoryItem,
   decompressHistoryItem,
@@ -310,6 +310,55 @@ export const saveUserFavorites = async (
       userDocRef,
       {
         favorites2: favorites,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    )
+  );
+};
+
+// 讀取使用者 AI 指令收藏
+export const loadUserPromptFavorites = async (uid: string): Promise<PromptFavorite[]> => {
+  if (!uid) return [];
+
+  await checkNetworkConnection();
+
+  const userDocRef = doc(db, 'users', uid);
+  const userSnap = await retryOperation(() => getDoc(userDocRef));
+
+  if (!userSnap.exists()) {
+    return [];
+  }
+
+  const data = userSnap.data();
+  const prompts = (data as any).promptFavorites;
+
+  if (!Array.isArray(prompts)) {
+    return [];
+  }
+
+  return prompts.map(p => ({
+    id: String(p.id),
+    prompt: String(p.prompt),
+    createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now()
+  })) as PromptFavorite[];
+};
+
+// 儲存使用者 AI 指令收藏
+export const saveUserPromptFavorites = async (
+  uid: string,
+  favorites: PromptFavorite[]
+): Promise<void> => {
+  if (!uid) return;
+
+  await checkNetworkConnection();
+
+  const userDocRef = doc(db, 'users', uid);
+  await retryOperation(() =>
+    setDoc(
+      userDocRef,
+      {
+        promptFavorites: favorites,
         updatedAt: serverTimestamp()
       },
       { merge: true }

@@ -1,6 +1,6 @@
 // 本地存储工具函数
 
-import { Tag, Favorite } from '../types/speech';
+import { Tag, Favorite, PromptFavorite } from '../types/speech';
 import { AI_SERVER_URL } from './api'; // 從api.ts導入常量
 import { DEFAULT_VOICE } from '../config/voiceConfig'; // 導入預設語音配置
 import { auth } from '../config/firebaseConfig';
@@ -234,6 +234,29 @@ export const getNextFavoriteId = (favorites: Favorite[]): number => {
 // 保存下一个收藏ID
 export const saveNextFavoriteId = (_id: number): void => {
   // 不再保存到 localStorage
+};
+
+// -------- AI Prompt Favorites --------
+
+export const getPromptFavorites = (): PromptFavorite[] => {
+  return getItem<PromptFavorite[]>('aiPromptFavorites', []);
+};
+
+export const savePromptFavorites = (favorites: PromptFavorite[]): void => {
+  setItem('aiPromptFavorites', favorites);
+};
+
+export const getNextPromptFavoriteId = (favorites: PromptFavorite[]): number => {
+  const nums = favorites
+    .map(f => parseInt(f.id, 10))
+    .filter(n => !isNaN(n));
+  const max = nums.length > 0 ? Math.max(...nums) : -1;
+  let next = max + 1;
+  if (next < 0) next = 0;
+  while (favorites.some(f => f.id === String(next))) {
+    next++;
+  }
+  return next;
 };
 
 // 卡片展开状态相关函数

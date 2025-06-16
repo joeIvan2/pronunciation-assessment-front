@@ -78,6 +78,13 @@ export interface Favorite {
   createdAt: number;
 }
 
+// AI 指令收藏類型
+export interface PromptFavorite {
+  id: string;
+  prompt: string;
+  createdAt: number;
+}
+
 // 语音选项类型
 export interface VoiceOption extends SpeechSynthesisVoice {
   // 扩展浏览器标准的SpeechSynthesisVoice类型
