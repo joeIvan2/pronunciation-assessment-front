@@ -878,8 +878,7 @@ const PronunciationAssessment: React.FC = () => {
 
   const goToRandomSentence = async () => {
     const currentUser = userRef.current;
-    // 已移除 debug log
-    if (filteredFavorites.length === 0) {
+    if (!favoritesLoaded || filteredFavorites.length === 0) {
       return;
     }
     const randomIndex = Math.floor(Math.random() * filteredFavorites.length);
@@ -1740,9 +1739,10 @@ const PronunciationAssessment: React.FC = () => {
 
   useEffect(() => {
     if (currentFavoriteId) {
-      localStorage.setItem('currentFavoriteId', currentFavoriteId);
+      const key = getCurrentFavoriteIdKey(user);
+      localStorage.setItem(key, currentFavoriteId);
     }
-  }, [currentFavoriteId]);
+  }, [currentFavoriteId, user]);
 
   // 新增：控制拖放隨機按鈕顯示與位置
   const [waitingForRandomBtnPos, setWaitingForRandomBtnPos] = useState(false);
@@ -1801,26 +1801,40 @@ const PronunciationAssessment: React.FC = () => {
     };
   }, [waitingForRandomBtnPos]);
 
-  // 全域快捷鍵：numpad enter/enter 觸發隨機或停止錄音
+  // 全域快捷鍵：numpad enter/enter 觸發隨機或停止錄音（避免輸入框觸發）
   useEffect(() => {
+    const isEditableElement = (el: Element | null): boolean => {
+      if (!el) return false;
+      const tag = (el as HTMLElement).tagName.toLowerCase();
+      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable;
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (isEditableElement(e.target as Element) || isEditableElement(activeEl)) {
+        return;
+      }
       if (e.code === 'NumpadEnter' || e.code === 'Enter') {
         if (recorder.recording) {
           stopAssessment();
-        } else {
+        } else if (favoritesLoaded) {
           goToRandomSentence();
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [recorder.recording]);
+  }, [recorder.recording, favoritesLoaded]);
 
-  // 全域快捷鍵：空白鍵觸發撥放聲音（非輸入狀態）
+  // 全域快捷鍵：空白鍵觸發撥放聲音（避免輸入框觸發）
   useEffect(() => {
+    const isEditableElement = (el: Element | null): boolean => {
+      if (!el) return false;
+      const tag = (el as HTMLElement).tagName.toLowerCase();
+      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable;
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName.toLowerCase();
-      const isInput = tag === 'input' || tag === 'textarea' || (e.target as HTMLElement).isContentEditable;
+      const activeEl = document.activeElement;
+      const isInput = isEditableElement(e.target as Element) || isEditableElement(activeEl);
       if (!isInput && e.code === 'Space') {
         e.preventDefault();
         if (recorder.recording) {

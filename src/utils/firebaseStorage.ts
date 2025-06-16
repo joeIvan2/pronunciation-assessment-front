@@ -9,7 +9,12 @@ import {
   disableNetwork
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
-import { Favorite, Tag } from '../types/speech';
+import { Favorite, Tag, PromptFavorite } from '../types/speech';
+import {
+  compressHistoryItem,
+  decompressHistoryItem,
+  CompressedHistoryItem
+} from './storage';
 
 // 生成隨機ID (5位小寫英文加數字)
 const generateId = (): string => {
@@ -312,6 +317,55 @@ export const saveUserFavorites = async (
   );
 };
 
+// 讀取使用者 AI 指令收藏
+export const loadUserPromptFavorites = async (uid: string): Promise<PromptFavorite[]> => {
+  if (!uid) return [];
+
+  await checkNetworkConnection();
+
+  const userDocRef = doc(db, 'users', uid);
+  const userSnap = await retryOperation(() => getDoc(userDocRef));
+
+  if (!userSnap.exists()) {
+    return [];
+  }
+
+  const data = userSnap.data();
+  const prompts = (data as any).promptFavorites;
+
+  if (!Array.isArray(prompts)) {
+    return [];
+  }
+
+  return prompts.map(p => ({
+    id: String(p.id),
+    prompt: String(p.prompt),
+    createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now()
+  })) as PromptFavorite[];
+};
+
+// 儲存使用者 AI 指令收藏
+export const saveUserPromptFavorites = async (
+  uid: string,
+  favorites: PromptFavorite[]
+): Promise<void> => {
+  if (!uid) return;
+
+  await checkNetworkConnection();
+
+  const userDocRef = doc(db, 'users', uid);
+  await retryOperation(() =>
+    setDoc(
+      userDocRef,
+      {
+        promptFavorites: favorites,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    )
+  );
+};
+
 // 讀取使用者標籤
 export const loadUserTags = async (uid: string): Promise<Tag[]> => {
   if (!uid) return [];
@@ -393,13 +447,22 @@ export const loadUserProfile = async (uid: string): Promise<{
     const result = await retryOperation(async () => {
       const docRef = doc(db, 'users', uid);
       const docSnap = await getDoc(docRef);
-      
+
       if (!docSnap.exists()) {
         return null;
       }
-      
+
       return docSnap.data();
     });
+
+    if (result && Array.isArray(result.historyRecords)) {
+      const arr = result.historyRecords;
+      if (arr.length > 0 && (arr[0].a !== undefined || arr[0].b !== undefined)) {
+        result.historyRecords = arr.map((item: CompressedHistoryItem | any) =>
+          decompressHistoryItem(item)
+        );
+      }
+    }
 
     console.log('使用者資料載入成功:', uid);
     return result;
@@ -551,11 +614,16 @@ export const saveUserHistoryRecords = async (
 
   try {
     await checkNetworkConnection();
-    
+
     await retryOperation(async () => {
       const userDocRef = doc(db, 'users', uid);
+      const compressed = historyRecords.map(record =>
+        record.a !== undefined || record.b !== undefined
+          ? (record as CompressedHistoryItem)
+          : compressHistoryItem(record)
+      );
       await setDoc(userDocRef, {
-        historyRecords,
+        historyRecords: compressed,
         updatedAt: serverTimestamp()
       }, { merge: true });
     });

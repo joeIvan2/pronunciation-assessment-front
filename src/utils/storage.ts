@@ -1,6 +1,6 @@
 // 本地存储工具函数
 
-import { Tag, Favorite } from '../types/speech';
+import { Tag, Favorite, PromptFavorite } from '../types/speech';
 import { AI_SERVER_URL } from './api'; // 從api.ts導入常量
 import { DEFAULT_VOICE } from '../config/voiceConfig'; // 導入預設語音配置
 import { auth } from '../config/firebaseConfig';
@@ -236,6 +236,29 @@ export const saveNextFavoriteId = (_id: number): void => {
   // 不再保存到 localStorage
 };
 
+// -------- AI Prompt Favorites --------
+
+export const getPromptFavorites = (): PromptFavorite[] => {
+  return getItem<PromptFavorite[]>('aiPromptFavorites', []);
+};
+
+export const savePromptFavorites = (favorites: PromptFavorite[]): void => {
+  setItem('aiPromptFavorites', favorites);
+};
+
+export const getNextPromptFavoriteId = (favorites: PromptFavorite[]): number => {
+  const nums = favorites
+    .map(f => parseInt(f.id, 10))
+    .filter(n => !isNaN(n));
+  const max = nums.length > 0 ? Math.max(...nums) : -1;
+  let next = max + 1;
+  if (next < 0) next = 0;
+  while (favorites.some(f => f.id === String(next))) {
+    next++;
+  }
+  return next;
+};
+
 // 卡片展开状态相关函数
 type CardExpandState = {
   favoriteList: boolean;
@@ -276,9 +299,128 @@ export interface HistoryItem {
   words?: any[]; // 新增单词评分数据字段
 }
 
+// 壓縮後的單詞結構
+export interface CompressedWordAssessment {
+  a?: number; // AccuracyScore
+  e?: string; // ErrorType
+}
+
+export interface CompressedPhoneme {
+  p: string; // Phoneme text
+  a?: number; // AccuracyScore
+}
+
+export interface CompressedWord {
+  w: string; // Word
+  p?: CompressedWordAssessment; // PronunciationAssessment
+  m?: CompressedPhoneme[]; // Phonemes
+}
+
+// 壓縮後的歷史記錄結構，使用更短的欄位名稱以節省空間
+export interface CompressedHistoryItem {
+  a: string; // id
+  b: string; // text
+  c: number; // scoreAccuracy
+  d: number; // scoreFluency
+  e: number; // scoreCompleteness
+  f: number; // scorePronunciation
+  g: number; // timestamp
+  h?: string; // recognizedText
+  i?: any[]; // words
+}
+
+export const compressWord = (word: any): CompressedWord => ({
+  w: word.Word,
+  p: word.PronunciationAssessment
+    ? {
+        a: word.PronunciationAssessment.AccuracyScore,
+        e: word.PronunciationAssessment.ErrorType
+      }
+    : undefined,
+  m: Array.isArray(word.Phonemes)
+    ? word.Phonemes.map((ph: any) => ({
+        p: ph.Phoneme,
+        a: ph.PronunciationAssessment?.AccuracyScore
+      }))
+    : undefined
+});
+
+export const decompressWord = (data: any): any => ({
+  Word: data.w ?? data.Word,
+  PronunciationAssessment: data.p
+    ? {
+        AccuracyScore: data.p.a ?? data.p.AccuracyScore,
+        ErrorType: data.p.e ?? data.p.ErrorType
+      }
+    : data.PronunciationAssessment,
+  Phonemes: Array.isArray(data.m)
+    ? data.m.map((ph: any) => ({
+        Phoneme: ph.p ?? ph.Phoneme,
+        PronunciationAssessment: ph.a !== undefined || ph.PronunciationAssessment
+          ? {
+              AccuracyScore: ph.a ?? ph.PronunciationAssessment?.AccuracyScore
+            }
+          : undefined
+      }))
+    : data.Phonemes
+});
+
+export const compressHistoryItem = (item: HistoryItem): CompressedHistoryItem => ({
+  a: item.id,
+  b: item.text,
+  c: item.scoreAccuracy,
+  d: item.scoreFluency,
+  e: item.scoreCompleteness,
+  f: item.scorePronunciation,
+  g: item.timestamp,
+  h: item.recognizedText,
+  i: item.words ? item.words.map(compressWord) : undefined
+});
+
+export const decompressHistoryItem = (data: any): HistoryItem => ({
+  id: data.a ?? data.id,
+  text: data.b ?? data.text,
+  scoreAccuracy: data.c ?? data.scoreAccuracy,
+  scoreFluency: data.d ?? data.scoreFluency,
+  scoreCompleteness: data.e ?? data.scoreCompleteness,
+  scorePronunciation: data.f ?? data.scorePronunciation,
+  timestamp: data.g ?? data.timestamp,
+  recognizedText: data.h ?? data.recognizedText,
+  words: Array.isArray(data.i)
+    ? data.i.map(decompressWord)
+    : Array.isArray(data.words)
+      ? data.words.map(decompressWord)
+      : []
+});
+
+const saveHistoryRecordsToStorage = (records: HistoryItem[]): void => {
+  const compressed = records.map(compressHistoryItem);
+  setItem('historyRecords', compressed);
+};
+
 // 获取历史记录
 export const getHistoryRecords = (): HistoryItem[] => {
-  return getItem<HistoryItem[]>('historyRecords', []);
+  const raw = getItem<any>('historyRecords', []);
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  if (raw.length > 0 && (raw[0].a !== undefined || raw[0].b !== undefined)) {
+    return raw.map(item => decompressHistoryItem(item));
+  }
+  return raw as HistoryItem[];
+};
+
+export const getCompressedHistoryRecords = (): CompressedHistoryItem[] => {
+  const raw = getItem<any>('historyRecords', []);
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  if (raw.length > 0 && (raw[0].a !== undefined || raw[0].b !== undefined)) {
+    return raw as CompressedHistoryItem[];
+  }
+  const compressed = (raw as HistoryItem[]).map(compressHistoryItem);
+  setItem('historyRecords', compressed);
+  return compressed;
 };
 
 // 保存历史记录
@@ -291,24 +433,24 @@ export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>):
     id: Date.now().toString(),
     timestamp: Date.now()
   };
-  
-  // 限制历史记录数量，只保留最近的20条
-  const updatedRecords = [newRecord, ...records].slice(0, 20);
-  setItem('historyRecords', updatedRecords);
+
+  // 限制历史记录数量，只保留最近的50条
+  const updatedRecords = [newRecord, ...records].slice(0, 50);
+  saveHistoryRecordsToStorage(updatedRecords);
 };
 
 // 删除单个历史记录
 export const deleteHistoryRecord = (id: string): void => {
   const records = getHistoryRecords();
   const updatedRecords = records.filter(record => record.id !== id);
-  setItem('historyRecords', updatedRecords);
+  saveHistoryRecordsToStorage(updatedRecords);
 };
 
 // 刪除歷史記錄（支援Firebase同步）
 export const deleteHistoryRecordWithSync = async (id: string, uid?: string): Promise<void> => {
   const records = getHistoryRecords();
   const updatedRecords = records.filter(record => record.id !== id);
-  setItem('historyRecords', updatedRecords);
+  saveHistoryRecordsToStorage(updatedRecords);
   
   // 如果用戶已登入，同步到Firebase
   if (uid) {
@@ -324,12 +466,12 @@ export const deleteHistoryRecordWithSync = async (id: string, uid?: string): Pro
 
 // 清空历史记录
 export const clearHistoryRecords = (): void => {
-  setItem('historyRecords', []);
+  saveHistoryRecordsToStorage([]);
 };
 
 // 清空歷史記錄（支援Firebase同步）
 export const clearHistoryRecordsWithSync = async (uid?: string): Promise<void> => {
-  setItem('historyRecords', []);
+  saveHistoryRecordsToStorage([]);
   
   // 如果用戶已登入，同步到Firebase
   if (uid) {
