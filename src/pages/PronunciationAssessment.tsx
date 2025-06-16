@@ -1050,11 +1050,11 @@ const PronunciationAssessment: React.FC = () => {
         };
 
         if (user && historySyncRef.current) {
-          try {
-            await historySyncRef.current.patch({ type: 'add', item: newItem });
-          } catch (err) {
-            console.error('保存歷史記錄失敗:', err);
-          }
+          historySyncRef.current
+            .patch({ type: 'add', item: newItem })
+            .catch(err => {
+              console.error('保存歷史記錄失敗:', err);
+            });
         } else {
           storage.addHistoryRecord({
             text: referenceText,
