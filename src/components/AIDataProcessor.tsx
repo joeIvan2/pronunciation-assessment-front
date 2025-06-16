@@ -346,11 +346,11 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       // 準備發送給AI的數據
       const formData = new FormData();
       
-      // 只使用最新的10條發音記錄（已壓縮格式）
+      // 只使用最新的30條發音記錄（已壓縮格式）
       const latestHistoryRecords = storage
         .getCompressedHistoryRecords()
         .sort((a, b) => (b.g || 0) - (a.g || 0))
-        .slice(0, 10);
+        .slice(0, 30);
 
       const jsonData = JSON.stringify({
         historyRecords: latestHistoryRecords,

@@ -411,8 +411,8 @@ export const addHistoryRecord = (record: Omit<HistoryItem, 'id' | 'timestamp'>):
     timestamp: Date.now()
   };
 
-  // 限制历史记录数量，只保留最近的20条
-  const updatedRecords = [newRecord, ...records].slice(0, 20);
+  // 限制历史记录数量，只保留最近的50条
+  const updatedRecords = [newRecord, ...records].slice(0, 50);
   saveHistoryRecordsToStorage(updatedRecords);
 };
 
