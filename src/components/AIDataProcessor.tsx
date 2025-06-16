@@ -230,36 +230,45 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   const addPromptToFavorites = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    if (promptFavorites.some(p => p.prompt === trimmed)) return;
-    const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
-    const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
-    const updated = [...promptFavorites, newFav];
 
     if (user) {
       try {
-        const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
-        await saveUserPromptFavorites(user.uid, updated);
-        setPromptFavorites(updated); // 遠端成功後再更新本地
-      } catch (err) {
-        console.error('保存指令收藏失敗:', err);
-      }
-    } else {
-      setPromptFavorites(updated);
-    }
-  };
-
-  const removePromptFromFavorites = async (text: string) => {
-    const updated = promptFavorites.filter(p => p.prompt !== text);
-
-    if (user) {
-      try {
-        const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
+        const { loadUserPromptFavorites, saveUserPromptFavorites } = await import('../utils/firebaseStorage');
+        const remoteFavs = await loadUserPromptFavorites(user.uid);
+        if (remoteFavs.some(p => p.prompt === trimmed)) {
+          setPromptFavorites(remoteFavs);
+          return;
+        }
+        const id = storage.getNextPromptFavoriteId(remoteFavs).toString();
+        const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
+        const updated = [...remoteFavs, newFav];
         await saveUserPromptFavorites(user.uid, updated);
         setPromptFavorites(updated);
       } catch (err) {
         console.error('保存指令收藏失敗:', err);
       }
     } else {
+      if (promptFavorites.some(p => p.prompt === trimmed)) return;
+      const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
+      const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
+      const updated = [...promptFavorites, newFav];
+      setPromptFavorites(updated);
+    }
+  };
+
+  const removePromptFromFavorites = async (text: string) => {
+    if (user) {
+      try {
+        const { loadUserPromptFavorites, saveUserPromptFavorites } = await import('../utils/firebaseStorage');
+        const remoteFavs = await loadUserPromptFavorites(user.uid);
+        const updated = remoteFavs.filter(p => p.prompt !== text);
+        await saveUserPromptFavorites(user.uid, updated);
+        setPromptFavorites(updated);
+      } catch (err) {
+        console.error('保存指令收藏失敗:', err);
+      }
+    } else {
+      const updated = promptFavorites.filter(p => p.prompt !== text);
       setPromptFavorites(updated);
     }
   };
