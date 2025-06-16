@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as storage from '../utils/storage';
-import { Tag, Favorite, Word } from '../types/speech';
+import { Tag, Favorite, Word, PromptFavorite } from '../types/speech';
 import ResizableTextarea from './ResizableTextarea';
 import { Tooltip } from 'react-tooltip';
 import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
@@ -115,7 +115,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
-  const [promptFavorites, setPromptFavorites] = useState<storage.PromptFavorite[]>(() =>
+  const [promptFavorites, setPromptFavorites] = useState<PromptFavorite[]>(() =>
     storage.getPromptFavorites()
   );
   
@@ -235,7 +235,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     if (!trimmed) return;
     if (promptFavorites.some(p => p.prompt === trimmed)) return;
     const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
-    const newFav: storage.PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
+    const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
     setPromptFavorites([...promptFavorites, newFav]);
   };
 
