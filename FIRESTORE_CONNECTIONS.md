@@ -10,37 +10,17 @@
 - **建議**: 改為手動檢查登入狀態
 
 ### 2. 使用者資料即時同步
-**檔案**: `src/utils/firebaseStorage.ts`
-**函數**: 多個即時讀取操作
-- `loadUserFavorites()` - 載入收藏夾
-- `loadUserTags()` - 載入標籤
-- `loadUserProfile()` - 載入使用者設定檔
-- `loadSharedData()` - 載入分享資料
+**檔案**: `src/utils/firestoreSync.ts`
+**函數**: `createArraySync()`、`useFirestoreArray()`
+- 統一管理 `favorites2`、`tags2` 等陣列欄位
+- 透過 `onSnapshot` 推播保持多裝置一致
 
 ## 高頻率操作
 
-### 1. 收藏夾同步 (src/utils/storage.ts)
-```typescript
-// 每次收藏變更都會觸發Firestore寫入
-- addToFavorites()
-- removeFromFavorites() 
-- syncFavoritesToFirebase()
-```
-
-### 2. 歷史記錄同步
-```typescript
-// 每次記錄變更都會觸發Firestore寫入
-- deleteHistoryRecord()
-- clearHistoryRecords()
-- syncShareHistoryToFirebase()
-```
-
-### 3. 標籤管理同步
-```typescript
-// 每次標籤變更都會觸發Firestore寫入
-- saveTags()
-- syncTagsToFirebase()
-```
+### 高頻率操作
+過去各功能在每次新增、編輯或刪除時都直接寫入 Firestore。
+改用 `createArraySync` 後，所有陣列欄位透過 `patch()` 方法更新，
+並由 `onSnapshot` 即時推播減少重複寫入。
 
 ## 建議的REST API改造
 
