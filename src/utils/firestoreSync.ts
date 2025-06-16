@@ -1,6 +1,7 @@
 import { db } from '../config/firebaseConfig';
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, enableNetwork } from 'firebase/firestore';
-import firestoreUtils from './firestoreUtils';
+// We rely on `navigator.onLine` to check connectivity to avoid creating
+// additional Firestore reads that may conflict with active listeners.
 
 let networkEnabled = false;
 const ensureNetwork = async () => {
@@ -69,7 +70,7 @@ export const createArraySync = <T extends { id: string }>({ uid, field, localKey
 
   const ensureOnline = async () => {
     await ensureNetwork();
-    if (!(await firestoreUtils.checkConnection())) throw new Error('offline');
+    if (!navigator.onLine) throw new Error('offline');
   };
 
   const refresh = async () => {
