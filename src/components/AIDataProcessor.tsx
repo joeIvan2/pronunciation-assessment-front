@@ -4,7 +4,7 @@ import { Tag, Favorite, Word, PromptFavorite } from '../types/speech';
 import ResizableTextarea from './ResizableTextarea';
 import { Tooltip } from 'react-tooltip';
 import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
-import { createArraySync } from '../utils/firestoreSync';
+import { useFirestoreArray } from '../hooks/useFirestoreArray';
 
 // 後端API URL
 const API_URL = AI_SERVER_URL;
@@ -116,11 +116,13 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
-  const [promptFavorites, setPromptFavorites] = useState<PromptFavorite[]>(() =>
-    storage.getPromptFavorites()
-  );
-  const [promptFavoritesLoaded, setPromptFavoritesLoaded] = useState<boolean>(false);
-  const promptFavSyncRef = useRef<ReturnType<typeof createArraySync<PromptFavorite>> | null>(null);
+  const { items: promptFavorites, patch: patchPromptFavorite, loaded: promptFavoritesLoaded } = useFirestoreArray<PromptFavorite>({
+    user,
+    field: 'promptFavorites',
+    localKey: 'aiPromptFavorites',
+    loadLocal: storage.getPromptFavorites,
+    saveLocal: storage.savePromptFavorites
+  });
   
   // 定義範例提示句
   const examplePrompts = [
@@ -185,34 +187,6 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     }
   }, [prompt]);
 
-  // 載入並同步使用者 AI 指令收藏
-  useEffect(() => {
-    if (!user) {
-      promptFavSyncRef.current = null;
-      setPromptFavorites(storage.getPromptFavorites());
-      setPromptFavoritesLoaded(true);
-      return;
-    }
-
-    const sync = createArraySync<PromptFavorite>({
-      uid: user.uid,
-      field: 'promptFavorites',
-      localKey: 'aiPromptFavorites',
-      setState: setPromptFavorites
-    });
-    promptFavSyncRef.current = sync;
-    setPromptFavoritesLoaded(false);
-    // 初次登入時等待推播更新
-    setPromptFavoritesLoaded(true);
-    const unsub = sync.subscribe();
-    return () => unsub();
-  }, [user]);
-
-  // 收藏變化時存到本地（未登入時）
-  useEffect(() => {
-    if (!promptFavoritesLoaded || user) return;
-    storage.savePromptFavorites(promptFavorites);
-  }, [promptFavorites, promptFavoritesLoaded, user]);
 
   // 處理提示文字變更，確保始終是字符串
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -232,12 +206,12 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    if (user && promptFavSyncRef.current) {
+    if (user) {
       if (promptFavorites.some(p => p.prompt === trimmed)) return;
       const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
       const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
       try {
-        await promptFavSyncRef.current.patch({ type: 'add', item: newFav });
+        await patchPromptFavorite({ type: 'add', item: newFav });
       } catch (err) {
         console.error('保存指令收藏失敗:', err);
       }
@@ -245,23 +219,23 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       if (promptFavorites.some(p => p.prompt === trimmed)) return;
       const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
       const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
-      const updated = [...promptFavorites, newFav];
-      setPromptFavorites(updated);
+      await patchPromptFavorite({ type: 'add', item: newFav });
     }
   };
 
   const removePromptFromFavorites = async (text: string) => {
-    if (user && promptFavSyncRef.current) {
+    if (user) {
       const item = promptFavorites.find(p => p.prompt === text);
       if (!item) return;
       try {
-        await promptFavSyncRef.current.patch({ type: 'delete', id: item.id });
+        await patchPromptFavorite({ type: 'delete', id: item.id });
       } catch (err) {
         console.error('保存指令收藏失敗:', err);
       }
     } else {
-      const updated = promptFavorites.filter(p => p.prompt !== text);
-      setPromptFavorites(updated);
+      const item = promptFavorites.find(p => p.prompt === text);
+      if (!item) return;
+      await patchPromptFavorite({ type: 'delete', id: item.id });
     }
   };
 

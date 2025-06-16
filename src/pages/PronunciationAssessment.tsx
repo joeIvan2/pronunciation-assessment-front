@@ -32,7 +32,7 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 import * as storage from "../utils/storage";
 import { getPracticeIdFromUrl, redirectToNewFormat, isPracticePage } from "../utils/urlUtils";
 import { useParams } from "react-router-dom";
-import { createArraySync } from '../utils/firestoreSync';
+import { useFirestoreArray } from '../hooks/useFirestoreArray';
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
@@ -74,18 +74,32 @@ const PronunciationAssessment: React.FC = () => {
   const [selectedAIVoice, setSelectedAIVoice] = useState<string>(() => storage.getAIVoice());
   
   // 標籤系統（標籤管理已整合到 FavoriteList 中）
-  const [tags, setTags] = useState<Tag[]>(() => storage.getTags());
-  const [nextTagId, setNextTagId] = useState<number>(() => storage.getNextTagId());
-  const [tagsLoaded, setTagsLoaded] = useState<boolean>(false);
-  const tagSyncRef = useRef<ReturnType<typeof createArraySync<Tag>> | null>(null);
+  const { items: tags, patch: patchTag, loaded: tagsLoaded } = useFirestoreArray<Tag>({
+    user,
+    field: 'tags2',
+    localKey: 'tags',
+    loadLocal: storage.getTags,
+    saveLocal: storage.saveTags
+  });
+  const [nextTagId, setNextTagId] = useState<number>(0);
 
-  const favoriteSyncRef = useRef<ReturnType<typeof createArraySync<Favorite>> | null>(null);
-  
   // 收藏系統
-  const [favorites, setFavorites] = useState<Favorite[]>(() => storage.getFavorites());
-  const [nextFavoriteId, setNextFavoriteId] = useState<number>(() => storage.getNextFavoriteId(favorites));
+  const { items: favorites, patch: patchFavorite, loaded: favoritesLoaded } = useFirestoreArray<Favorite>({
+    user,
+    field: 'favorites2',
+    localKey: 'favorites',
+    loadLocal: storage.getFavorites,
+    saveLocal: storage.saveFavorites
+  });
+  const [nextFavoriteId, setNextFavoriteId] = useState<number>(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [favoritesLoaded, setFavoritesLoaded] = useState<boolean>(false);
+
+  useEffect(() => {
+    const max = tags.reduce((m, t) => Math.max(m, parseInt(t.tagId, 10) || 0), 0);
+    const next = max + 1;
+    setNextTagId(next);
+    storage.saveNextTagId(next);
+  }, [tags]);
 
   // 根据当前選擇的標籤過濾收藏列表
   const filteredFavorites = useMemo(() => {
@@ -102,9 +116,14 @@ const PronunciationAssessment: React.FC = () => {
   const [fontSize, setFontSize] = useState<number>(() => storage.getFontSize());
   
   // 歷史記錄狀態
-  const [historyRecords, setHistoryRecords] = useState<storage.HistoryItem[]>(() => storage.getHistoryRecords());
+  const { items: historyRecords, patch: patchHistory } = useFirestoreArray<storage.HistoryItem>({
+    user,
+    field: 'historyRecords',
+    localKey: 'historyRecords',
+    loadLocal: storage.getHistoryRecords,
+    saveLocal: storage.setHistoryRecords
+  });
   const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(() => storage.getCardExpandStates().historyRecord);
-  const historySyncRef = useRef<ReturnType<typeof createArraySync<storage.HistoryItem>> | null>(null);
   
   // 標籤頁狀態
   const [topActiveTab, setTopActiveTab] = useState<storage.TopTabName>(() => storage.getTopActiveTab());
@@ -259,74 +278,18 @@ const PronunciationAssessment: React.FC = () => {
 
   // 登入後載入並同步 Firestore 收藏
   useEffect(() => {
-    if (!user) {
-      favoriteSyncRef.current = null;
-      const localFavs = storage.getFavorites();
-      setFavorites(localFavs);
-      setNextFavoriteId(storage.getNextFavoriteId(localFavs));
-      setFavoritesLoaded(true);
+    const next = storage.getNextFavoriteId(favorites);
+    setNextFavoriteId(next);
+    if (favoritesLoaded && favorites.length === 0) {
+      setIsFirstTimeUser(true);
+      setShowAITooltip(true);
+      setTimeout(() => setShowAITooltip(false), 5000);
+    } else if (favoritesLoaded) {
       setIsFirstTimeUser(false);
-      return;
     }
-
-    const updateState = (data: Favorite[]) => {
-      setFavorites(data);
-      setNextFavoriteId(storage.getNextFavoriteId(data));
-      if (data.length === 0) {
-        setIsFirstTimeUser(true);
-        setShowAITooltip(true);
-        setTimeout(() => setShowAITooltip(false), 5000);
-      } else {
-        setIsFirstTimeUser(false);
-      }
-    };
-
-    const sync = createArraySync<Favorite>({
-      uid: user.uid,
-      field: 'favorites2',
-      localKey: 'favorites',
-      setState: updateState
-    });
-    favoriteSyncRef.current = sync;
-    setFavoritesLoaded(false);
-    // 先使用本地資料, 遠端變更由訂閱處理
-    setFavoritesLoaded(true);
-    const unsub = sync.subscribe();
-    return () => unsub();
-  }, [user]);
+  }, [favorites, favoritesLoaded]);
 
   // 登入後載入並同步 Firestore 標籤
-  useEffect(() => {
-    if (!user) {
-      tagSyncRef.current = null;
-      setTags(storage.getTags());
-      setNextTagId(storage.getNextTagId());
-      setTagsLoaded(true);
-      return;
-    }
-
-    const updateState = (data: Tag[]) => {
-      const withIds = data.map(t => ({ ...t, tagId: t.tagId || t.id, id: t.id || t.tagId }));
-      setTags(withIds);
-      const max = withIds.reduce((m, t) => Math.max(m, parseInt(t.tagId, 10) || 0), 0);
-      const next = max + 1;
-      setNextTagId(next);
-      storage.saveNextTagId(next);
-    };
-
-    const sync = createArraySync<Tag>({
-      uid: user.uid,
-      field: 'tags2',
-      localKey: 'tags',
-      setState: updateState
-    });
-    tagSyncRef.current = sync;
-    setTagsLoaded(false);
-    // 初次登入不立即拉取遠端, 後續由訂閱處理
-    setTagsLoaded(true);
-    const unsub = sync.subscribe();
-    return () => unsub();
-  }, [user]);
 
   // 處理匯入數據的回調函數
   const handleDataImported = (newTags: Tag[], newFavorites: Favorite[]) => {
@@ -350,14 +313,9 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  // 登入後載入並同步歷史記錄
+  // 建立使用者文件
   useEffect(() => {
-    if (!user) {
-      historySyncRef.current = null;
-      setHistoryRecords(storage.getHistoryRecords());
-      return;
-    }
-
+    if (!user) return;
     const setup = async () => {
       try {
         const { createOrUpdateUserProfile } = await import('../utils/firebaseStorage');
@@ -366,25 +324,7 @@ const PronunciationAssessment: React.FC = () => {
         console.error('初始化用戶資料失敗:', err);
       }
     };
-
     setup();
-
-    const updateState = (data: storage.HistoryItem[]) => {
-      const normalized = data.map(item => item.id ? item : { ...item, id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
-      setHistoryRecords(normalized);
-      storage.setHistoryRecords(normalized);
-    };
-
-    const sync = createArraySync<storage.HistoryItem>({
-      uid: user.uid,
-      field: 'historyRecords',
-      localKey: 'historyRecords',
-      setState: updateState
-    });
-    historySyncRef.current = sync;
-    // 不在登入時主動拉取遠端
-    const unsub = sync.subscribe();
-    return () => unsub();
   }, [user]);
 
   // 字型大小變更時儲存到 localStorage
@@ -588,10 +528,10 @@ const PronunciationAssessment: React.FC = () => {
     if (newFavorites.length === 0) return;
     
     // 合併所有收藏項目（不排序，保證傳入順序）
-    if (user && favoriteSyncRef.current) {
+    if (user) {
       for (const fav of newFavorites) {
         try {
-          await favoriteSyncRef.current.patch({ type: 'add', item: fav });
+          await patchFavorite({ type: 'add', item: fav });
         } catch (err) {
           console.error('保存收藏失敗:', err);
         }
@@ -624,9 +564,9 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   const removeFromFavorite = async (id: string) => {
-    if (user && favoriteSyncRef.current) {
+    if (user) {
       try {
-        await favoriteSyncRef.current.patch({ type: 'delete', id });
+        await patchFavorite({ type: 'delete', id });
       } catch (err) {
         console.error('保存收藏失敗:', err);
       }
@@ -674,12 +614,12 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   const updateFavoriteTags = async (id: string, tagIds: string[]) => {
-    if (user && favoriteSyncRef.current) {
+    if (user) {
       const existing = favorites.find(f => f.id === id);
       if (!existing) return;
       const updated = { ...existing, tagIds };
       try {
-        await favoriteSyncRef.current.patch({ type: 'update', item: updated });
+        await patchFavorite({ type: 'update', item: updated });
       } catch (err) {
         console.error('保存收藏失敗:', err);
       }
@@ -701,9 +641,9 @@ const PronunciationAssessment: React.FC = () => {
       ...target,
       tagIds: hasTag ? target.tagIds.filter(id => id !== tagId) : [...target.tagIds, tagId]
     };
-    if (user && favoriteSyncRef.current) {
+    if (user) {
       try {
-        await favoriteSyncRef.current.patch({ type: 'update', item: updated });
+        await patchFavorite({ type: 'update', item: updated });
       } catch (err) {
         console.error('保存收藏失敗:', err);
       }
@@ -967,8 +907,8 @@ const PronunciationAssessment: React.FC = () => {
   // 歷史記錄相關函數
   const handleDeleteHistoryRecord = async (id: string) => {
     try {
-      if (user && historySyncRef.current) {
-        await historySyncRef.current.patch({ type: 'delete', id });
+      if (user) {
+        await patchHistory({ type: 'delete', id });
       } else {
         storage.deleteHistoryRecord(id);
       }
@@ -981,9 +921,9 @@ const PronunciationAssessment: React.FC = () => {
 
   const handleClearHistoryRecords = async () => {
     try {
-      if (user && historySyncRef.current) {
+      if (user) {
         for (const rec of historyRecords) {
-          await historySyncRef.current.patch({ type: 'delete', id: rec.id });
+          await patchHistory({ type: 'delete', id: rec.id });
         }
       } else {
         storage.clearHistoryRecords();
@@ -1052,12 +992,10 @@ const PronunciationAssessment: React.FC = () => {
           words: words
         };
 
-        if (user && historySyncRef.current) {
-          historySyncRef.current
-            .patch({ type: 'add', item: newItem })
-            .catch(err => {
-              console.error('保存歷史記錄失敗:', err);
-            });
+        if (user) {
+          patchHistory({ type: 'add', item: newItem }).catch(err => {
+            console.error('保存歷史記錄失敗:', err);
+          });
         } else {
           storage.addHistoryRecord({
             text: referenceText,
@@ -1358,8 +1296,8 @@ const PronunciationAssessment: React.FC = () => {
       createdAt: Date.now()
     };
     
-    if (user && tagSyncRef.current) {
-      tagSyncRef.current.patch({ type: 'add', item: newTag }).catch(err => {
+    if (user) {
+      patchTag({ type: 'add', item: newTag }).catch(err => {
         console.error('保存標籤失敗:', err);
       });
     } else {
@@ -1375,11 +1313,11 @@ const PronunciationAssessment: React.FC = () => {
   };
 
   const editTag = (tagId: string, newName: string, newColor?: string) => {
-    if (user && tagSyncRef.current) {
+    if (user) {
       const existing = tags.find(t => t.tagId === tagId);
       if (!existing) return;
       const updated = { ...existing, id: existing.id || existing.tagId, tagId: existing.tagId || existing.id, name: newName || existing.name, color: newColor || existing.color };
-      tagSyncRef.current.patch({ type: 'update', item: updated }).catch(err => {
+      patchTag({ type: 'update', item: updated }).catch(err => {
         console.error('保存標籤失敗:', err);
       });
     } else {
@@ -1394,8 +1332,8 @@ const PronunciationAssessment: React.FC = () => {
   };
 
   const deleteTag = (tagId: string) => {
-    if (user && tagSyncRef.current) {
-      tagSyncRef.current.patch({ type: 'delete', id: tagId }).catch(err => {
+    if (user) {
+      patchTag({ type: 'delete', id: tagId }).catch(err => {
         console.error('保存標籤失敗:', err);
       });
     } else {
@@ -1595,10 +1533,10 @@ const PronunciationAssessment: React.FC = () => {
         currentNextId++;
       }
       
-      if (user && isCloudImport && favoriteSyncRef.current) {
+      if (user && isCloudImport) {
         for (const fav of newFavorites) {
           try {
-            await favoriteSyncRef.current.patch({ type: 'add', item: fav });
+            await patchFavorite({ type: 'add', item: fav });
           } catch (err) {
             console.error('保存收藏失敗:', err);
           }
@@ -1635,9 +1573,9 @@ const PronunciationAssessment: React.FC = () => {
     const fav = favorites.find(f => f.id === currentFavoriteId);
     if (fav) {
       const updated = { ...fav, text: referenceText };
-      if (user && favoriteSyncRef.current) {
+      if (user) {
         try {
-          await favoriteSyncRef.current.patch({ type: 'update', item: updated });
+          await patchFavorite({ type: 'update', item: updated });
         } catch (err) {
           console.error('保存收藏失敗:', err);
         }
@@ -2267,10 +2205,10 @@ const PronunciationAssessment: React.FC = () => {
                   onDataImported={handleDataImported}
                   setFavorites={setFavorites}
                   onClearAllFavorites={async () => {
-                    if (user && favoriteSyncRef.current) {
+                    if (user) {
                       for (const fav of favorites) {
                         try {
-                          await favoriteSyncRef.current.patch({ type: 'delete', id: fav.id });
+                          await patchFavorite({ type: 'delete', id: fav.id });
                         } catch (err) {
                           console.error('清空收藏失敗:', err);
                         }

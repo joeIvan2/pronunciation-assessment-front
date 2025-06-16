@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Tag, Favorite } from '../types/speech';
 import * as storage from '../utils/storage';
-import { createArraySync } from '../utils/firestoreSync';
+import { useFirestoreArray } from '../hooks/useFirestoreArray';
 import '../styles/PronunciationAssessment.css';
 import { Tooltip } from 'react-tooltip';
 
@@ -40,8 +40,16 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   
   // 分享歷史記錄
   type ShareHistoryItem = { id: string; editPassword: string; createdAt: number; shareId?: string };
-  const [shareHistory, setShareHistory] = useState<storage.ShareInfo[]>([]);
-  const shareHistorySyncRef = useRef<ReturnType<typeof createArraySync<ShareHistoryItem>> | null>(null);
+  const { items: shareHistory, patch: patchShareHistory } = useFirestoreArray<ShareHistoryItem>({
+    user,
+    field: 'shareHistory',
+    localKey: 'shareHistoryRaw',
+    loadLocal: () => storage.getSavedShareInfo().map(i => ({ id: i.hash, editPassword: i.editPassword, createdAt: i.timestamp } as ShareHistoryItem)),
+    saveLocal: items => {
+      const mapped = items.map(it => ({ hash: it.id, editPassword: it.editPassword, url: formatShareLink(it.id), timestamp: it.createdAt }));
+      storage.setItem('savedShareInfo', mapped);
+    }
+  });
   
   // 分享歷史動畫效果
   const [showHistoryAnimation, setShowHistoryAnimation] = useState<boolean>(false);
@@ -52,36 +60,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   // 添加第一個輸入框的 ref  
   const updateHashInputRef = useRef<HTMLInputElement>(null);
   
-  // 登入後載入並同步分享歷史
-  useEffect(() => {
-    if (!user) {
-      shareHistorySyncRef.current = null;
-      setShareHistory(storage.getSavedShareInfo());
-      return;
-    }
-
-    const updateState = (data: ShareHistoryItem[]) => {
-      const mapped = data.map(d => ({
-        hash: d.id || d.shareId,
-        editPassword: d.editPassword,
-        url: formatShareLink(d.id || d.shareId || ''),
-        timestamp: typeof d.createdAt === 'number' ? d.createdAt : Date.now()
-      }));
-      setShareHistory(mapped);
-      storage.setItem('savedShareInfo', mapped);
-    };
-
-    const sync = createArraySync<ShareHistoryItem>({
-      uid: user.uid,
-      field: 'shareHistory',
-      localKey: 'shareHistoryRaw',
-      setState: updateState
-    });
-    shareHistorySyncRef.current = sync;
-    // 等待雲端推播同步
-    const unsub = sync.subscribe();
-    return () => unsub();
-  }, [user]);
   
   // 當favorites變化時，預設全選
   useEffect(() => {
@@ -189,7 +167,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           url: result.url
         });
 
-        if (user && shareHistorySyncRef.current) {
+        if (user) {
           const item: ShareHistoryItem = {
             id: result.hash,
             shareId: result.hash,
@@ -197,14 +175,12 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             createdAt: Date.now()
           };
           try {
-            await shareHistorySyncRef.current.patch({ type: 'add', item });
+            await patchShareHistory({ type: 'add', item });
           } catch (err) {
             console.error('保存分享歷史失敗:', err);
           }
         }
         
-        // 刷新分享歷史
-        setShareHistory(storage.getSavedShareInfo());
         
         // 觸發歷史記錄動畫效果
         setShowHistoryAnimation(true);
@@ -347,15 +323,13 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   // 刪除分享歷史記錄
   const deleteShareHistoryItem = async (hash: string) => {
     try {
-      if (user && shareHistorySyncRef.current) {
-        await shareHistorySyncRef.current.patch({ type: 'delete', id: hash });
+      if (user) {
+        await patchShareHistory({ type: 'delete', id: hash });
       } else {
         storage.deleteShareInfo(hash);
       }
-      setShareHistory(storage.getSavedShareInfo());
     } catch (error) {
       console.error('刪除分享歷史失敗:', error);
-      setShareHistory(storage.getSavedShareInfo());
     }
   };
   
