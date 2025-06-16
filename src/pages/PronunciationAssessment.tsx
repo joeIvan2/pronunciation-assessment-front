@@ -62,6 +62,9 @@ const PronunciationAssessment: React.FC = () => {
   const [voiceSettings, setVoiceSettings] = useState(() => storage.getVoiceSettings());
   // 新增AI語音設置
   const [selectedAIVoice, setSelectedAIVoice] = useState<string>(() => storage.getAIVoice());
+
+  // Firebase 登入狀態
+  const { user, signInWithGoogle, signOutUser, loading: userLoading } = useFirebaseAuth();
   
   // 標籤系統（標籤管理已整合到 FavoriteList 中）
   const { items: tags, patch: patchTag, loaded: tagsLoaded } = useFirestoreArray<Tag>({
@@ -139,7 +142,6 @@ const PronunciationAssessment: React.FC = () => {
   const recorder = useRecorder();
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
-  const { user, signInWithGoogle, signOutUser, loading: userLoading } = useFirebaseAuth();
 
   // Google 登入按鈕永遠顯示，不再隱藏
   const disableGoogle = false;
@@ -838,9 +840,6 @@ const PronunciationAssessment: React.FC = () => {
   // 歷史記錄相關函數
   const handleDeleteHistoryRecord = async (id: string) => {
     try {
-      if (user) {
-        await patchHistory({ type: 'delete', id });
-      }
       await patchHistory({ type: 'delete', id });
     } catch (error) {
       console.error('刪除歷史記錄失敗:', error);
