@@ -113,9 +113,10 @@ src/
 │   ├── AIDataProcessor.tsx # AI 助理
 │   └── ...
 ├── hooks/              # 自訂 React Hooks
-│   ├── useRecorder.ts     # 錄音功能
-│   ├── useAzureSpeech.ts  # Azure 語音服務
-│   └── useBackendSpeech.ts # 後端 API
+│   ├── useRecorder.ts       # 錄音功能
+│   ├── useAzureSpeech.ts    # Azure 語音服務
+│   ├── useBackendSpeech.ts  # 後端 API
+│   └── useFirestoreArray.ts # Firestore 陣列同步
 ├── pages/              # 頁面元件
 │   └── PronunciationAssessment.tsx
 ├── utils/              # 工具函式
