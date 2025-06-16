@@ -29,41 +29,39 @@ const generatePassword = (): string => {
   return Math.random().toString(36).substr(2, 12);
 };
 
+// 處理 Target ID 衝突，返回 true 表示需要重試
+const handleTargetIdConflict = async (error: any): Promise<boolean> => {
+  if (
+    error?.code === 'already-exists' ||
+    (error instanceof Error && error.message.includes('Target ID'))
+  ) {
+    console.log('Firebase Target ID 衝突，等待後重試...');
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    return true;
+  }
+  return false;
+};
+
 // 重試機制
 const retryOperation = async <T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
   delay: number = 1000
 ): Promise<T> => {
-  for (let i = 0; i < maxRetries; i++) {
+  for (let i = 0; i < maxRetries; ) {
     try {
       return await operation();
     } catch (error) {
-      // 如果是 Target ID 已存在的錯誤，等待一小段時間後重試一次
-      if (error instanceof Error && error.message.includes('Target ID already exists')) {
-        console.log('Firebase Target ID 衝突，等待後重試...');
-        await new Promise(resolve => setTimeout(resolve, 100)); // 短暫等待
-        try {
-          return await operation();
-        } catch (secondError) {
-          // 如果還是 Target ID 錯誤，忽略並假設操作成功
-          if (secondError instanceof Error && secondError.message.includes('Target ID already exists')) {
-            console.log('Target ID 衝突持續，忽略錯誤並繼續');
-            // 返回一個默認值或空操作結果
-            return undefined as any;
-          }
-          throw secondError;
-        }
+      if (await handleTargetIdConflict(error)) {
+        continue;
       }
-      
+
       console.warn(`操作失敗，重試 ${i + 1}/${maxRetries}:`, error);
-      
-      if (i === maxRetries - 1) {
+      i++;
+      if (i === maxRetries) {
         throw error;
       }
-      
-      // 等待後重試
-      await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+      await new Promise(resolve => setTimeout(resolve, delay * i));
     }
   }
   throw new Error('重試次數已用盡');
