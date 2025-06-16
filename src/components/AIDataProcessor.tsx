@@ -207,21 +207,11 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     }
   }, [user]);
 
-  // 同步 AI 指令收藏
+  // 收藏變化時存到本地
   useEffect(() => {
     if (!promptFavoritesLoaded) return;
     storage.savePromptFavorites(promptFavorites);
-    if (user) {
-      (async () => {
-        try {
-          const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
-          await saveUserPromptFavorites(user.uid, promptFavorites);
-        } catch (err) {
-          console.error('保存指令收藏失敗:', err);
-        }
-      })();
-    }
-  }, [promptFavorites, user, promptFavoritesLoaded]);
+  }, [promptFavorites, promptFavoritesLoaded]);
 
   // 處理提示文字變更，確保始終是字符串
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -237,18 +227,37 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     }
   };
 
-  const addPromptToFavorites = (text: string) => {
+  const addPromptToFavorites = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     if (promptFavorites.some(p => p.prompt === trimmed)) return;
     const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
     const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
-    setPromptFavorites([...promptFavorites, newFav]);
+    const updated = [...promptFavorites, newFav];
+    setPromptFavorites(updated);
+    storage.savePromptFavorites(updated);
+    if (user) {
+      try {
+        const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
+        await saveUserPromptFavorites(user.uid, updated);
+      } catch (err) {
+        console.error('保存指令收藏失敗:', err);
+      }
+    }
   };
 
-  const removePromptFromFavorites = (text: string) => {
+  const removePromptFromFavorites = async (text: string) => {
     const updated = promptFavorites.filter(p => p.prompt !== text);
     setPromptFavorites(updated);
+    storage.savePromptFavorites(updated);
+    if (user) {
+      try {
+        const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
+        await saveUserPromptFavorites(user.uid, updated);
+      } catch (err) {
+        console.error('保存指令收藏失敗:', err);
+      }
+    }
   };
 
   // 處理圖片上傳
