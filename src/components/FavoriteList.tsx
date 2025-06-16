@@ -24,7 +24,6 @@ interface FavoriteListProps {
   onEditTag: (tagId: string, newName: string, newColor?: string) => void;
   onDeleteTag: (tagId: string) => void;
   onDataImported?: (newTags: Tag[], newFavorites: Favorite[]) => void;
-  setFavorites: React.Dispatch<React.SetStateAction<Favorite[]>>;
   onClearAllFavorites?: () => void;
 }
 
@@ -48,7 +47,6 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
   onEditTag,
   onDeleteTag,
   onDataImported,
-  setFavorites,
   onClearAllFavorites
 }) => {
   // 數據規範化 - 確保每個收藏項目都有正確的數據結構
@@ -297,8 +295,6 @@ const FavoriteList: React.FC<FavoriteListProps> = ({
       if (onClearAllFavorites) {
         await onClearAllFavorites();
       }
-      storage.saveFavorites([]); // 清空本地
-      setFavorites([]); // 立即清空畫面
       alert('已清空所有收藏！');
     } catch (e) {
       alert('清空失敗，請檢查網路或稍後再試。');

@@ -293,8 +293,16 @@ const PronunciationAssessment: React.FC = () => {
 
   // 處理匯入數據的回調函數
   const handleDataImported = (newTags: Tag[], newFavorites: Favorite[]) => {
-    setTags(newTags);
-    setFavorites(newFavorites);
+    newTags.forEach(tag => {
+      patchTag({ type: 'add', item: { ...tag, id: tag.id || tag.tagId } }).catch(
+        err => console.error('保存標籤失敗:', err)
+      );
+    });
+    newFavorites.forEach(fav => {
+      patchFavorite({ type: 'add', item: fav }).catch(err =>
+        console.error('保存收藏失敗:', err)
+      );
+    });
     setNextFavoriteId(storage.getNextFavoriteId(newFavorites));
     
     // 計算新的標籤ID
@@ -305,12 +313,6 @@ const PronunciationAssessment: React.FC = () => {
     
     // 清除選擇的標籤
     setSelectedTags([]);
-    
-    // 如果用戶已登入，標記為已載入以觸發雲端同步
-    if (user) {
-      setTagsLoaded(true);
-      setFavoritesLoaded(true);
-    }
   };
 
   // 建立使用者文件
@@ -528,19 +530,14 @@ const PronunciationAssessment: React.FC = () => {
     if (newFavorites.length === 0) return;
     
     // 合併所有收藏項目（不排序，保證傳入順序）
-    if (user) {
-      for (const fav of newFavorites) {
-        try {
-          await patchFavorite({ type: 'add', item: fav });
-        } catch (err) {
-          console.error('保存收藏失敗:', err);
-        }
+    for (const fav of newFavorites) {
+      try {
+        await patchFavorite({ type: 'add', item: fav });
+      } catch (err) {
+        console.error('保存收藏失敗:', err);
       }
-    } else {
-      const allFavorites = [...favorites, ...newFavorites];
-      setFavorites(allFavorites);
-      setNextFavoriteId(currentNextId);
     }
+    setNextFavoriteId(currentNextId);
     
     // 如果是批次新增，顯示新增成功的提示
     if (Array.isArray(text) && newFavorites.length > 0) {
@@ -564,15 +561,10 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   const removeFromFavorite = async (id: string) => {
-    if (user) {
-      try {
-        await patchFavorite({ type: 'delete', id });
-      } catch (err) {
-        console.error('保存收藏失敗:', err);
-      }
-    } else {
-      const updatedFavorites = favorites.filter(fav => fav.id !== id);
-      setFavorites(updatedFavorites);
+    try {
+      await patchFavorite({ type: 'delete', id });
+    } catch (err) {
+      console.error('保存收藏失敗:', err);
     }
   };
   
@@ -614,22 +606,13 @@ const PronunciationAssessment: React.FC = () => {
   };
   
   const updateFavoriteTags = async (id: string, tagIds: string[]) => {
-    if (user) {
-      const existing = favorites.find(f => f.id === id);
-      if (!existing) return;
-      const updated = { ...existing, tagIds };
-      try {
-        await patchFavorite({ type: 'update', item: updated });
-      } catch (err) {
-        console.error('保存收藏失敗:', err);
-      }
-    } else {
-      const updatedFavorites = favorites.map(fav =>
-        fav.id === id
-          ? { ...fav, tagIds: tagIds }
-          : fav
-      );
-      setFavorites(updatedFavorites);
+    const existing = favorites.find(f => f.id === id);
+    if (!existing) return;
+    const updated = { ...existing, tagIds };
+    try {
+      await patchFavorite({ type: 'update', item: updated });
+    } catch (err) {
+      console.error('保存收藏失敗:', err);
     }
   };
   
@@ -641,17 +624,10 @@ const PronunciationAssessment: React.FC = () => {
       ...target,
       tagIds: hasTag ? target.tagIds.filter(id => id !== tagId) : [...target.tagIds, tagId]
     };
-    if (user) {
-      try {
-        await patchFavorite({ type: 'update', item: updated });
-      } catch (err) {
-        console.error('保存收藏失敗:', err);
-      }
-    } else {
-      const updatedFavorites = favorites.map(f =>
-        f.id === favoriteId ? updated : f
-      );
-      setFavorites(updatedFavorites);
+    try {
+      await patchFavorite({ type: 'update', item: updated });
+    } catch (err) {
+      console.error('保存收藏失敗:', err);
     }
   };
   
@@ -909,29 +885,19 @@ const PronunciationAssessment: React.FC = () => {
     try {
       if (user) {
         await patchHistory({ type: 'delete', id });
-      } else {
-        storage.deleteHistoryRecord(id);
-      }
-      setHistoryRecords(storage.getHistoryRecords());
+      await patchHistory({ type: 'delete', id });
     } catch (error) {
       console.error('刪除歷史記錄失敗:', error);
-      setHistoryRecords(storage.getHistoryRecords());
     }
   };
 
   const handleClearHistoryRecords = async () => {
     try {
-      if (user) {
-        for (const rec of historyRecords) {
-          await patchHistory({ type: 'delete', id: rec.id });
-        }
-      } else {
-        storage.clearHistoryRecords();
+      for (const rec of historyRecords) {
+        await patchHistory({ type: 'delete', id: rec.id });
       }
-      setHistoryRecords([]);
     } catch (error) {
       console.error('清空歷史記錄失敗:', error);
-      setHistoryRecords([]);
     }
   };
   
@@ -992,22 +958,9 @@ const PronunciationAssessment: React.FC = () => {
           words: words
         };
 
-        if (user) {
-          patchHistory({ type: 'add', item: newItem }).catch(err => {
-            console.error('保存歷史記錄失敗:', err);
-          });
-        } else {
-          storage.addHistoryRecord({
-            text: referenceText,
-            scoreAccuracy: result.accuracyScore || 0,
-            scoreFluency: result.fluencyScore || 0,
-            scoreCompleteness: result.completenessScore || 0,
-            scorePronunciation: result.pronunciationScore || 0,
-            recognizedText: recognizedText,
-            words
-          });
-          setHistoryRecords(storage.getHistoryRecords());
-        }
+        patchHistory({ type: 'add', item: newItem }).catch(err => {
+          console.error('保存歷史記錄失敗:', err);
+        });
       } else {
         console.log('檢測到重複的歷史記錄，已忽略');
       }
@@ -1296,57 +1249,37 @@ const PronunciationAssessment: React.FC = () => {
       createdAt: Date.now()
     };
     
-    if (user) {
-      patchTag({ type: 'add', item: newTag }).catch(err => {
-        console.error('保存標籤失敗:', err);
-      });
-    } else {
-      const updatedTags = [...tags, newTag];
-      setTags(updatedTags);
-      storage.saveTags(updatedTags);
-      const newNextId = currentNextId + 1;
-      setNextTagId(newNextId);
-      storage.saveNextTagId(newNextId);
-    }
+    patchTag({ type: 'add', item: newTag }).catch(err => {
+      console.error('保存標籤失敗:', err);
+    });
+    const newNextId = currentNextId + 1;
+    setNextTagId(newNextId);
+    storage.saveNextTagId(newNextId);
 
     return newTag.tagId;
   };
 
   const editTag = (tagId: string, newName: string, newColor?: string) => {
-    if (user) {
-      const existing = tags.find(t => t.tagId === tagId);
-      if (!existing) return;
-      const updated = { ...existing, id: existing.id || existing.tagId, tagId: existing.tagId || existing.id, name: newName || existing.name, color: newColor || existing.color };
-      patchTag({ type: 'update', item: updated }).catch(err => {
-        console.error('保存標籤失敗:', err);
-      });
-    } else {
-      const updatedTags = tags.map(tag =>
-        tag.tagId === tagId
-          ? { ...tag, name: newName || tag.name, color: newColor || tag.color }
-          : tag
-      );
-      setTags(updatedTags);
-      storage.saveTags(updatedTags);
-    }
+    const existing = tags.find(t => t.tagId === tagId);
+    if (!existing) return;
+    const updated = { ...existing, id: existing.id || existing.tagId, tagId: existing.tagId || existing.id, name: newName || existing.name, color: newColor || existing.color };
+    patchTag({ type: 'update', item: updated }).catch(err => {
+      console.error('保存標籤失敗:', err);
+    });
   };
 
   const deleteTag = (tagId: string) => {
-    if (user) {
-      patchTag({ type: 'delete', id: tagId }).catch(err => {
-        console.error('保存標籤失敗:', err);
-      });
-    } else {
-      const updatedTags = tags.filter(tag => tag.tagId !== tagId);
-      setTags(updatedTags);
-      storage.saveTags(updatedTags);
-    }
+    patchTag({ type: 'delete', id: tagId }).catch(err => {
+      console.error('保存標籤失敗:', err);
+    });
 
     const updatedFavorites = favorites.map(favorite => ({
       ...favorite,
       tagIds: favorite.tagIds.filter(tid => tid !== tagId)
     }));
-    setFavorites(updatedFavorites);
+    updatedFavorites.forEach(fav => {
+      patchFavorite({ type: 'update', item: fav }).catch(err => console.error('保存收藏失敗:', err));
+    });
   };
 
   // 處理AI語音選擇
@@ -1424,14 +1357,12 @@ const PronunciationAssessment: React.FC = () => {
           currentNextId++;
         }
         
-        // 一次性更新狀態
-        const updatedFavorites = [...newFavorites, ...favorites];
-        setFavorites(updatedFavorites);
+        for (const fav of newFavorites) {
+          patchFavorite({ type: 'add', item: fav }).catch(err =>
+            console.error('保存收藏失敗:', err)
+          );
+        }
         setNextFavoriteId(currentNextId);
-        
-        // 保存到 localStorage
-        storage.saveFavorites(updatedFavorites);
-        storage.saveNextFavoriteId(currentNextId);
         
         // 切換到favorites標籤
         setBottomActiveTab('favorites');
@@ -1542,8 +1473,11 @@ const PronunciationAssessment: React.FC = () => {
           }
         }
       } else {
-        const updatedFavorites = [...newFavorites, ...favorites];
-        setFavorites(updatedFavorites);
+        for (const fav of newFavorites) {
+          patchFavorite({ type: 'add', item: fav }).catch(err =>
+            console.error('保存收藏失敗:', err)
+          );
+        }
         setNextFavoriteId(currentNextId);
       }
       
@@ -1573,17 +1507,10 @@ const PronunciationAssessment: React.FC = () => {
     const fav = favorites.find(f => f.id === currentFavoriteId);
     if (fav) {
       const updated = { ...fav, text: referenceText };
-      if (user) {
-        try {
-          await patchFavorite({ type: 'update', item: updated });
-        } catch (err) {
-          console.error('保存收藏失敗:', err);
-        }
-      } else {
-        const updatedFavorites = favorites.map(f =>
-          f.id === fav.id ? updated : f
-        );
-        setFavorites(updatedFavorites);
+      try {
+        await patchFavorite({ type: 'update', item: updated });
+      } catch (err) {
+        console.error('保存收藏失敗:', err);
       }
       setSystemTip('已修改該句子');
       setTimeout(() => setSystemTip(null), 2000);
@@ -2086,9 +2013,6 @@ const PronunciationAssessment: React.FC = () => {
               favorites={favorites}
               tags={tags}
               historyRecords={historyRecords}
-              onUpdateFavorites={setFavorites}
-              onUpdateTags={setTags}
-              onUpdateHistoryRecords={setHistoryRecords}
               aiResponse={aiResponse}
               setAiResponse={setAiResponse}
               onAIResponseReceived={handleAIResponseReceived}
@@ -2203,7 +2127,6 @@ const PronunciationAssessment: React.FC = () => {
                   onEditTag={editTag}
                   onDeleteTag={deleteTag}
                   onDataImported={handleDataImported}
-                  setFavorites={setFavorites}
                   onClearAllFavorites={async () => {
                     if (user) {
                       for (const fav of favorites) {
@@ -2214,7 +2137,6 @@ const PronunciationAssessment: React.FC = () => {
                         }
                       }
                     }
-                    setFavorites([]);
                   }}
                 />
               )}

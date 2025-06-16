@@ -75,9 +75,9 @@ interface AIDataProcessorProps {
   favorites: Favorite[];
   tags: Tag[];
   historyRecords: storage.HistoryItem[];
-  onUpdateFavorites: (newFavorites: Favorite[]) => void;
-  onUpdateTags: (newTags: Tag[]) => void;
-  onUpdateHistoryRecords: (newHistoryRecords: storage.HistoryItem[]) => void;
+  onUpdateFavorites?: (newFavorites: Favorite[]) => void;
+  onUpdateTags?: (newTags: Tag[]) => void;
+  onUpdateHistoryRecords?: (newHistoryRecords: storage.HistoryItem[]) => void;
   aiResponse: string | null;
   setAiResponse: (response: string | null) => void;
   onAIResponseReceived: () => void;
@@ -91,9 +91,6 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   favorites,
   tags,
   historyRecords,
-  onUpdateFavorites,
-  onUpdateTags,
-  onUpdateHistoryRecords,
   aiResponse,
   setAiResponse,
   onAIResponseReceived,
