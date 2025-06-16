@@ -107,6 +107,8 @@ export const createArraySync = <T extends { id: string }>({ uid, field, localKey
 
   const subscribe = () => {
     if (!uid) return () => {};
+    // ensure network connectivity before subscribing
+    ensureNetwork().catch(err => console.warn('啟用網路失敗:', err));
     return onSnapshot(userRef, async snap => {
       if (!snap.exists()) return;
       const raw = Array.isArray((snap.data() as any)[field]) ? (snap.data() as any)[field] as T[] : [];

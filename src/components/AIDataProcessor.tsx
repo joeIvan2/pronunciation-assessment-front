@@ -202,7 +202,8 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     });
     promptFavSyncRef.current = sync;
     setPromptFavoritesLoaded(false);
-    sync.refresh().catch(err => console.error('載入指令收藏失敗:', err)).finally(() => setPromptFavoritesLoaded(true));
+    // 初次登入時等待推播更新
+    setPromptFavoritesLoaded(true);
     const unsub = sync.subscribe();
     return () => unsub();
   }, [user]);

@@ -78,7 +78,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       setState: updateState
     });
     shareHistorySyncRef.current = sync;
-    sync.refresh().catch(err => console.error('載入分享歷史失敗:', err));
+    // 等待雲端推播同步
     const unsub = sync.subscribe();
     return () => unsub();
   }, [user]);

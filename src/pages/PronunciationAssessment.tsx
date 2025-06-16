@@ -289,7 +289,8 @@ const PronunciationAssessment: React.FC = () => {
     });
     favoriteSyncRef.current = sync;
     setFavoritesLoaded(false);
-    sync.refresh().catch(err => console.error('載入使用者收藏失敗:', err)).finally(() => setFavoritesLoaded(true));
+    // 先使用本地資料, 遠端變更由訂閱處理
+    setFavoritesLoaded(true);
     const unsub = sync.subscribe();
     return () => unsub();
   }, [user]);
@@ -321,7 +322,8 @@ const PronunciationAssessment: React.FC = () => {
     });
     tagSyncRef.current = sync;
     setTagsLoaded(false);
-    sync.refresh().catch(err => console.error('載入使用者標籤失敗:', err)).finally(() => setTagsLoaded(true));
+    // 初次登入不立即拉取遠端, 後續由訂閱處理
+    setTagsLoaded(true);
     const unsub = sync.subscribe();
     return () => unsub();
   }, [user]);
@@ -380,7 +382,7 @@ const PronunciationAssessment: React.FC = () => {
       setState: updateState
     });
     historySyncRef.current = sync;
-    sync.refresh().catch(err => console.error('載入使用者歷史記錄失敗:', err));
+    // 不在登入時主動拉取遠端
     const unsub = sync.subscribe();
     return () => unsub();
   }, [user]);
