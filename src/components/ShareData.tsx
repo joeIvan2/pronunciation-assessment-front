@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Tag, Favorite } from '../types/speech';
 import * as storage from '../utils/storage';
+import { createArraySync } from '../utils/firestoreSync';
 import '../styles/PronunciationAssessment.css';
 import { Tooltip } from 'react-tooltip';
 
@@ -38,7 +39,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   const [updateResult, setUpdateResult] = useState<{success: boolean; message: string} | null>(null);
   
   // 分享歷史記錄
+  type ShareHistoryItem = { id: string; editPassword: string; createdAt: number; shareId?: string };
   const [shareHistory, setShareHistory] = useState<storage.ShareInfo[]>([]);
+  const shareHistorySyncRef = useRef<ReturnType<typeof createArraySync<ShareHistoryItem>> | null>(null);
   
   // 分享歷史動畫效果
   const [showHistoryAnimation, setShowHistoryAnimation] = useState<boolean>(false);
@@ -49,10 +52,36 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   // 添加第一個輸入框的 ref  
   const updateHashInputRef = useRef<HTMLInputElement>(null);
   
-  // 初始加載分享歷史記錄
+  // 登入後載入並同步分享歷史
   useEffect(() => {
-    setShareHistory(storage.getSavedShareInfo());
-  }, []);
+    if (!user) {
+      shareHistorySyncRef.current = null;
+      setShareHistory(storage.getSavedShareInfo());
+      return;
+    }
+
+    const updateState = (data: ShareHistoryItem[]) => {
+      const mapped = data.map(d => ({
+        hash: d.id || d.shareId,
+        editPassword: d.editPassword,
+        url: formatShareLink(d.id || d.shareId || ''),
+        timestamp: typeof d.createdAt === 'number' ? d.createdAt : Date.now()
+      }));
+      setShareHistory(mapped);
+      storage.setItem('savedShareInfo', mapped);
+    };
+
+    const sync = createArraySync<ShareHistoryItem>({
+      uid: user.uid,
+      field: 'shareHistory',
+      localKey: 'shareHistoryRaw',
+      setState: updateState
+    });
+    shareHistorySyncRef.current = sync;
+    sync.refresh().catch(err => console.error('載入分享歷史失敗:', err));
+    const unsub = sync.subscribe();
+    return () => unsub();
+  }, [user]);
   
   // 當favorites變化時，預設全選
   useEffect(() => {
@@ -159,6 +188,20 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           editPassword: result.editPassword,
           url: result.url
         });
+
+        if (user && shareHistorySyncRef.current) {
+          const item: ShareHistoryItem = {
+            id: result.hash,
+            shareId: result.hash,
+            editPassword: result.editPassword,
+            createdAt: Date.now()
+          };
+          try {
+            await shareHistorySyncRef.current.patch({ type: 'add', item });
+          } catch (err) {
+            console.error('保存分享歷史失敗:', err);
+          }
+        }
         
         // 刷新分享歷史
         setShareHistory(storage.getSavedShareInfo());
@@ -304,17 +347,14 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   // 刪除分享歷史記錄
   const deleteShareHistoryItem = async (hash: string) => {
     try {
-      if (user) {
-        // 使用支援Firebase同步的刪除函數
-        await storage.deleteShareInfoWithSync(hash, user.uid);
+      if (user && shareHistorySyncRef.current) {
+        await shareHistorySyncRef.current.patch({ type: 'delete', id: hash });
       } else {
-        // 未登入用戶只更新本地存儲
         storage.deleteShareInfo(hash);
       }
       setShareHistory(storage.getSavedShareInfo());
     } catch (error) {
       console.error('刪除分享歷史失敗:', error);
-      // 即使同步失敗，仍更新本地顯示
       setShareHistory(storage.getSavedShareInfo());
     }
   };

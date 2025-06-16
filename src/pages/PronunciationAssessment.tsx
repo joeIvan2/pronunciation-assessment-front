@@ -32,6 +32,7 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 import * as storage from "../utils/storage";
 import { getPracticeIdFromUrl, redirectToNewFormat, isPracticePage } from "../utils/urlUtils";
 import { useParams } from "react-router-dom";
+import { createArraySync } from '../utils/firestoreSync';
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
@@ -76,6 +77,9 @@ const PronunciationAssessment: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>(() => storage.getTags());
   const [nextTagId, setNextTagId] = useState<number>(() => storage.getNextTagId());
   const [tagsLoaded, setTagsLoaded] = useState<boolean>(false);
+  const tagSyncRef = useRef<ReturnType<typeof createArraySync<Tag>> | null>(null);
+
+  const favoriteSyncRef = useRef<ReturnType<typeof createArraySync<Favorite>> | null>(null);
   
   // 收藏系統
   const [favorites, setFavorites] = useState<Favorite[]>(() => storage.getFavorites());
@@ -100,6 +104,7 @@ const PronunciationAssessment: React.FC = () => {
   // 歷史記錄狀態
   const [historyRecords, setHistoryRecords] = useState<storage.HistoryItem[]>(() => storage.getHistoryRecords());
   const [isHistoryExpanded, setIsHistoryExpanded] = useState<boolean>(() => storage.getCardExpandStates().historyRecord);
+  const historySyncRef = useRef<ReturnType<typeof createArraySync<storage.HistoryItem>> | null>(null);
   
   // 標籤頁狀態
   const [topActiveTab, setTopActiveTab] = useState<storage.TopTabName>(() => storage.getTopActiveTab());
@@ -252,99 +257,73 @@ const PronunciationAssessment: React.FC = () => {
 
   // 自動練習模式不需要自動清理，保持開關狀態
 
-  // 登入後載入 Firestore 收藏並在更新時同步
+  // 登入後載入並同步 Firestore 收藏
   useEffect(() => {
-    if (user) {
-      setFavoritesLoaded(false);
-      (async () => {
-        try {
-          const { loadUserFavorites } = await import('../utils/firebaseStorage');
-          const favs = await loadUserFavorites(user.uid);
-          if (favs.length) {
-            setFavorites(favs);
-            storage.saveFavorites(favs); // 覆蓋本地資料
-            setNextFavoriteId(storage.getNextFavoriteId(favs));
-          } else {
-            setFavorites([]);
-            // 如果是新用戶（沒有收藏），設定為首次用戶
-            setIsFirstTimeUser(true);
-            setShowAITooltip(true);
-            // 5秒後自動關閉 tooltip
-            setTimeout(() => {
-              setShowAITooltip(false);
-            }, 5000);
-          }
-        } catch (err) {
-          console.error('載入使用者收藏失敗:', err);
-        } finally {
-          setFavoritesLoaded(true);
-        }
-      })();
-    } else {
-      setFavorites(storage.getFavorites());
-      setFavoritesLoaded(false);
+    if (!user) {
+      favoriteSyncRef.current = null;
+      const localFavs = storage.getFavorites();
+      setFavorites(localFavs);
+      setNextFavoriteId(storage.getNextFavoriteId(localFavs));
+      setFavoritesLoaded(true);
       setIsFirstTimeUser(false);
+      return;
     }
+
+    const updateState = (data: Favorite[]) => {
+      setFavorites(data);
+      setNextFavoriteId(storage.getNextFavoriteId(data));
+      if (data.length === 0) {
+        setIsFirstTimeUser(true);
+        setShowAITooltip(true);
+        setTimeout(() => setShowAITooltip(false), 5000);
+      } else {
+        setIsFirstTimeUser(false);
+      }
+    };
+
+    const sync = createArraySync<Favorite>({
+      uid: user.uid,
+      field: 'favorites2',
+      localKey: 'favorites',
+      setState: updateState
+    });
+    favoriteSyncRef.current = sync;
+    setFavoritesLoaded(false);
+    sync.refresh().catch(err => console.error('載入使用者收藏失敗:', err)).finally(() => setFavoritesLoaded(true));
+    const unsub = sync.subscribe();
+    return () => unsub();
   }, [user]);
 
-  // 登入後載入 Firestore 標籤並在更新時同步
+  // 登入後載入並同步 Firestore 標籤
   useEffect(() => {
-    if (user) {
-      setTagsLoaded(false);
-      (async () => {
-        try {
-          const { loadUserTags } = await import('../utils/firebaseStorage');
-          const userTags = await loadUserTags(user.uid);
-          if (userTags.length) {
-            setTags(userTags);
-            storage.saveTags(userTags); // 覆蓋本地資料
-            // 計算下一個標籤ID
-            const maxId = Math.max(...userTags.map(tag => parseInt(tag.tagId, 10) || 0), 0);
-            setNextTagId(maxId + 1);
-          } else {
-            // 如果雲端沒有標籤，保持本地標籤
-            setTags(storage.getTags());
-          }
-        } catch (err) {
-          console.error('載入使用者標籤失敗:', err);
-        } finally {
-          setTagsLoaded(true);
-        }
-      })();
-    } else {
+    if (!user) {
+      tagSyncRef.current = null;
       setTags(storage.getTags());
-      setTagsLoaded(false);
+      setNextTagId(storage.getNextTagId());
+      setTagsLoaded(true);
+      return;
     }
+
+    const updateState = (data: Tag[]) => {
+      setTags(data);
+      const max = data.reduce((m, t) => Math.max(m, parseInt(t.tagId, 10) || 0), 0);
+      const next = max + 1;
+      setNextTagId(next);
+      storage.saveNextTagId(next);
+    };
+
+    const sync = createArraySync<Tag>({
+      uid: user.uid,
+      field: 'tags2',
+      localKey: 'tags',
+      setState: updateState
+    });
+    tagSyncRef.current = sync;
+    setTagsLoaded(false);
+    sync.refresh().catch(err => console.error('載入使用者標籤失敗:', err)).finally(() => setTagsLoaded(true));
+    const unsub = sync.subscribe();
+    return () => unsub();
   }, [user]);
-
-  useEffect(() => {
-    if (user && favoritesLoaded) {
-      (async () => {
-        try {
-          const { saveUserFavorites } = await import('../utils/firebaseStorage');
-          await saveUserFavorites(user.uid, favorites);
-        } catch (err) {
-          console.error('保存使用者收藏失敗:', err);
-          // 不要拋出錯誤，只記錄
-        }
-      })();
-    }
-  }, [favorites, user, favoritesLoaded]);
-
-  // 同步標籤到雲端
-  useEffect(() => {
-    if (user && tagsLoaded) {
-      (async () => {
-        try {
-          const { saveUserTags } = await import('../utils/firebaseStorage');
-          await saveUserTags(user.uid, tags);
-        } catch (err) {
-          console.error('保存使用者標籤失敗:', err);
-          // 不要拋出錯誤，只記錄
-        }
-      })();
-    }
-  }, [tags, user, tagsLoaded]);
 
   // 處理匯入數據的回調函數
   const handleDataImported = (newTags: Tag[], newFavorites: Favorite[]) => {
@@ -368,87 +347,41 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  // 登入後載入使用者歷史記錄和分享歷史
+  // 登入後載入並同步歷史記錄
   useEffect(() => {
-    if (!user) return;
-    
-    let isCancelled = false;
-    
-    // 添加延遲以避免多個操作同時執行
-    const timeoutId = setTimeout(async () => {
-      if (isCancelled) return;
-      
+    if (!user) {
+      historySyncRef.current = null;
+      setHistoryRecords(storage.getHistoryRecords());
+      return;
+    }
+
+    const setup = async () => {
       try {
-        // 首先創建或更新用戶基本資料
-        const { createOrUpdateUserProfile, loadUserProfile } = await import('../utils/firebaseStorage');
-        
-        // 創建/更新用戶基本資料，包含顯示名稱和電子郵件
-        await createOrUpdateUserProfile(
-          user.uid, 
-          user.displayName || undefined, 
-          user.email || undefined
-        );
-        console.log('用戶基本資料已確保存在');
-        
-        // 載入用戶資料
-        const profile = await loadUserProfile(user.uid);
-        
-        if (isCancelled) return;
-        
-        // 載入並覆蓋本地歷史記錄，遠端優先
-        if (profile?.historyRecords && profile.historyRecords.length > 0) {
-          const firebaseRecords = profile.historyRecords;
-          storage.setHistoryRecords(firebaseRecords);
-          setHistoryRecords(firebaseRecords);
-        } else {
-          const localRecords = storage.getHistoryRecords();
-          setHistoryRecords(localRecords);
-          if (localRecords.length > 0) {
-            try {
-              const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
-              await saveUserHistoryRecords(user.uid, localRecords);
-              console.log('本地歷史記錄已上傳到Firebase');
-            } catch (err) {
-              console.warn('上傳本地歷史記錄失敗:', err);
-            }
-          }
-        }
-        
-        console.log('使用者歷史記錄載入成功');
+        const { createOrUpdateUserProfile } = await import('../utils/firebaseStorage');
+        await createOrUpdateUserProfile(user.uid, user.displayName || undefined, user.email || undefined);
       } catch (err) {
-        if (!isCancelled) {
-          console.error('載入使用者歷史記錄失敗:', err);
-        }
+        console.error('初始化用戶資料失敗:', err);
       }
-      
-      // 同步分享歷史 - 稍後執行以避免衝突
-      if (!isCancelled) {
-        try {
-          const { syncShareHistoryFromFirebase, syncShareHistoryToFirebase } = await import('../utils/storage');
-          
-          // 先將本地未同步的分享歷史同步到Firebase
-          await syncShareHistoryToFirebase(user.uid);
-          
-          // 等待一小段時間再執行下一步
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          if (!isCancelled) {
-            // 再從Firebase載入完整的分享歷史到本地
-            await syncShareHistoryFromFirebase(user.uid);
-            console.log('分享歷史同步完成');
-          }
-        } catch (err) {
-          if (!isCancelled) {
-            console.error('同步分享歷史失敗:', err);
-          }
-        }
-      }
-    }, 500); // 延遲500毫秒執行
-    
-    return () => {
-      isCancelled = true;
-      clearTimeout(timeoutId);
     };
+
+    setup();
+
+    const updateState = (data: storage.HistoryItem[]) => {
+      const normalized = data.map(item => item.id ? item : { ...item, id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
+      setHistoryRecords(normalized);
+      storage.setHistoryRecords(normalized);
+    };
+
+    const sync = createArraySync<storage.HistoryItem>({
+      uid: user.uid,
+      field: 'historyRecords',
+      localKey: 'historyRecords',
+      setState: updateState
+    });
+    historySyncRef.current = sync;
+    sync.refresh().catch(err => console.error('載入使用者歷史記錄失敗:', err));
+    const unsub = sync.subscribe();
+    return () => unsub();
   }, [user]);
 
   // 字型大小變更時儲存到 localStorage
@@ -466,23 +399,6 @@ const PronunciationAssessment: React.FC = () => {
     storage.saveAIVoice(selectedAIVoice);
   }, [selectedAIVoice]);
 
-  // 歷史記錄同步（當用戶登入且歷史記錄變化時）
-  useEffect(() => {
-    if (!user) return;
-
-    const timeoutId = setTimeout(async () => {
-      try {
-        const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
-        await saveUserHistoryRecords(user.uid, historyRecords);
-        console.log('歷史記錄已同步到Firebase');
-      } catch (err) {
-        console.error('保存歷史記錄失敗:', err);
-        // 不要拋出錯誤，只記錄
-      }
-    }, 1000); // 1秒防抖，因為歷史記錄更新較少
-
-    return () => clearTimeout(timeoutId);
-  }, [historyRecords, user]);
 
   // 新增streaming相關狀態和refs
   const streamingCallbackRef = useRef<((chunk: Blob) => void) | null>(null);
@@ -596,7 +512,7 @@ const PronunciationAssessment: React.FC = () => {
 
 
   // 收藏夾相關函數
-  const addToFavorites = (text: string | string[], tagIds: string[] = []) => {
+  const addToFavorites = async (text: string | string[], tagIds: string[] = []) => {
     // 檢查登入狀態
     if (!checkLoginAndShowModal(
       '加入我的最愛',
@@ -669,11 +585,19 @@ const PronunciationAssessment: React.FC = () => {
     if (newFavorites.length === 0) return;
     
     // 合併所有收藏項目（不排序，保證傳入順序）
-    const allFavorites = [...favorites, ...newFavorites];
-    setFavorites(allFavorites);
-    
-    // 更新 nextFavoriteId
-    setNextFavoriteId(currentNextId);
+    if (user && favoriteSyncRef.current) {
+      for (const fav of newFavorites) {
+        try {
+          await favoriteSyncRef.current.patch({ type: 'add', item: fav });
+        } catch (err) {
+          console.error('保存收藏失敗:', err);
+        }
+      }
+    } else {
+      const allFavorites = [...favorites, ...newFavorites];
+      setFavorites(allFavorites);
+      setNextFavoriteId(currentNextId);
+    }
     
     // 如果是批次新增，顯示新增成功的提示
     if (Array.isArray(text) && newFavorites.length > 0) {
@@ -696,9 +620,17 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
   
-  const removeFromFavorite = (id: string) => {
-    const updatedFavorites = favorites.filter(fav => fav.id !== id);
-    setFavorites(updatedFavorites);
+  const removeFromFavorite = async (id: string) => {
+    if (user && favoriteSyncRef.current) {
+      try {
+        await favoriteSyncRef.current.patch({ type: 'delete', id });
+      } catch (err) {
+        console.error('保存收藏失敗:', err);
+      }
+    } else {
+      const updatedFavorites = favorites.filter(fav => fav.id !== id);
+      setFavorites(updatedFavorites);
+    }
   };
   
   // 取得 localStorage key
@@ -738,32 +670,46 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
   
-  const updateFavoriteTags = (id: string, tagIds: string[]) => {
-    const updatedFavorites = favorites.map(fav => 
-      fav.id === id 
-        ? { ...fav, tagIds: tagIds } 
-        : fav
-    );
-    
-    setFavorites(updatedFavorites);
+  const updateFavoriteTags = async (id: string, tagIds: string[]) => {
+    if (user && favoriteSyncRef.current) {
+      const existing = favorites.find(f => f.id === id);
+      if (!existing) return;
+      const updated = { ...existing, tagIds };
+      try {
+        await favoriteSyncRef.current.patch({ type: 'update', item: updated });
+      } catch (err) {
+        console.error('保存收藏失敗:', err);
+      }
+    } else {
+      const updatedFavorites = favorites.map(fav =>
+        fav.id === id
+          ? { ...fav, tagIds: tagIds }
+          : fav
+      );
+      setFavorites(updatedFavorites);
+    }
   };
   
-  const toggleTagOnFavorite = (favoriteId: string, tagId: string) => {
-    const updatedFavorites = favorites.map(fav => {
-      if (fav.id === favoriteId) {
-        // 如果標籤已存在，則移除；否則新增
-        const hasTag = fav.tagIds.includes(tagId);
-        return {
-          ...fav,
-          tagIds: hasTag 
-            ? fav.tagIds.filter(id => id !== tagId) 
-            : [...fav.tagIds, tagId]
-        };
+  const toggleTagOnFavorite = async (favoriteId: string, tagId: string) => {
+    const target = favorites.find(f => f.id === favoriteId);
+    if (!target) return;
+    const hasTag = target.tagIds.includes(tagId);
+    const updated = {
+      ...target,
+      tagIds: hasTag ? target.tagIds.filter(id => id !== tagId) : [...target.tagIds, tagId]
+    };
+    if (user && favoriteSyncRef.current) {
+      try {
+        await favoriteSyncRef.current.patch({ type: 'update', item: updated });
+      } catch (err) {
+        console.error('保存收藏失敗:', err);
       }
-      return fav;
-    });
-    
-    setFavorites(updatedFavorites);
+    } else {
+      const updatedFavorites = favorites.map(f =>
+        f.id === favoriteId ? updated : f
+      );
+      setFavorites(updatedFavorites);
+    }
   };
   
   // 標籤選擇相關
@@ -1016,36 +962,32 @@ const PronunciationAssessment: React.FC = () => {
 
 
   // 歷史記錄相關函數
-    const handleDeleteHistoryRecord = async (id: string) => {
+  const handleDeleteHistoryRecord = async (id: string) => {
     try {
-      if (user) {
-        // 使用支援Firebase同步的刪除函數
-        await storage.deleteHistoryRecordWithSync(id, user.uid);
+      if (user && historySyncRef.current) {
+        await historySyncRef.current.patch({ type: 'delete', id });
       } else {
-        // 未登入用戶只更新本地存儲
         storage.deleteHistoryRecord(id);
       }
       setHistoryRecords(storage.getHistoryRecords());
     } catch (error) {
       console.error('刪除歷史記錄失敗:', error);
-      // 即使同步失敗，仍更新本地顯示
       setHistoryRecords(storage.getHistoryRecords());
     }
   };
 
   const handleClearHistoryRecords = async () => {
     try {
-      if (user) {
-        // 使用支援Firebase同步的清空函數
-        await storage.clearHistoryRecordsWithSync(user.uid);
+      if (user && historySyncRef.current) {
+        for (const rec of historyRecords) {
+          await historySyncRef.current.patch({ type: 'delete', id: rec.id });
+        }
       } else {
-        // 未登入用戶只更新本地存儲
         storage.clearHistoryRecords();
       }
       setHistoryRecords([]);
     } catch (error) {
       console.error('清空歷史記錄失敗:', error);
-      // 即使同步失敗，仍更新本地顯示
       setHistoryRecords([]);
     }
   };
@@ -1083,9 +1025,6 @@ const PronunciationAssessment: React.FC = () => {
         recognizedText = result.DisplayText || result.text || '';
       }
 
-      // 生成一個唯一ID，使用時間戳加隨機數
-      const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
       // 檢查當前記錄是否已經存在相似記錄（同一文本和相近時間）
       const existingRecords = storage.getHistoryRecords();
       const last5Seconds = Date.now() - 5000; // 5秒內
@@ -1097,16 +1036,36 @@ const PronunciationAssessment: React.FC = () => {
       
       // 只有不存在相似記錄時才新增
       if (!hasSimilarRecord) {
-        storage.addHistoryRecord({
+        const newItem: storage.HistoryItem = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           text: referenceText,
           scoreAccuracy: result.accuracyScore || 0,
           scoreFluency: result.fluencyScore || 0,
           scoreCompleteness: result.completenessScore || 0,
           scorePronunciation: result.pronunciationScore || 0,
+          timestamp: Date.now(),
           recognizedText: recognizedText,
-          words: words // 保存單詞評分數據
-        });
-        setHistoryRecords(storage.getHistoryRecords());
+          words: words
+        };
+
+        if (user && historySyncRef.current) {
+          try {
+            await historySyncRef.current.patch({ type: 'add', item: newItem });
+          } catch (err) {
+            console.error('保存歷史記錄失敗:', err);
+          }
+        } else {
+          storage.addHistoryRecord({
+            text: referenceText,
+            scoreAccuracy: result.accuracyScore || 0,
+            scoreFluency: result.fluencyScore || 0,
+            scoreCompleteness: result.completenessScore || 0,
+            scorePronunciation: result.pronunciationScore || 0,
+            recognizedText: recognizedText,
+            words
+          });
+          setHistoryRecords(storage.getHistoryRecords());
+        }
       } else {
         console.log('檢測到重複的歷史記錄，已忽略');
       }
@@ -1393,41 +1352,56 @@ const PronunciationAssessment: React.FC = () => {
       createdAt: Date.now()
     };
     
-    const updatedTags = [...tags, newTag];
-    setTags(updatedTags);
-    storage.saveTags(updatedTags);
-    
-    // 保存遞增後的ID
-    const newNextId = currentNextId + 1;
-    setNextTagId(newNextId);
-    storage.saveNextTagId(newNextId);
-    
-    return newTag.tagId; // 返回新創建的標籤ID
+    if (user && tagSyncRef.current) {
+      tagSyncRef.current.patch({ type: 'add', item: newTag }).catch(err => {
+        console.error('保存標籤失敗:', err);
+      });
+    } else {
+      const updatedTags = [...tags, newTag];
+      setTags(updatedTags);
+      storage.saveTags(updatedTags);
+      const newNextId = currentNextId + 1;
+      setNextTagId(newNextId);
+      storage.saveNextTagId(newNextId);
+    }
+
+    return newTag.tagId;
   };
-  
+
   const editTag = (tagId: string, newName: string, newColor?: string) => {
-    const updatedTags = tags.map(tag => 
-      tag.tagId === tagId 
-        ? { ...tag, name: newName || tag.name, color: newColor || tag.color } 
-        : tag
-    );
-    
-    setTags(updatedTags);
-    storage.saveTags(updatedTags);
+    if (user && tagSyncRef.current) {
+      const existing = tags.find(t => t.tagId === tagId);
+      if (!existing) return;
+      const updated = { ...existing, name: newName || existing.name, color: newColor || existing.color };
+      tagSyncRef.current.patch({ type: 'update', item: updated }).catch(err => {
+        console.error('保存標籤失敗:', err);
+      });
+    } else {
+      const updatedTags = tags.map(tag =>
+        tag.tagId === tagId
+          ? { ...tag, name: newName || tag.name, color: newColor || tag.color }
+          : tag
+      );
+      setTags(updatedTags);
+      storage.saveTags(updatedTags);
+    }
   };
-  
+
   const deleteTag = (tagId: string) => {
-    // 刪除標籤
-    const updatedTags = tags.filter(tag => tag.tagId !== tagId);
-    setTags(updatedTags);
-    storage.saveTags(updatedTags);
-    
-    // 從所有收藏中移除該標籤
+    if (user && tagSyncRef.current) {
+      tagSyncRef.current.patch({ type: 'delete', id: tagId }).catch(err => {
+        console.error('保存標籤失敗:', err);
+      });
+    } else {
+      const updatedTags = tags.filter(tag => tag.tagId !== tagId);
+      setTags(updatedTags);
+      storage.saveTags(updatedTags);
+    }
+
     const updatedFavorites = favorites.map(favorite => ({
       ...favorite,
       tagIds: favorite.tagIds.filter(tid => tid !== tagId)
     }));
-    
     setFavorites(updatedFavorites);
   };
 
@@ -1615,10 +1589,19 @@ const PronunciationAssessment: React.FC = () => {
         currentNextId++;
       }
       
-      // 一次性更新狀態
-      const updatedFavorites = [...newFavorites, ...favorites];
-      setFavorites(updatedFavorites);
-      setNextFavoriteId(currentNextId);
+      if (user && isCloudImport && favoriteSyncRef.current) {
+        for (const fav of newFavorites) {
+          try {
+            await favoriteSyncRef.current.patch({ type: 'add', item: fav });
+          } catch (err) {
+            console.error('保存收藏失敗:', err);
+          }
+        }
+      } else {
+        const updatedFavorites = [...newFavorites, ...favorites];
+        setFavorites(updatedFavorites);
+        setNextFavoriteId(currentNextId);
+      }
       
       // 切換到favorites標籤
       setBottomActiveTab('favorites');
@@ -1636,7 +1619,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  const handleEditCurrentReference = () => {
+  const handleEditCurrentReference = async () => {
     if (!referenceText) return;
     if (!currentFavoriteId) {
       setSystemTip('請先選擇收藏句子');
@@ -1645,11 +1628,19 @@ const PronunciationAssessment: React.FC = () => {
     }
     const fav = favorites.find(f => f.id === currentFavoriteId);
     if (fav) {
-      const updatedFavorites = favorites.map(f =>
-        f.id === fav.id ? { ...f, text: referenceText } : f
-      );
-      setFavorites(updatedFavorites);
-      // 不要自動跳回第一句，維持 currentFavoriteId 與 textarea 內容
+      const updated = { ...fav, text: referenceText };
+      if (user && favoriteSyncRef.current) {
+        try {
+          await favoriteSyncRef.current.patch({ type: 'update', item: updated });
+        } catch (err) {
+          console.error('保存收藏失敗:', err);
+        }
+      } else {
+        const updatedFavorites = favorites.map(f =>
+          f.id === fav.id ? updated : f
+        );
+        setFavorites(updatedFavorites);
+      }
       setSystemTip('已修改該句子');
       setTimeout(() => setSystemTip(null), 2000);
     } else {
@@ -2269,6 +2260,18 @@ const PronunciationAssessment: React.FC = () => {
                   onDeleteTag={deleteTag}
                   onDataImported={handleDataImported}
                   setFavorites={setFavorites}
+                  onClearAllFavorites={async () => {
+                    if (user && favoriteSyncRef.current) {
+                      for (const fav of favorites) {
+                        try {
+                          await favoriteSyncRef.current.patch({ type: 'delete', id: fav.id });
+                        } catch (err) {
+                          console.error('清空收藏失敗:', err);
+                        }
+                      }
+                    }
+                    setFavorites([]);
+                  }}
                 />
               )}
               
