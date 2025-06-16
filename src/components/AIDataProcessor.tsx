@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as storage from '../utils/storage';
-import { Tag, Favorite, Word } from '../types/speech';
+import { Tag, Favorite, Word, PromptFavorite } from '../types/speech';
 import ResizableTextarea from './ResizableTextarea';
 import { Tooltip } from 'react-tooltip';
 import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
@@ -115,6 +115,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
+  const [promptFavorites, setPromptFavorites] = useState<PromptFavorite[]>(() =>
+    storage.getPromptFavorites()
+  );
   
   // 定義範例提示句
   const examplePrompts = [
@@ -179,6 +182,40 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     }
   }, [prompt]);
 
+  // 載入使用者 AI 指令收藏
+  useEffect(() => {
+    if (user) {
+      (async () => {
+        try {
+          const { loadUserPromptFavorites } = await import('../utils/firebaseStorage');
+          const favs = await loadUserPromptFavorites(user.uid);
+          if (favs.length) {
+            setPromptFavorites(favs);
+          }
+        } catch (err) {
+          console.error('載入指令收藏失敗:', err);
+        }
+      })();
+    } else {
+      setPromptFavorites(storage.getPromptFavorites());
+    }
+  }, [user]);
+
+  // 同步 AI 指令收藏
+  useEffect(() => {
+    storage.savePromptFavorites(promptFavorites);
+    if (user) {
+      (async () => {
+        try {
+          const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
+          await saveUserPromptFavorites(user.uid, promptFavorites);
+        } catch (err) {
+          console.error('保存指令收藏失敗:', err);
+        }
+      })();
+    }
+  }, [promptFavorites, user]);
+
   // 處理提示文字變更，確保始終是字符串
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -191,6 +228,20 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       storage.saveAIPrompt(prompt);
       console.log('保存AI提示 (失去焦點): ', prompt.substring(0, 20) + (prompt.length > 20 ? '...' : ''));
     }
+  };
+
+  const addPromptToFavorites = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    if (promptFavorites.some(p => p.prompt === trimmed)) return;
+    const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
+    const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
+    setPromptFavorites([...promptFavorites, newFav]);
+  };
+
+  const removePromptFromFavorites = (text: string) => {
+    const updated = promptFavorites.filter(p => p.prompt !== text);
+    setPromptFavorites(updated);
   };
 
   // 處理圖片上傳
@@ -346,25 +397,14 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       // 準備發送給AI的數據
       const formData = new FormData();
       
-      // 只使用最新的10條發音記錄
-      const latestHistoryRecords = [...historyRecords].sort((a, b) => 
-        (b.timestamp || 0) - (a.timestamp || 0)
-      ).slice(0, 10);
-      
-      // 過濾 historyRecords，將 words 只保留單字層級（去除 Phonemes）
-      const filteredHistoryRecords = latestHistoryRecords.map(item => {
-        if (!item.words || !Array.isArray(item.words)) return item;
-        return {
-          ...item,
-          words: item.words.map((w: any) => {
-            // 僅保留 Word 和 PronunciationAssessment
-            const { Word, PronunciationAssessment } = w;
-            return { Word, PronunciationAssessment };
-          })
-        };
-      });
+      // 只使用最新的30條發音記錄（已壓縮格式）
+      const latestHistoryRecords = storage
+        .getCompressedHistoryRecords()
+        .sort((a, b) => (b.g || 0) - (a.g || 0))
+        .slice(0, 30);
+
       const jsonData = JSON.stringify({
-        historyRecords: filteredHistoryRecords,
+        historyRecords: latestHistoryRecords,
         prompt: currentPrompt
       });
       formData.append('data', jsonData);
@@ -475,7 +515,25 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
 
           <label htmlFor="image-upload" className="control-button" title="新增圖片">
             <i className="fas fa-image"></i>
-        </label>
+          </label>
+          <button
+            onClick={() => addPromptToFavorites(prompt)}
+            disabled={!prompt.trim()}
+            className="control-button"
+            title="收藏指令"
+            style={{ marginLeft: 4 }}
+          >
+            <i className="fas fa-star"></i>
+          </button>
+          <button
+            onClick={() => removePromptFromFavorites(prompt)}
+            disabled={!prompt.trim()}
+            className="control-button"
+            title="刪除指令收藏"
+            style={{ marginLeft: 4 }}
+          >
+            <i className="fas fa-trash"></i>
+          </button>
         </div>
       </div>
 
@@ -610,10 +668,55 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       )}
       
       
+      {/* 收藏的指令列表 */}
+      <div style={{ marginBottom: "16px" }}>
+        <p style={{
+          marginBottom: "8px",
+          color: "var(--ios-text-secondary)",
+          fontSize: "14px"
+        }}>
+          我的最愛指令：
+        </p>
+        {promptFavorites.length > 0 ? (
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {promptFavorites.map(fav => (
+              <li key={fav.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span
+                  onClick={() => {
+                    setPrompt(fav.prompt);
+                    storage.saveAIPrompt(fav.prompt);
+                  }}
+                  style={{ cursor: "pointer", flexGrow: 1, marginRight: 8 }}
+                >
+                  {fav.prompt}
+                </span>
+                <button
+                  onClick={() => removePromptFromFavorites(fav.prompt)}
+                  className="btn-delete"
+                  title="刪除"
+                >
+                  <i className="fas fa-trash"></i>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div style={{
+            padding: "8px",
+            color: "var(--ios-text-secondary)",
+            textAlign: "center",
+            border: "1px solid var(--ios-border)",
+            borderRadius: "8px"
+          }}>
+            還沒有收藏的指令
+          </div>
+        )}
+      </div>
+
       {/* 範例提示區域放到最後 */}
       <div style={{ marginBottom: "16px" }}>
-        <p style={{ 
-          marginBottom: "8px", 
+        <p style={{
+          marginBottom: "8px",
           color: "var(--ios-text-secondary)",
           fontSize: "14px"
         }}>
@@ -671,7 +774,9 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
                 // 輸出時反轉順序，防呆處理
                 const reversedAiSentences = Array.isArray(response.sentences)
                   ? response.sentences.slice().reverse()
-                  : [];
+                  : response.message
+                    ? [String(response.message)]
+                    : [];
                 
                 return (
                   <>
