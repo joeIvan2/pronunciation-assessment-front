@@ -114,11 +114,19 @@ export const createArraySync = <T extends { id: string }>({ uid, field, localKey
     saveLocal(updated);
   };
 
+  let unsubscribe: (() => void) | null = null;
+
   const subscribe = () => {
     if (!uid) return () => {};
     // ensure network connectivity before subscribing
     ensureNetwork().catch(err => console.warn('啟用網路失敗:', err));
-    return onSnapshot(userRef, async snap => {
+
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
+    }
+
+    unsubscribe = onSnapshot(userRef, async snap => {
       if (!snap.exists()) return;
       const raw = Array.isArray((snap.data() as any)[field]) ? (snap.data() as any)[field] as T[] : [];
       const { normalized, changed } = normalize(raw);
@@ -131,6 +139,13 @@ export const createArraySync = <T extends { id: string }>({ uid, field, localKey
         }
       }
     });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    };
   };
 
   return { refresh, patch, subscribe };
