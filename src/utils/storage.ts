@@ -150,15 +150,19 @@ export const saveVoiceSettings = (
 // 获取标签
 export const getTags = (): Tag[] => {
   const defaultTags: Tag[] = [
-    { tagId: "1", name: "範例標籤", color: "#1e90ff", createdAt: 1747713791965 }
+    { tagId: "1", id: "1", name: "範例標籤", color: "#1e90ff", createdAt: 1747713791965 }
   ];
 
-  return getItem<Tag[]>('tags', defaultTags);
+  return getItem<Tag[]>('tags', defaultTags).map(t => ({
+    ...t,
+    id: t.id || t.tagId
+  }));
 };
 
 // 保存标签
 export const saveTags = (tags: Tag[]): void => {
-  setItem('tags', tags);
+  const normalized = tags.map(t => ({ ...t, id: t.id || t.tagId, tagId: t.tagId || t.id }));
+  setItem('tags', normalized);
 };
 
 // 获取下一个标签ID
@@ -679,9 +683,10 @@ export const loadFromHash = async (hash: string): Promise<LoadResponse> => {
 
 // 應用從服務器加載的數據
 export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): void => {
-  // 處理標籤 - 保持原有ID
+  // 處理標籤 - 確保同時存在 id 與 tagId
   if (data.tags && Array.isArray(data.tags)) {
-    saveTags(data.tags);
+    const processed = data.tags.map(t => ({ ...t, id: t.id || t.tagId, tagId: t.tagId || t.id }));
+    saveTags(processed);
   }
   
   // 處理收藏項目 - 使用前綴確保ID不會衝突

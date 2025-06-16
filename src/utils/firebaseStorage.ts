@@ -388,7 +388,8 @@ export const loadUserTags = async (uid: string): Promise<Tag[]> => {
     }
 
     const tags = tags2.map(tag => ({
-      tagId: String(tag.tagId),
+      tagId: String(tag.tagId ?? tag.id),
+      id: String(tag.id ?? tag.tagId),
       name: String(tag.name),
       color: String(tag.color),
       createdAt: typeof tag.createdAt === 'number' ? tag.createdAt : Date.now()

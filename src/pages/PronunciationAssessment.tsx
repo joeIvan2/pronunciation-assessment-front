@@ -305,8 +305,9 @@ const PronunciationAssessment: React.FC = () => {
     }
 
     const updateState = (data: Tag[]) => {
-      setTags(data);
-      const max = data.reduce((m, t) => Math.max(m, parseInt(t.tagId, 10) || 0), 0);
+      const withIds = data.map(t => ({ ...t, tagId: t.tagId || t.id, id: t.id || t.tagId }));
+      setTags(withIds);
+      const max = withIds.reduce((m, t) => Math.max(m, parseInt(t.tagId, 10) || 0), 0);
       const next = max + 1;
       setNextTagId(next);
       storage.saveNextTagId(next);
@@ -1349,6 +1350,7 @@ const PronunciationAssessment: React.FC = () => {
     
     const newTag: Tag = {
       tagId: idStr,
+      id: idStr,
       name: name,
       color: color,
       createdAt: Date.now()
@@ -1374,7 +1376,7 @@ const PronunciationAssessment: React.FC = () => {
     if (user && tagSyncRef.current) {
       const existing = tags.find(t => t.tagId === tagId);
       if (!existing) return;
-      const updated = { ...existing, name: newName || existing.name, color: newColor || existing.color };
+      const updated = { ...existing, id: existing.id || existing.tagId, tagId: existing.tagId || existing.id, name: newName || existing.name, color: newColor || existing.color };
       tagSyncRef.current.patch({ type: 'update', item: updated }).catch(err => {
         console.error('保存標籤失敗:', err);
       });
