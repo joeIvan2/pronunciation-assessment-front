@@ -262,6 +262,7 @@ const PronunciationAssessment: React.FC = () => {
           const favs = await loadUserFavorites(user.uid);
           if (favs.length) {
             setFavorites(favs);
+            storage.saveFavorites(favs); // 覆蓋本地資料
             setNextFavoriteId(storage.getNextFavoriteId(favs));
           } else {
             setFavorites([]);
@@ -296,6 +297,7 @@ const PronunciationAssessment: React.FC = () => {
           const userTags = await loadUserTags(user.uid);
           if (userTags.length) {
             setTags(userTags);
+            storage.saveTags(userTags); // 覆蓋本地資料
             // 計算下一個標籤ID
             const maxId = Math.max(...userTags.map(tag => parseInt(tag.tagId, 10) || 0), 0);
             setNextTagId(maxId + 1);
@@ -393,42 +395,15 @@ const PronunciationAssessment: React.FC = () => {
         
         if (isCancelled) return;
         
-        // 載入並合併歷史記錄
-        if (profile?.historyRecords) {
+        // 載入並覆蓋本地歷史記錄，遠端優先
+        if (profile?.historyRecords && profile.historyRecords.length > 0) {
           const firebaseRecords = profile.historyRecords;
-          const localRecords = storage.getHistoryRecords();
-          
-          // 合併本地和Firebase的歷史記錄，避免重複
-          const mergedRecords = [...firebaseRecords];
-          const firebaseIds = new Set(firebaseRecords.map((record: any) => record.id));
-          
-          // 添加本地獨有的記錄
-          localRecords.forEach(localRecord => {
-            if (!firebaseIds.has(localRecord.id)) {
-              mergedRecords.push(localRecord);
-            }
-          });
-          
-          // 按時間戳排序（最新的在前）
-          mergedRecords.sort((a: any, b: any) => b.timestamp - a.timestamp);
-          
-          setHistoryRecords(mergedRecords);
-          
-          // 如果有新增的本地記錄，同步到Firebase
-          if (mergedRecords.length > firebaseRecords.length) {
-            try {
-              const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
-              await saveUserHistoryRecords(user.uid, mergedRecords);
-              console.log('本地歷史記錄已合併並同步到Firebase');
-            } catch (err) {
-              console.warn('同步合併的歷史記錄失敗:', err);
-            }
-          }
+          storage.setHistoryRecords(firebaseRecords);
+          setHistoryRecords(firebaseRecords);
         } else {
-          // 如果Firebase中沒有歷史記錄，使用本地記錄並同步到Firebase
           const localRecords = storage.getHistoryRecords();
+          setHistoryRecords(localRecords);
           if (localRecords.length > 0) {
-            setHistoryRecords(localRecords);
             try {
               const { saveUserHistoryRecords } = await import('../utils/firebaseStorage');
               await saveUserHistoryRecords(user.uid, localRecords);

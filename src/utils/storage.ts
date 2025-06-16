@@ -194,10 +194,9 @@ export const getFavorites = (): Favorite[] => {
   return userFavorites.length === 0 ? defaultFavorites : userFavorites;
 };
 
-// 保存收藏夹
-// 保存收藏夹（不再寫入 localStorage）
-export const saveFavorites = (_favorites: Favorite[]): void => {
-  // Firestore 同步在頁面中處理，這裡保留函式接口以維持兼容
+// 保存收藏夹到 localStorage（Firestore 同步在頁面中處理）
+export const saveFavorites = (favorites: Favorite[]): void => {
+  setItem('favorites', favorites);
 };
 
 // 获取下一个收藏ID
@@ -396,6 +395,11 @@ export const decompressHistoryItem = (data: any): HistoryItem => ({
 const saveHistoryRecordsToStorage = (records: HistoryItem[]): void => {
   const compressed = records.map(compressHistoryItem);
   setItem('historyRecords', compressed);
+};
+
+// 覆蓋保存整個歷史記錄陣列
+export const setHistoryRecords = (records: HistoryItem[]): void => {
+  saveHistoryRecordsToStorage(records);
 };
 
 // 获取历史记录
