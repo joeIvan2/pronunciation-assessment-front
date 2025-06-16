@@ -1,6 +1,21 @@
 import { db } from '../config/firebaseConfig';
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, enableNetwork } from 'firebase/firestore';
 import firestoreUtils from './firestoreUtils';
+
+let networkEnabled = false;
+const ensureNetwork = async () => {
+  if (networkEnabled) return;
+  try {
+    await enableNetwork(db);
+    networkEnabled = true;
+  } catch (err: any) {
+    if (err instanceof Error && err.message.includes('already enabled')) {
+      networkEnabled = true;
+    } else {
+      console.warn('啟用網路連接失敗:', err);
+    }
+  }
+};
 
 export type PatchAction<T> =
   | { type: 'add'; item: T }
@@ -53,6 +68,7 @@ export const createArraySync = <T extends { id: string }>({ uid, field, localKey
   };
 
   const ensureOnline = async () => {
+    await ensureNetwork();
     if (!(await firestoreUtils.checkConnection())) throw new Error('offline');
   };
 
