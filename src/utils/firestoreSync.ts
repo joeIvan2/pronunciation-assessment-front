@@ -32,7 +32,17 @@ export interface SyncConfig<T extends { id: string }> {
 
 export const createArraySync = <T extends { id: string }>({ uid, field, localKey, setState }: SyncConfig<T>) => {
   const userRef = doc(db, 'users', uid);
+  let current: T[] = (() => {
+    try {
+      const raw = localStorage.getItem(localKey);
+      if (!raw) return [] as T[];
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed as T[];
+    } catch {}
+    return [] as T[];
+  })();
   const saveLocal = (data: T[]) => {
+    current = data;
     localStorage.setItem(localKey, JSON.stringify(data));
     setState(data);
   };
@@ -83,8 +93,7 @@ export const createArraySync = <T extends { id: string }>({ uid, field, localKey
   const patch = async (action: PatchAction<T>) => {
     if (!uid) return;
     await ensureOnline();
-    const remote = await fetchRemote();
-    const { normalized: normRemote } = normalize(remote);
+    const { normalized: normLocal } = normalize(current);
 
     const ensureItemId = (item: T): T => {
       if (!item.id) {
@@ -96,10 +105,10 @@ export const createArraySync = <T extends { id: string }>({ uid, field, localKey
 
     const updated =
       action.type === 'add'
-        ? [...normRemote.filter(r => r.id !== action.item.id), ensureItemId(action.item)]
+        ? [...normLocal.filter(r => r.id !== action.item.id), ensureItemId(action.item)]
         : action.type === 'update'
-          ? normRemote.map(r => (r.id === action.item.id ? ensureItemId(action.item) : r))
-          : normRemote.filter(r => r.id !== action.id);
+          ? normLocal.map(r => (r.id === action.item.id ? ensureItemId(action.item) : r))
+          : normLocal.filter(r => r.id !== action.id);
 
     await setDoc(userRef, { [field]: updated, updatedAt: serverTimestamp() }, { merge: true });
     saveLocal(updated);
