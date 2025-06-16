@@ -189,9 +189,8 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
         try {
           const { loadUserPromptFavorites } = await import('../utils/firebaseStorage');
           const favs = await loadUserPromptFavorites(user.uid);
-          if (favs.length) {
-            setPromptFavorites(favs);
-          }
+          setPromptFavorites(favs);
+          storage.savePromptFavorites(favs); // 遠端為主，覆蓋本地
         } catch (err) {
           console.error('載入指令收藏失敗:', err);
         }
