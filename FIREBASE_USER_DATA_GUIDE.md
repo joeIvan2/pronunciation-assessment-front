@@ -104,12 +104,18 @@ const handleUserLogin = async (user: User) => {
     // 載入使用者資料（包含分享歷史）
     const userProfile = await loadUserProfile(uid);
     
-    // 載入收藏
-    const favorites = await loadUserFavorites(uid);
-    
+    // 初始化收藏同步
+    const favoriteSync = createArraySync<Favorite>({
+      uid,
+      field: 'favorites2',
+      localKey: 'favorites',
+      setState: setFavorites
+    });
+    await favoriteSync.refresh();
+    favoriteSync.subscribe();
+
     // 更新應用狀態
     setUserProfile(userProfile);
-    setFavorites(favorites);
     
     // 顯示分享歷史
     if (userProfile?.shareHistory) {

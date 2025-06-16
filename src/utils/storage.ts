@@ -150,15 +150,19 @@ export const saveVoiceSettings = (
 // 获取标签
 export const getTags = (): Tag[] => {
   const defaultTags: Tag[] = [
-    { tagId: "1", name: "範例標籤", color: "#1e90ff", createdAt: 1747713791965 }
+    { tagId: "1", id: "1", name: "範例標籤", color: "#1e90ff", createdAt: 1747713791965 }
   ];
 
-  return getItem<Tag[]>('tags', defaultTags);
+  return getItem<Tag[]>('tags', defaultTags).map(t => ({
+    ...t,
+    id: t.id || t.tagId
+  }));
 };
 
 // 保存标签
 export const saveTags = (tags: Tag[]): void => {
-  setItem('tags', tags);
+  const normalized = tags.map(t => ({ ...t, id: t.id || t.tagId, tagId: t.tagId || t.id }));
+  setItem('tags', normalized);
 };
 
 // 获取下一个标签ID
@@ -450,43 +454,9 @@ export const deleteHistoryRecord = (id: string): void => {
   saveHistoryRecordsToStorage(updatedRecords);
 };
 
-// 刪除歷史記錄（支援Firebase同步）
-export const deleteHistoryRecordWithSync = async (id: string, uid?: string): Promise<void> => {
-  const records = getHistoryRecords();
-  const updatedRecords = records.filter(record => record.id !== id);
-  saveHistoryRecordsToStorage(updatedRecords);
-  
-  // 如果用戶已登入，同步到Firebase
-  if (uid) {
-    try {
-      const { saveUserHistoryRecords } = await import('./firebaseStorage');
-      await saveUserHistoryRecords(uid, updatedRecords);
-      console.log('歷史記錄刪除已同步到Firebase');
-    } catch (error) {
-      console.error('同步歷史記錄刪除失敗:', error);
-    }
-  }
-};
-
 // 清空历史记录
 export const clearHistoryRecords = (): void => {
   saveHistoryRecordsToStorage([]);
-};
-
-// 清空歷史記錄（支援Firebase同步）
-export const clearHistoryRecordsWithSync = async (uid?: string): Promise<void> => {
-  saveHistoryRecordsToStorage([]);
-  
-  // 如果用戶已登入，同步到Firebase
-  if (uid) {
-    try {
-      const { saveUserHistoryRecords } = await import('./firebaseStorage');
-      await saveUserHistoryRecords(uid, []);
-      console.log('歷史記錄清空已同步到Firebase');
-    } catch (error) {
-      console.error('同步歷史記錄清空失敗:', error);
-    }
-  }
 };
 
 // 标签页相关类型和函数
@@ -679,9 +649,10 @@ export const loadFromHash = async (hash: string): Promise<LoadResponse> => {
 
 // 應用從服務器加載的數據
 export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): void => {
-  // 處理標籤 - 保持原有ID
+  // 處理標籤 - 確保同時存在 id 與 tagId
   if (data.tags && Array.isArray(data.tags)) {
-    saveTags(data.tags);
+    const processed = data.tags.map(t => ({ ...t, id: t.id || t.tagId, tagId: t.tagId || t.id }));
+    saveTags(processed);
   }
   
   // 處理收藏項目 - 使用前綴確保ID不會衝突
@@ -844,44 +815,6 @@ export const deleteShareInfo = (hash: string): void => {
   const shareInfos = getSavedShareInfo();
   const updatedInfos = shareInfos.filter(info => info.hash !== hash);
   setItem('savedShareInfo', updatedInfos);
-};
-
-// 刪除分享信息（支援Firebase同步）
-export const deleteShareInfoWithSync = async (hash: string, uid?: string): Promise<void> => {
-  const shareInfos = getSavedShareInfo();
-  const updatedInfos = shareInfos.filter(info => info.hash !== hash);
-  setItem('savedShareInfo', updatedInfos);
-  
-  // 如果用戶已登入，需要更新Firebase中的分享歷史
-  if (uid) {
-    try {
-      // 先載入用戶資料
-      const { loadUserProfile } = await import('./firebaseStorage');
-      const userProfile = await loadUserProfile(uid);
-      
-      if (userProfile && userProfile.shareHistory) {
-        // 從Firebase分享歷史中移除指定的記錄
-        const updatedFirebaseHistory = userProfile.shareHistory.filter(
-          (item: any) => item.shareId !== hash
-        );
-        
-        // 更新用戶資料
-        const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('../config/firebaseConfig');
-        
-        const userDocRef = doc(db, 'users', uid);
-        await setDoc(userDocRef, {
-          ...userProfile,
-          shareHistory: updatedFirebaseHistory,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        
-        console.log('分享歷史刪除已同步到Firebase:', hash);
-      }
-    } catch (error) {
-      console.error('同步分享歷史刪除失敗:', error);
-    }
-  }
 };
 
 // 获取AI语音设置（不受登入狀態限制）

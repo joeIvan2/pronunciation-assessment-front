@@ -2,14 +2,12 @@ import {
   doc, 
   setDoc, 
   getDoc, 
-  updateDoc, 
-  deleteDoc,
+  updateDoc,
   serverTimestamp,
-  enableNetwork,
-  disableNetwork
+  enableNetwork
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
-import { Favorite, Tag, PromptFavorite } from '../types/speech';
+import { Favorite, Tag } from '../types/speech';
 import {
   compressHistoryItem,
   decompressHistoryItem,
@@ -262,171 +260,6 @@ export const updateSharedData = async (
   } catch (error) {
     console.error('更新分享數據失敗:', error);
     throw new Error(`更新失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
-  }
-};
-
-// 刪除分享的數據
-
-// 讀取使用者收藏
-export const loadUserFavorites = async (uid: string): Promise<Favorite[]> => {
-  if (!uid) return [];
-
-  await checkNetworkConnection();
-
-  const userDocRef = doc(db, 'users', uid);
-  const userSnap = await retryOperation(() => getDoc(userDocRef));
-
-  if (!userSnap.exists()) {
-    return [];
-  }
-
-  const data = userSnap.data();
-  const favorites2 = (data as any).favorites2;
-
-  if (!Array.isArray(favorites2)) {
-    return [];
-  }
-
-  return favorites2.map(fav => ({
-    id: String(fav.id),
-    text: String(fav.text),
-    tagIds: Array.isArray(fav.tagIds) ? fav.tagIds : [],
-    createdAt: typeof fav.createdAt === 'number' ? fav.createdAt : Date.now()
-  })) as Favorite[];
-};
-
-// 儲存使用者收藏
-export const saveUserFavorites = async (
-  uid: string,
-  favorites: Favorite[]
-): Promise<void> => {
-  if (!uid) return;
-
-  await checkNetworkConnection();
-
-  const userDocRef = doc(db, 'users', uid);
-  await retryOperation(() =>
-    setDoc(
-      userDocRef,
-      {
-        favorites2: favorites,
-        updatedAt: serverTimestamp()
-      },
-      { merge: true }
-    )
-  );
-};
-
-// 讀取使用者 AI 指令收藏
-export const loadUserPromptFavorites = async (uid: string): Promise<PromptFavorite[]> => {
-  if (!uid) return [];
-
-  await checkNetworkConnection();
-
-  const userDocRef = doc(db, 'users', uid);
-  const userSnap = await retryOperation(() => getDoc(userDocRef));
-
-  if (!userSnap.exists()) {
-    return [];
-  }
-
-  const data = userSnap.data();
-  const prompts = (data as any).promptFavorites;
-
-  if (!Array.isArray(prompts)) {
-    return [];
-  }
-
-  return prompts.map(p => ({
-    id: String(p.id),
-    prompt: String(p.prompt),
-    createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now()
-  })) as PromptFavorite[];
-};
-
-// 儲存使用者 AI 指令收藏
-export const saveUserPromptFavorites = async (
-  uid: string,
-  favorites: PromptFavorite[]
-): Promise<void> => {
-  if (!uid) return;
-
-  await checkNetworkConnection();
-
-  const userDocRef = doc(db, 'users', uid);
-  await retryOperation(() =>
-    setDoc(
-      userDocRef,
-      {
-        promptFavorites: favorites,
-        updatedAt: serverTimestamp()
-      },
-      { merge: true }
-    )
-  );
-};
-
-// 讀取使用者標籤
-export const loadUserTags = async (uid: string): Promise<Tag[]> => {
-  if (!uid) return [];
-
-  try {
-    await checkNetworkConnection();
-
-    const userDocRef = doc(db, 'users', uid);
-    const userSnap = await retryOperation(() => getDoc(userDocRef));
-
-    if (!userSnap.exists()) {
-      return [];
-    }
-
-    const data = userSnap.data();
-    const tags2 = (data as any).tags2;
-
-    if (!Array.isArray(tags2)) {
-      return [];
-    }
-
-    const tags = tags2.map(tag => ({
-      tagId: String(tag.tagId),
-      name: String(tag.name),
-      color: String(tag.color),
-      createdAt: typeof tag.createdAt === 'number' ? tag.createdAt : Date.now()
-    })) as Tag[];
-
-    console.log('使用者標籤載入成功:', uid, tags.length);
-    return tags;
-  } catch (error) {
-    console.error('載入使用者標籤失敗:', error);
-    return [];
-  }
-};
-
-// 儲存使用者標籤
-export const saveUserTags = async (
-  uid: string,
-  tags: Tag[]
-): Promise<void> => {
-  if (!uid) return;
-
-  try {
-    await checkNetworkConnection();
-
-    const userDocRef = doc(db, 'users', uid);
-    await retryOperation(() =>
-      setDoc(
-        userDocRef,
-        {
-          tags2: tags,
-          updatedAt: serverTimestamp()
-        },
-        { merge: true }
-      )
-    );
-    console.log('使用者標籤儲存成功:', uid, tags.length);
-  } catch (error) {
-    console.error('儲存使用者標籤失敗:', error);
-    throw new Error(`儲存失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
   }
 };
 

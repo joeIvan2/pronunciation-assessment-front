@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as storage from '../utils/storage';
 import { Tag, Favorite, Word, PromptFavorite } from '../types/speech';
 import ResizableTextarea from './ResizableTextarea';
 import { Tooltip } from 'react-tooltip';
 import { AI_SERVER_URL } from '../utils/api'; // 從api.ts導入常量
+import { useFirestoreArray } from '../hooks/useFirestoreArray';
 
 // 後端API URL
 const API_URL = AI_SERVER_URL;
@@ -74,9 +75,9 @@ interface AIDataProcessorProps {
   favorites: Favorite[];
   tags: Tag[];
   historyRecords: storage.HistoryItem[];
-  onUpdateFavorites: (newFavorites: Favorite[]) => void;
-  onUpdateTags: (newTags: Tag[]) => void;
-  onUpdateHistoryRecords: (newHistoryRecords: storage.HistoryItem[]) => void;
+  onUpdateFavorites?: (newFavorites: Favorite[]) => void;
+  onUpdateTags?: (newTags: Tag[]) => void;
+  onUpdateHistoryRecords?: (newHistoryRecords: storage.HistoryItem[]) => void;
   aiResponse: string | null;
   setAiResponse: (response: string | null) => void;
   onAIResponseReceived: () => void;
@@ -90,9 +91,6 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   favorites,
   tags,
   historyRecords,
-  onUpdateFavorites,
-  onUpdateTags,
-  onUpdateHistoryRecords,
   aiResponse,
   setAiResponse,
   onAIResponseReceived,
@@ -115,12 +113,13 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
-  const [promptFavorites, setPromptFavorites] = useState<PromptFavorite[]>(() =>
-    storage.getPromptFavorites()
-  );
-  const [promptFavoritesLoaded, setPromptFavoritesLoaded] = useState<boolean>(
-    false
-  );
+  const { items: promptFavorites, patch: patchPromptFavorite, loaded: promptFavoritesLoaded } = useFirestoreArray<PromptFavorite>({
+    user,
+    field: 'promptFavorites',
+    localKey: 'aiPromptFavorites',
+    loadLocal: storage.getPromptFavorites,
+    saveLocal: storage.savePromptFavorites
+  });
   
   // 定義範例提示句
   const examplePrompts = [
@@ -185,33 +184,6 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     }
   }, [prompt]);
 
-  // 載入使用者 AI 指令收藏
-  useEffect(() => {
-    if (user) {
-      setPromptFavoritesLoaded(false);
-      (async () => {
-        try {
-          const { loadUserPromptFavorites } = await import('../utils/firebaseStorage');
-          const favs = await loadUserPromptFavorites(user.uid);
-          setPromptFavorites(favs);
-          storage.savePromptFavorites(favs); // 遠端為主，覆蓋本地
-        } catch (err) {
-          console.error('載入指令收藏失敗:', err);
-        } finally {
-          setPromptFavoritesLoaded(true);
-        }
-      })();
-    } else {
-      setPromptFavorites(storage.getPromptFavorites());
-      setPromptFavoritesLoaded(true);
-    }
-  }, [user]);
-
-  // 收藏變化時存到本地
-  useEffect(() => {
-    if (!promptFavoritesLoaded) return;
-    storage.savePromptFavorites(promptFavorites);
-  }, [promptFavorites, promptFavoritesLoaded]);
 
   // 處理提示文字變更，確保始終是字符串
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -232,18 +204,11 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     if (!trimmed) return;
 
     if (user) {
+      if (promptFavorites.some(p => p.prompt === trimmed)) return;
+      const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
+      const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
       try {
-        const { loadUserPromptFavorites, saveUserPromptFavorites } = await import('../utils/firebaseStorage');
-        const remoteFavs = await loadUserPromptFavorites(user.uid);
-        if (remoteFavs.some(p => p.prompt === trimmed)) {
-          setPromptFavorites(remoteFavs);
-          return;
-        }
-        const id = storage.getNextPromptFavoriteId(remoteFavs).toString();
-        const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
-        const updated = [...remoteFavs, newFav];
-        await saveUserPromptFavorites(user.uid, updated);
-        setPromptFavorites(updated);
+        await patchPromptFavorite({ type: 'add', item: newFav });
       } catch (err) {
         console.error('保存指令收藏失敗:', err);
       }
@@ -251,25 +216,23 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       if (promptFavorites.some(p => p.prompt === trimmed)) return;
       const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
       const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
-      const updated = [...promptFavorites, newFav];
-      setPromptFavorites(updated);
+      await patchPromptFavorite({ type: 'add', item: newFav });
     }
   };
 
   const removePromptFromFavorites = async (text: string) => {
     if (user) {
+      const item = promptFavorites.find(p => p.prompt === text);
+      if (!item) return;
       try {
-        const { loadUserPromptFavorites, saveUserPromptFavorites } = await import('../utils/firebaseStorage');
-        const remoteFavs = await loadUserPromptFavorites(user.uid);
-        const updated = remoteFavs.filter(p => p.prompt !== text);
-        await saveUserPromptFavorites(user.uid, updated);
-        setPromptFavorites(updated);
+        await patchPromptFavorite({ type: 'delete', id: item.id });
       } catch (err) {
         console.error('保存指令收藏失敗:', err);
       }
     } else {
-      const updated = promptFavorites.filter(p => p.prompt !== text);
-      setPromptFavorites(updated);
+      const item = promptFavorites.find(p => p.prompt === text);
+      if (!item) return;
+      await patchPromptFavorite({ type: 'delete', id: item.id });
     }
   };
 

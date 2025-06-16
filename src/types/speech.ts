@@ -65,6 +65,10 @@ export interface Tag {
    * 標籤唯一識別碼
    */
   tagId: string;
+  /**
+   * 與 `tagId` 相同，提供統一的 `id` 欄位以便同步工具使用
+   */
+  id: string;
   name: string;
   color: string;
   createdAt: number;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Tag, Favorite } from '../types/speech';
 import * as storage from '../utils/storage';
+import { useFirestoreArray } from '../hooks/useFirestoreArray';
 import '../styles/PronunciationAssessment.css';
 import { Tooltip } from 'react-tooltip';
 
@@ -38,7 +39,17 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   const [updateResult, setUpdateResult] = useState<{success: boolean; message: string} | null>(null);
   
   // 分享歷史記錄
-  const [shareHistory, setShareHistory] = useState<storage.ShareInfo[]>([]);
+  type ShareHistoryItem = { id: string; editPassword: string; createdAt: number; shareId?: string };
+  const { items: shareHistory, patch: patchShareHistory } = useFirestoreArray<ShareHistoryItem>({
+    user,
+    field: 'shareHistory',
+    localKey: 'shareHistoryRaw',
+    loadLocal: () => storage.getSavedShareInfo().map(i => ({ id: i.hash, editPassword: i.editPassword, createdAt: i.timestamp } as ShareHistoryItem)),
+    saveLocal: items => {
+      const mapped = items.map(it => ({ hash: it.id, editPassword: it.editPassword, url: formatShareLink(it.id), timestamp: it.createdAt }));
+      storage.setItem('savedShareInfo', mapped);
+    }
+  });
   
   // 分享歷史動畫效果
   const [showHistoryAnimation, setShowHistoryAnimation] = useState<boolean>(false);
@@ -49,10 +60,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   // 添加第一個輸入框的 ref  
   const updateHashInputRef = useRef<HTMLInputElement>(null);
   
-  // 初始加載分享歷史記錄
-  useEffect(() => {
-    setShareHistory(storage.getSavedShareInfo());
-  }, []);
   
   // 當favorites變化時，預設全選
   useEffect(() => {
@@ -159,9 +166,21 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           editPassword: result.editPassword,
           url: result.url
         });
+
+        if (user) {
+          const item: ShareHistoryItem = {
+            id: result.hash,
+            shareId: result.hash,
+            editPassword: result.editPassword,
+            createdAt: Date.now()
+          };
+          try {
+            await patchShareHistory({ type: 'add', item });
+          } catch (err) {
+            console.error('保存分享歷史失敗:', err);
+          }
+        }
         
-        // 刷新分享歷史
-        setShareHistory(storage.getSavedShareInfo());
         
         // 觸發歷史記錄動畫效果
         setShowHistoryAnimation(true);
@@ -305,17 +324,12 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   const deleteShareHistoryItem = async (hash: string) => {
     try {
       if (user) {
-        // 使用支援Firebase同步的刪除函數
-        await storage.deleteShareInfoWithSync(hash, user.uid);
+        await patchShareHistory({ type: 'delete', id: hash });
       } else {
-        // 未登入用戶只更新本地存儲
         storage.deleteShareInfo(hash);
       }
-      setShareHistory(storage.getSavedShareInfo());
     } catch (error) {
       console.error('刪除分享歷史失敗:', error);
-      // 即使同步失敗，仍更新本地顯示
-      setShareHistory(storage.getSavedShareInfo());
     }
   };
   
