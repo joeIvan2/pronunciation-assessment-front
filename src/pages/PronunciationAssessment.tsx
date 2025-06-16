@@ -840,6 +840,7 @@ const PronunciationAssessment: React.FC = () => {
     try {
       if (user) {
         await patchHistory({ type: 'delete', id });
+      }
       await patchHistory({ type: 'delete', id });
     } catch (error) {
       console.error('刪除歷史記錄失敗:', error);
