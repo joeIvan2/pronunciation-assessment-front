@@ -14,6 +14,7 @@ export const useFirestoreArray = <T extends { id: string }>(config: HookConfig<T
   const [items, setItems] = useState<T[]>(() => loadLocal());
   const [loaded, setLoaded] = useState<boolean>(false);
   const syncRef = useRef<ReturnType<typeof createArraySync<T>> | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
 
   useEffect(() => {
     if (!user) {
@@ -23,6 +24,8 @@ export const useFirestoreArray = <T extends { id: string }>(config: HookConfig<T
       setLoaded(true);
       return;
     }
+
+    if (isSubscribed) return;
 
     const sync = createArraySync<T>({
       uid: user.uid,
@@ -37,7 +40,11 @@ export const useFirestoreArray = <T extends { id: string }>(config: HookConfig<T
     setLoaded(false);
     setLoaded(true);
     const unsub = sync.subscribe();
-    return () => unsub();
+    setIsSubscribed(true);
+    return () => {
+      setIsSubscribed(false);
+      unsub();
+    };
   }, [user]);
 
   useEffect(() => {
