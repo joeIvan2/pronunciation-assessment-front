@@ -1005,7 +1005,8 @@ const PronunciationAssessment: React.FC = () => {
 
   // 將評估結果新增到歷史記錄
   useEffect(() => {
-    if (result) {
+    const processResult = async () => {
+      if (!result) return;
       // 提取單詞評分數據
       let words: any[] = [];
       let recognizedText = '';
@@ -1069,7 +1070,8 @@ const PronunciationAssessment: React.FC = () => {
       } else {
         console.log('檢測到重複的歷史記錄，已忽略');
       }
-    }
+    };
+    processResult();
   }, [result, referenceText]);
 
   // 處理標籤頁切換
