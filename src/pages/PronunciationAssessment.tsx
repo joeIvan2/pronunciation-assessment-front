@@ -878,8 +878,7 @@ const PronunciationAssessment: React.FC = () => {
 
   const goToRandomSentence = async () => {
     const currentUser = userRef.current;
-    // 已移除 debug log
-    if (filteredFavorites.length === 0) {
+    if (!favoritesLoaded || filteredFavorites.length === 0) {
       return;
     }
     const randomIndex = Math.floor(Math.random() * filteredFavorites.length);
@@ -1740,9 +1739,10 @@ const PronunciationAssessment: React.FC = () => {
 
   useEffect(() => {
     if (currentFavoriteId) {
-      localStorage.setItem('currentFavoriteId', currentFavoriteId);
+      const key = getCurrentFavoriteIdKey(user);
+      localStorage.setItem(key, currentFavoriteId);
     }
-  }, [currentFavoriteId]);
+  }, [currentFavoriteId, user]);
 
   // 新增：控制拖放隨機按鈕顯示與位置
   const [waitingForRandomBtnPos, setWaitingForRandomBtnPos] = useState(false);
@@ -1816,14 +1816,14 @@ const PronunciationAssessment: React.FC = () => {
       if (e.code === 'NumpadEnter' || e.code === 'Enter') {
         if (recorder.recording) {
           stopAssessment();
-        } else {
+        } else if (favoritesLoaded) {
           goToRandomSentence();
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [recorder.recording]);
+  }, [recorder.recording, favoritesLoaded]);
 
   // 全域快捷鍵：空白鍵觸發撥放聲音（避免輸入框觸發）
   useEffect(() => {
