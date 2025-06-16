@@ -1801,9 +1801,18 @@ const PronunciationAssessment: React.FC = () => {
     };
   }, [waitingForRandomBtnPos]);
 
-  // 全域快捷鍵：numpad enter/enter 觸發隨機或停止錄音
+  // 全域快捷鍵：numpad enter/enter 觸發隨機或停止錄音（避免輸入框觸發）
   useEffect(() => {
+    const isEditableElement = (el: Element | null): boolean => {
+      if (!el) return false;
+      const tag = (el as HTMLElement).tagName.toLowerCase();
+      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable;
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (isEditableElement(e.target as Element) || isEditableElement(activeEl)) {
+        return;
+      }
       if (e.code === 'NumpadEnter' || e.code === 'Enter') {
         if (recorder.recording) {
           stopAssessment();
@@ -1816,11 +1825,16 @@ const PronunciationAssessment: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [recorder.recording]);
 
-  // 全域快捷鍵：空白鍵觸發撥放聲音（非輸入狀態）
+  // 全域快捷鍵：空白鍵觸發撥放聲音（避免輸入框觸發）
   useEffect(() => {
+    const isEditableElement = (el: Element | null): boolean => {
+      if (!el) return false;
+      const tag = (el as HTMLElement).tagName.toLowerCase();
+      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable;
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName.toLowerCase();
-      const isInput = tag === 'input' || tag === 'textarea' || (e.target as HTMLElement).isContentEditable;
+      const activeEl = document.activeElement;
+      const isInput = isEditableElement(e.target as Element) || isEditableElement(activeEl);
       if (!isInput && e.code === 'Space') {
         e.preventDefault();
         if (recorder.recording) {
