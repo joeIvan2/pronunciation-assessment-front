@@ -660,28 +660,28 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                     </thead>
                     <tbody>
                       {shareHistory.map((item) => (
-                        <tr key={item.hash}>
+                        <tr key={item.id}>
                           <td style={{ fontSize: '11px' }}>
-                            {new Date(item.timestamp).toLocaleString()}
+                            {new Date(item.createdAt).toLocaleString()}
                           </td>
                           <td style={{display: 'none'}}>
                             <div className="copy-container">
-                              <input type="text" value={item.hash} readOnly />
-                              <button onClick={() => copyToClipboard(item.hash)}>複製</button>
+                              <input type="text" value={item.id} readOnly />
+                              <button onClick={() => copyToClipboard(item.id)}>複製</button>
                             </div>
                           </td>
                           <td>
-                            <div className="copy-container" style={{ 
-                              display: 'flex', 
+                            <div className="copy-container" style={{
+                              display: 'flex',
                               gap: '4px',
                               alignItems: 'center'
                             }}>
-                              <input 
-                                type="text" 
-                                value={formatShareLink(item.hash)} 
-                                readOnly 
-                                onClick={() => copyToClipboard(formatShareLink(item.hash))} 
-                                style={{ 
+                              <input
+                                type="text"
+                                value={formatShareLink(item.id)}
+                                readOnly
+                                onClick={() => copyToClipboard(formatShareLink(item.id))}
+                                style={{
                                   fontSize: '11px',
                                   minWidth: '150px',
                                   flex: '1'
@@ -694,9 +694,9 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                                       const shareData = {
                                         title: '發音評估分享',
                                         text: '查看我的發音評估數據',
-                                        url: formatShareLink(item.hash)
+                                        url: formatShareLink(item.id)
                                       };
-                                      
+
                                       if (navigator.canShare(shareData)) {
                                         await navigator.share(shareData);
                                         return;
@@ -704,12 +704,12 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                                     }
                                     
                                     // 備用方案：複製到剪貼板
-                                    copyToClipboard(formatShareLink(item.hash));
+                                    copyToClipboard(formatShareLink(item.id));
                                     alert('分享鏈接已複製到剪貼板');
                                   } catch (err) {
                                     console.error('分享失敗:', err);
                                     // 如果分享失敗，複製到剪貼板
-                                    copyToClipboard(formatShareLink(item.hash));
+                                    copyToClipboard(formatShareLink(item.id));
                                     alert('分享鏈接已複製到剪貼板');
                                   }
                                 }}
@@ -745,8 +745,8 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                             }}>
                               <button 
                                 className="delete-button"
-                                onClick={() => deleteShareHistoryItem(item.hash)}
-                                style={{ 
+                                onClick={() => deleteShareHistoryItem(item.id)}
+                                style={{
                                   fontSize: '10px',
                                   padding: '2px 6px'
                                 }}
@@ -756,7 +756,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                               <button 
                                 className="update-button"
                                 onClick={() => {
-                                  setUpdateHash(item.hash);
+                                  setUpdateHash(item.id);
                                   setUpdatePassword(item.editPassword);
                                   // 滾動到更新表單並給予焦點
                                   if (updateDataRef.current) {
