@@ -20,6 +20,7 @@ import IOSLINEModal from "../components/IOSLINEModal";
 
 // 瀏覽器環境檢測
 import { isAndroidWebView } from "../utils/browserDetection";
+import { isIOS, isFacebookInApp, isLineInApp } from "../utils/device";
 import { Tooltip } from 'react-tooltip';
 
 // 鉤子導入
@@ -36,19 +37,8 @@ import { useFirestoreArray } from '../hooks/useFirestoreArray';
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
-
-// iOS和Facebook檢測函數
-const isIOS = () => {
-  return /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
-};
-
-const isFacebookInApp = () => {
-  return /fban|fbav|fb_iab/i.test(navigator.userAgent.toLowerCase());
-};
-
-const isLineInApp = () => {
-  return /line/i.test(navigator.userAgent.toLowerCase());
-};
+import { getCurrentFavoriteIdKey, getInitialCurrentFavoriteId } from "../utils/favoriteUtils";
+import { useLoginModal } from "../hooks/useLoginModal";
 
 // 我們在storage.ts中已經更新了TabName類型，所以這裡不需要再定義
 
@@ -165,10 +155,6 @@ const PronunciationAssessment: React.FC = () => {
   // 控制評分按鈕CSS延遲變化的狀態
   const [buttonStyleDelayed, setButtonStyleDelayed] = useState<boolean>(false);
 
-  // 登入 Modal 相關狀態
-  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
-  const [loginModalMessage, setLoginModalMessage] = useState<string>('');
-  const [loginModalAction, setLoginModalAction] = useState<string>('此功能');
 
   // 新用戶提示狀態
   const [isFirstTimeUser, setIsFirstTimeUser] = useState<boolean>(false);
@@ -429,30 +415,14 @@ const PronunciationAssessment: React.FC = () => {
     }
   }, [recorder.error]);
 
-  // 登入檢查輔助函式
-  const checkLoginAndShowModal = (actionName: string, customMessage?: string): boolean => {
-    if (!user) {
-      setLoginModalAction(actionName);
-      setLoginModalMessage(customMessage || '');
-      setShowLoginModal(true);
-      return false;
-    }
-    return true;
-  };
-
-  // 處理登入 Modal
-  const handleLoginModalClose = () => {
-    setShowLoginModal(false);
-  };
-
-  const handleLoginFromModal = async () => {
-    try {
-      await signInWithGoogle();
-      setShowLoginModal(false);
-    } catch (error) {
-      console.error('登入失敗:', error);
-    }
-  };
+  const {
+    showLoginModal,
+    loginModalMessage,
+    loginModalAction,
+    check: checkLoginAndShowModal,
+    close: handleLoginModalClose,
+    login: handleLoginFromModal
+  } = useLoginModal(signInWithGoogle);
 
 
 
@@ -568,21 +538,6 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
   
-  // 取得 localStorage key
-  const getCurrentFavoriteIdKey = (user: any) => user && user.uid ? `currentFavoriteId_${user.uid}` : 'currentFavoriteId_guest';
-  
-  // 初始化 currentFavoriteId 狀態，優先讀 localStorage
-  const getInitialCurrentFavoriteId = (favorites: Favorite[], user: any) => {
-    const key = getCurrentFavoriteIdKey(user);
-    const storedId = localStorage.getItem(key);
-    if (storedId && favorites.some(f => f.id === storedId)) {
-      return storedId;
-    }
-    if (favorites.length > 0) {
-      return favorites.reduce((min, f) => (f.id < min.id ? f : min), favorites[0]).id;
-    }
-    return null;
-  };
   const setCurrentFavoriteIdWithLog = (id: string | null) => {
     console.log('currentFavoriteId:', id);
     setCurrentFavoriteId(id);
@@ -2020,9 +1975,7 @@ const PronunciationAssessment: React.FC = () => {
               initialPrompt={aiPromptFromURL}
               user={user}
               onLoginRequired={(actionName, message) => {
-                setLoginModalAction(actionName);
-                setLoginModalMessage(message || '');
-                setShowLoginModal(true);
+                checkLoginAndShowModal(user, actionName, message);
               }}
             />
           )}
@@ -2119,9 +2072,7 @@ const PronunciationAssessment: React.FC = () => {
                   highlightedFavoriteId={highlightedFavoriteId}
                   user={user}
                   onLoginRequired={(actionName, message) => {
-                    setLoginModalAction(actionName);
-                    setLoginModalMessage(message || '');
-                    setShowLoginModal(true);
+                    checkLoginAndShowModal(user, actionName, message);
                   }}
                   onAddTag={addTag}
                   onEditTag={editTag}
