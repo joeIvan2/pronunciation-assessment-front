@@ -1,18 +1,12 @@
-# onSnap.md
+# Firestore onSnapshot Usage
 
-This document checks for usage of Firestore `onSnapshot` callbacks in the source code to detect potential conflicts or duplicated listeners.
+This document lists all occurrences of `onSnapshot` in the project to help verify there are no duplicate listeners.
 
-## Search results
+## Grep results
 
-```
-grep -R "onSnapshot" -n src
-```
-
-Output:
-
-```
-$(grep -R "onSnapshot" -n src | tr -d '\r')
+```text
+src/utils/firestoreSync.ts:2:import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, enableNetwork } from 'firebase/firestore';
+src/utils/firestoreSync.ts:129:    unsubscribe = onSnapshot(userRef, async snap => {
 ```
 
-Only one location (`src/utils/firestoreSync.ts`) uses `onSnapshot`, so there are no conflicting listeners.
-
+There is only one listener created at line 129 of `src/utils/firestoreSync.ts`. The other match is just the import statement. No conflicting `onSnapshot` calls were found.
