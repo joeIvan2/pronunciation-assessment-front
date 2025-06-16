@@ -234,29 +234,33 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     const id = storage.getNextPromptFavoriteId(promptFavorites).toString();
     const newFav: PromptFavorite = { id, prompt: trimmed, createdAt: Date.now() };
     const updated = [...promptFavorites, newFav];
-    setPromptFavorites(updated);
-    storage.savePromptFavorites(updated);
+
     if (user) {
       try {
         const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
         await saveUserPromptFavorites(user.uid, updated);
+        setPromptFavorites(updated); // 遠端成功後再更新本地
       } catch (err) {
         console.error('保存指令收藏失敗:', err);
       }
+    } else {
+      setPromptFavorites(updated);
     }
   };
 
   const removePromptFromFavorites = async (text: string) => {
     const updated = promptFavorites.filter(p => p.prompt !== text);
-    setPromptFavorites(updated);
-    storage.savePromptFavorites(updated);
+
     if (user) {
       try {
         const { saveUserPromptFavorites } = await import('../utils/firebaseStorage');
         await saveUserPromptFavorites(user.uid, updated);
+        setPromptFavorites(updated);
       } catch (err) {
         console.error('保存指令收藏失敗:', err);
       }
+    } else {
+      setPromptFavorites(updated);
     }
   };
 
