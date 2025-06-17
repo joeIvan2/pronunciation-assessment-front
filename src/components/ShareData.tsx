@@ -53,6 +53,16 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   useEffect(() => {
     setShareHistory(storage.getSavedShareInfo());
   }, []);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (Array.isArray(e.detail)) {
+        setShareHistory(e.detail);
+      }
+    };
+    window.addEventListener('refreshShareHistory', handler);
+    return () => window.removeEventListener('refreshShareHistory', handler);
+  }, []);
   
   // 當favorites變化時，預設全選
   useEffect(() => {

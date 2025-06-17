@@ -213,6 +213,17 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     storage.savePromptFavorites(promptFavorites);
   }, [promptFavorites, promptFavoritesLoaded]);
 
+  // 接收集中同步事件更新指令收藏
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (Array.isArray(e.detail)) {
+        setPromptFavorites(e.detail);
+      }
+    };
+    window.addEventListener('refreshPromptFavorites', handler);
+    return () => window.removeEventListener('refreshPromptFavorites', handler);
+  }, []);
+
   // 處理提示文字變更，確保始終是字符串
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;

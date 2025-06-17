@@ -32,6 +32,8 @@ import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
 import * as storage from "../utils/storage";
 import { getPracticeIdFromUrl, redirectToNewFormat, isPracticePage } from "../utils/urlUtils";
 import { useParams } from "react-router-dom";
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
 
 // 類型導入
 import { SpeechAssessmentResult, Favorite, Tag } from "../types/speech";
@@ -285,6 +287,81 @@ const PronunciationAssessment: React.FC = () => {
       setFavoritesLoaded(false);
       setIsFirstTimeUser(false);
     }
+  }, [user]);
+
+  // 集中監聽 Firebase 資料變化
+  useEffect(() => {
+    if (!user) return;
+
+    const userDocRef = doc(db, 'users', user.uid);
+
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      { includeMetadataChanges: true },
+      (docSnap) => {
+        if (docSnap.metadata.hasPendingWrites) return;
+
+        const data = docSnap.data();
+        if (!data) return;
+
+        if (Array.isArray(data.favorites2)) {
+          setFavorites(data.favorites2);
+          storage.saveFavorites(data.favorites2);
+          setNextFavoriteId(storage.getNextFavoriteId(data.favorites2));
+        }
+
+        if (Array.isArray(data.tags2)) {
+          setTags(data.tags2);
+          storage.saveTags(data.tags2);
+          const maxId = Math.max(
+            ...data.tags2.map((t: any) => parseInt(t.tagId, 10) || 0),
+            0
+          );
+          setNextTagId(maxId + 1);
+        }
+
+        if (Array.isArray(data.historyRecords)) {
+          const records = data.historyRecords.map((item: any) =>
+            item.a !== undefined || item.b !== undefined
+              ? storage.decompressHistoryItem(item)
+              : item
+          );
+          setHistoryRecords(records);
+          storage.setHistoryRecords(records);
+        }
+
+        if (Array.isArray(data.shareHistory)) {
+          const history = data.shareHistory.map((item: any) => ({
+            hash: item.shareId,
+            editPassword: item.editPassword,
+            url: `${window.location.origin}/practice/${item.shareId}`,
+            timestamp:
+              typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
+          }));
+          storage.setItem('savedShareInfo', history);
+          window.dispatchEvent(
+            new CustomEvent('refreshShareHistory', { detail: history })
+          );
+        }
+
+        if (Array.isArray(data.promptFavorites)) {
+          const pfavs = data.promptFavorites.map((p: any) => ({
+            id: String(p.id),
+            prompt: String(p.prompt),
+            createdAt: typeof p.createdAt === 'number' ? p.createdAt : Date.now(),
+          }));
+          storage.savePromptFavorites(pfavs);
+          window.dispatchEvent(
+            new CustomEvent('refreshPromptFavorites', { detail: pfavs })
+          );
+        }
+      },
+      (err) => {
+        console.error('Firestore 即時同步失敗:', err);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   // 登入後載入 Firestore 標籤並在更新時同步
