@@ -896,13 +896,16 @@ const PronunciationAssessment: React.FC = () => {
     return "0";
   };
   const setCurrentFavoriteIdWithLog = (id: string | null) => {
-    console.log('currentFavoriteId:', id);
-    setCurrentFavoriteId(id);
-    
-    // 只有登入用戶才會存儲到 localStorage
-    if (user && id) {
-      const key = getCurrentFavoriteIdKey(user);
-      localStorage.setItem(key, id);
+    // 只有登入狀態才設定 currentFavoriteId，否則不設定也不紀錄
+    if (user) {
+      console.log('currentFavoriteId:', id);
+      setCurrentFavoriteId(id);
+      
+      // 登入用戶才存儲到 localStorage
+      if (id) {
+        const key = getCurrentFavoriteIdKey(user);
+        localStorage.setItem(key, id);
+      }
     }
   };
   const [currentFavoriteId, setCurrentFavoriteId] = useState<string | null>(() => getInitialCurrentFavoriteId(favorites, user));
