@@ -923,7 +923,13 @@ const PronunciationAssessment: React.FC = () => {
     const favorite = favorites.find(fav => fav.id === id);
     if (favorite) {
       setReferenceText(favorite.text);
-      setCurrentFavoriteIdWithLog(favorite.id);
+      
+      if (user) {
+        setCurrentFavoriteIdWithLog(favorite.id);
+      } else {
+        setCurrentFavoriteId(favorite.id);
+      }
+      
       storage.saveReferenceText(favorite.text);
       setHighlightedFavoriteId(id);
       handleTabChange('input');
@@ -1033,7 +1039,13 @@ const PronunciationAssessment: React.FC = () => {
     const target = filteredFavorites[newIndex];
     if (target) {
       setReferenceText(target.text);
-      setCurrentFavoriteIdWithLog(target.id);
+      
+      if (user) {
+        setCurrentFavoriteIdWithLog(target.id);
+      } else {
+        setCurrentFavoriteId(target.id);
+      }
+      
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
     }
@@ -1055,7 +1067,13 @@ const PronunciationAssessment: React.FC = () => {
     const target = filteredFavorites[newIndex];
     if (target) {
       setReferenceText(target.text);
-      setCurrentFavoriteIdWithLog(target.id);
+      
+      if (user) {
+        setCurrentFavoriteIdWithLog(target.id);
+      } else {
+        setCurrentFavoriteId(target.id);
+      }
+      
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
     }
@@ -1070,7 +1088,13 @@ const PronunciationAssessment: React.FC = () => {
     const target = filteredFavorites[randomIndex];
     if (target) {
       setReferenceText(target.text);
-      setCurrentFavoriteIdWithLog(target.id);
+      
+      if (user) {
+        setCurrentFavoriteIdWithLog(target.id);
+      } else {
+        setCurrentFavoriteId(target.id);
+      }
+      
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
       setTimeout(async () => {
@@ -1962,10 +1986,18 @@ const PronunciationAssessment: React.FC = () => {
       setTimeout(() => {
         if (nextIdx >= 0 && filteredFavorites[nextIdx]) {
           setReferenceText(filteredFavorites[nextIdx].text);
-          setCurrentFavoriteIdWithLog(filteredFavorites[nextIdx].id);
+          if (user) {
+            setCurrentFavoriteIdWithLog(filteredFavorites[nextIdx].id);
+          } else {
+            setCurrentFavoriteId(filteredFavorites[nextIdx].id);
+          }
         } else {
           setReferenceText('');
-          setCurrentFavoriteIdWithLog(null);
+          if (user) {
+            setCurrentFavoriteIdWithLog(null);
+          } else {
+            setCurrentFavoriteId(null);
+          }
         }
       }, 100);
       setSystemTip('已刪除該句子');
@@ -1998,7 +2030,15 @@ const PronunciationAssessment: React.FC = () => {
         // 未登入用戶或無有效 localStorage：使用 ID 最小的句子
         const minIdFavorite = filteredFavorites.reduce((min, f) => (f.id < min.id ? f : min), filteredFavorites[0]);
         setReferenceText(minIdFavorite.text);
-        setCurrentFavoriteIdWithLog(minIdFavorite.id);
+        
+        if (user) {
+          // 登入用戶：使用帶記錄的設定方式
+          setCurrentFavoriteIdWithLog(minIdFavorite.id);
+        } else {
+          // 未登入用戶：直接設定，不記錄
+          setCurrentFavoriteId(minIdFavorite.id);
+        }
+        
         storage.saveReferenceText(minIdFavorite.text);
       }
     }
