@@ -500,8 +500,8 @@ const PronunciationAssessment: React.FC = () => {
       } catch (err) {
         console.error('同步匯入數據到Firebase失敗:', err);
         // 即使同步失敗，仍標記為已載入以避免重複載入
-        setTagsLoaded(true);
-        setFavoritesLoaded(true);
+      setTagsLoaded(true);
+      setFavoritesLoaded(true);
       }
     }
   };
