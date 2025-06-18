@@ -4,9 +4,7 @@ import {
   getDoc, 
   updateDoc, 
   deleteDoc,
-  serverTimestamp,
-  enableNetwork,
-  disableNetwork
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { Favorite, Tag, PromptFavorite } from '../types/speech';
@@ -71,43 +69,31 @@ const retryOperation = async <T>(
   throw new Error('重試次數已用盡');
 };
 
-// 網路連接狀態追蹤
-let isNetworkEnabled = false;
-let networkPromise: Promise<void> | null = null;
+// 網路連接狀態追蹤 - 簡化版本，不再手動管理網路狀態
+let networkCheckPromise: Promise<void> | null = null;
 
-// 檢查網路連接
+// 檢查網路連接 - 移除 enableNetwork 調用以避免清除 watch
 const checkNetworkConnection = async (): Promise<void> => {
-  // 如果已經啟用或正在啟用中，直接返回
-  if (isNetworkEnabled) {
-    return;
+  // 如果正在檢查中，等待完成
+  if (networkCheckPromise) {
+    return await networkCheckPromise;
   }
   
-  // 如果正在啟用中，等待完成
-  if (networkPromise) {
-    return await networkPromise;
-  }
-  
-  // 創建新的啟用承諾
-  networkPromise = (async () => {
+  // 創建新的檢查承諾 - 但不再手動啟用網路
+  networkCheckPromise = (async () => {
     try {
-      await enableNetwork(db);
-      isNetworkEnabled = true;
-      console.log('Firebase 網路連接已啟用');
+      // 不再手動調用 enableNetwork，讓 Firebase 自行管理網路狀態
+      // 這樣可以避免清除現有的 watch 監聽器
+      console.log('Firebase 網路連接檢查完成 (使用默認狀態)');
     } catch (error) {
-      // 如果錯誤是因為已經啟用，則忽略
-      if (error instanceof Error && error.message.includes('already enabled')) {
-        isNetworkEnabled = true;
-        console.log('Firebase 網路連接已經啟用');
-      } else {
-        console.warn('網路連接檢查失敗:', error);
-        throw error;
-      }
+      console.warn('網路連接檢查失敗:', error);
+      throw error;
     } finally {
-      networkPromise = null;
+      networkCheckPromise = null;
     }
   })();
   
-  return await networkPromise;
+  return await networkCheckPromise;
 };
 
 // 檢查分享ID是否已存在
