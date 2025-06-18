@@ -1883,7 +1883,7 @@ const PronunciationAssessment: React.FC = () => {
     }
   };
 
-  const handleEditCurrentReference = () => {
+  const handleEditCurrentReference = async () => {
     if (!referenceText) return;
     if (!currentFavoriteId) {
       setSystemTip('請先選擇收藏句子');
@@ -1896,6 +1896,21 @@ const PronunciationAssessment: React.FC = () => {
         f.id === fav.id ? { ...f, text: referenceText } : f
       );
       setFavorites(updatedFavorites);
+      
+      // 同步到Firebase（如果用戶已登入）
+      if (user && favoritesLoaded && tagsLoaded) {
+        try {
+          // 更新鏡像以防止監聽器覆蓋
+          latestUpdateRef.current.favorites2 = updatedFavorites;
+          
+          const { saveUserFavorites } = await import('../utils/firebaseStorage');
+          await saveUserFavorites(user.uid, updatedFavorites);
+          console.log('修改句子已同步到Firebase');
+        } catch (err) {
+          console.error('同步修改句子到Firebase失敗:', err);
+        }
+      }
+      
       // 不要自動跳回第一句，維持 currentFavoriteId 與 textarea 內容
       setSystemTip('已修改該句子');
       setTimeout(() => setSystemTip(null), 2000);
