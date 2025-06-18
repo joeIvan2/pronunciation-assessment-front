@@ -873,75 +873,65 @@ const PronunciationAssessment: React.FC = () => {
   // 取得 localStorage key
   const getCurrentFavoriteIdKey = (user: any) => user && user.uid ? `currentFavoriteId_${user.uid}` : 'currentFavoriteId_guest';
   
-  // 初始化 currentFavoriteId 狀態，登入時讀取 localStorage，未登入時使用預設值 "0"
-  const getInitialCurrentFavoriteId = (favorites: Favorite[], user: any) => {
-    console.log('[getInitialCurrentFavoriteId] user:', user?.uid, 'favorites count:', favorites.length);
-    
-    // 如果未登入，直接返回預設值 "0"
-    if (!user) {
-      console.log('[getInitialCurrentFavoriteId] 未登入，返回預設值 "0"');
-      return "0";
-    }
-    
-    // 如果已登入，嘗試從 localStorage 讀取用戶專屬的值
-    const key = getCurrentFavoriteIdKey(user);
-    const storedId = localStorage.getItem(key);
-    console.log('[getInitialCurrentFavoriteId] localStorage key:', key, 'storedId:', storedId);
-    
-    if (storedId && favorites.some(f => f.id === storedId)) {
-      console.log('[getInitialCurrentFavoriteId] 使用localStorage中的有效值:', storedId);
-      return storedId;
-    }
-    
-    // 如果 localStorage 中沒有有效值，但有收藏項目，選擇 ID 最小的
-    if (favorites.length > 0) {
-      const minId = favorites.reduce((min, f) => (f.id < min.id ? f : min), favorites[0]).id;
-      console.log('[getInitialCurrentFavoriteId] 使用ID最小的收藏:', minId);
-      return minId;
-    }
-    
-    // 如果沒有收藏項目，返回預設值 "0"
-    console.log('[getInitialCurrentFavoriteId] 沒有收藏項目，返回預設值 "0"');
-    return "0";
+  // 簡化 currentFavoriteId 初始化，在 favorites 載入完成後再設定
+  const getInitialCurrentFavoriteId = () => {
+    // 初始化時不設定任何值，等待 favorites 載入完成
+    return null;
   };
-  const setCurrentFavoriteIdWithLog = (id: string | null) => {
-    // 只有登入狀態才設定 currentFavoriteId，否則不設定也不紀錄
-    if (user) {
-      console.log('[setCurrentFavoriteIdWithLog] 登入用戶，設定 currentFavoriteId:', id);
-      setCurrentFavoriteId(id);
-      
-      // 登入用戶才存儲到 localStorage
-      if (id) {
-        const key = getCurrentFavoriteIdKey(user);
-        localStorage.setItem(key, id);
-        console.log('[setCurrentFavoriteIdWithLog] 已存儲到 localStorage, key:', key, 'value:', id);
-      }
-    } else {
-      console.log('[setCurrentFavoriteIdWithLog] 未登入用戶，不設定 currentFavoriteId:', id);
-    }
-  };
-  const [currentFavoriteId, setCurrentFavoriteId] = useState<string | null>(() => getInitialCurrentFavoriteId(favorites, user));
+  // 統一使用 setCurrentFavoriteId，localStorage 由 useEffect 管理
+  const [currentFavoriteId, setCurrentFavoriteId] = useState<string | null>(() => getInitialCurrentFavoriteId());
   
-  // 用戶登入狀態變化時，更新 currentFavoriteId
+  // 在 favorites 完全載入後，設定 currentFavoriteId
   useEffect(() => {
-    console.log('[useEffect:user] 用戶登入狀態變化, user:', user?.uid, 'currentFavoriteId:', currentFavoriteId);
-    const newCurrentFavoriteId = getInitialCurrentFavoriteId(favorites, user);
-    if (newCurrentFavoriteId !== currentFavoriteId) {
-      console.log(`[useEffect:user] currentFavoriteId 更新: ${currentFavoriteId} -> ${newCurrentFavoriteId}`);
-      setCurrentFavoriteId(newCurrentFavoriteId);
+    // 只有在 favoritesLoaded 為 true 且 currentFavoriteId 尚未設定時才執行
+    if (favoritesLoaded && currentFavoriteId === null && filteredFavorites.length > 0) {
+      console.log('[useEffect:favoritesLoaded] favorites 已載入，開始設定 currentFavoriteId');
+      
+      if (user) {
+        // 登入用戶：嘗試從 localStorage 讀取
+        const key = getCurrentFavoriteIdKey(user);
+        const storedId = localStorage.getItem(key);
+        console.log('[useEffect:favoritesLoaded] localStorage key:', key, 'storedId:', storedId);
+        
+        if (storedId && filteredFavorites.some(f => f.id === storedId)) {
+          console.log('[useEffect:favoritesLoaded] 使用localStorage中的有效值:', storedId);
+          const fav = filteredFavorites.find(f => f.id === storedId)!;
+          setReferenceText(fav.text);
+          setCurrentFavoriteId(storedId);
+          storage.saveReferenceText(fav.text);
+        } else {
+          // localStorage 無有效值，使用 ID 最小的句子
+          const minIdFavorite = filteredFavorites.reduce((min, f) => (f.id < min.id ? f : min), filteredFavorites[0]);
+          console.log('[useEffect:favoritesLoaded] 使用ID最小的收藏:', minIdFavorite.id);
+          setReferenceText(minIdFavorite.text);
+          setCurrentFavoriteId(minIdFavorite.id);
+          storage.saveReferenceText(minIdFavorite.text);
+        }
+      } else {
+        // 未登入用戶：使用預設值 "0" 或 ID 最小的句子
+        if (filteredFavorites.some(f => f.id === "0")) {
+          console.log('[useEffect:favoritesLoaded] 未登入用戶，使用預設值 "0"');
+          const fav = filteredFavorites.find(f => f.id === "0")!;
+          setReferenceText(fav.text);
+          setCurrentFavoriteId("0");
+          storage.saveReferenceText(fav.text);
+        } else {
+          const minIdFavorite = filteredFavorites.reduce((min, f) => (f.id < min.id ? f : min), filteredFavorites[0]);
+          console.log('[useEffect:favoritesLoaded] 未登入用戶，使用ID最小的收藏:', minIdFavorite.id);
+          setReferenceText(minIdFavorite.text);
+          setCurrentFavoriteId(minIdFavorite.id);
+          storage.saveReferenceText(minIdFavorite.text);
+        }
+      }
     }
-  }, [user]); // 只依賴 user，不依賴 favorites 避免無限循環
+  }, [favoritesLoaded, currentFavoriteId, filteredFavorites, user]); // 依賴 favoritesLoaded 狀態
   
   const loadFavorite = (id: string) => {
     const favorite = favorites.find(fav => fav.id === id);
     if (favorite) {
       setReferenceText(favorite.text);
       
-      if (user) {
-        setCurrentFavoriteIdWithLog(favorite.id);
-      } else {
-        setCurrentFavoriteId(favorite.id);
-      }
+      setCurrentFavoriteId(favorite.id);
       
       storage.saveReferenceText(favorite.text);
       setHighlightedFavoriteId(id);
@@ -1052,13 +1042,7 @@ const PronunciationAssessment: React.FC = () => {
     const target = filteredFavorites[newIndex];
     if (target) {
       setReferenceText(target.text);
-      
-      if (user) {
-        setCurrentFavoriteIdWithLog(target.id);
-      } else {
-        setCurrentFavoriteId(target.id);
-      }
-      
+      setCurrentFavoriteId(target.id);
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
     }
@@ -1080,13 +1064,7 @@ const PronunciationAssessment: React.FC = () => {
     const target = filteredFavorites[newIndex];
     if (target) {
       setReferenceText(target.text);
-      
-      if (user) {
-        setCurrentFavoriteIdWithLog(target.id);
-      } else {
-        setCurrentFavoriteId(target.id);
-      }
-      
+      setCurrentFavoriteId(target.id);
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
     }
@@ -1101,13 +1079,7 @@ const PronunciationAssessment: React.FC = () => {
     const target = filteredFavorites[randomIndex];
     if (target) {
       setReferenceText(target.text);
-      
-      if (user) {
-        setCurrentFavoriteIdWithLog(target.id);
-      } else {
-        setCurrentFavoriteId(target.id);
-      }
-      
+      setCurrentFavoriteId(target.id);
       storage.saveReferenceText(target.text);
       setHighlightedFavoriteId(target.id);
       setTimeout(async () => {
@@ -1999,18 +1971,10 @@ const PronunciationAssessment: React.FC = () => {
       setTimeout(() => {
         if (nextIdx >= 0 && filteredFavorites[nextIdx]) {
           setReferenceText(filteredFavorites[nextIdx].text);
-          if (user) {
-            setCurrentFavoriteIdWithLog(filteredFavorites[nextIdx].id);
-          } else {
-            setCurrentFavoriteId(filteredFavorites[nextIdx].id);
-          }
+          setCurrentFavoriteId(filteredFavorites[nextIdx].id);
         } else {
           setReferenceText('');
-          if (user) {
-            setCurrentFavoriteIdWithLog(null);
-          } else {
-            setCurrentFavoriteId(null);
-          }
+          setCurrentFavoriteId(null);
         }
       }, 100);
       setSystemTip('已刪除該句子');
@@ -2022,49 +1986,21 @@ const PronunciationAssessment: React.FC = () => {
   };
 
   useEffect(() => {
-    // 只有登入用戶才從 localStorage 讀取，未登入用戶使用預設邏輯
-    const storedId = user ? localStorage.getItem(getCurrentFavoriteIdKey(user)) : null;
-    console.log('[useEffect:filteredFavorites] user:', user?.uid, 'currentFavoriteId:', currentFavoriteId, 'storedId:', storedId, 'filteredFavorites:', filteredFavorites.map(f=>f.id));
-    
-    // 確保類型一致：currentFavoriteId 應該是字符串或 null
-    const currentIdString = currentFavoriteId;
+    // 簡化的 filteredFavorites 邏輯：只處理當前 currentFavoriteId 不在篩選結果中的情況
+    console.log('[useEffect:filteredFavorites] currentFavoriteId:', currentFavoriteId, 'filteredFavorites:', filteredFavorites.map(f=>f.id));
     
     if (
+      currentFavoriteId !== null &&
       filteredFavorites.length > 0 &&
-      (currentIdString === null || !filteredFavorites.some(f => f.id === currentIdString))
+      !filteredFavorites.some(f => f.id === currentFavoriteId)
     ) {
-      console.log('[useEffect:filteredFavorites] 需要設定新的 currentFavoriteId');
-      
-      if (user && storedId && filteredFavorites.some(f => f.id === storedId)) {
-        // 登入用戶：localStorage 有且有效，直接跳到這一句
-        console.log('[useEffect:filteredFavorites] 使用 localStorage 中的有效值:', storedId);
-        const fav = filteredFavorites.find(f => f.id === storedId)!;
-        setReferenceText(fav.text);
-        setCurrentFavoriteIdWithLog(fav.id);
-        storage.saveReferenceText(fav.text);
-      } else {
-        // 未登入用戶或無有效 localStorage：使用 ID 最小的句子
-        const minIdFavorite = filteredFavorites.reduce((min, f) => (f.id < min.id ? f : min), filteredFavorites[0]);
-        console.log('[useEffect:filteredFavorites] 使用 ID 最小的句子:', minIdFavorite.id);
-        setReferenceText(minIdFavorite.text);
-        
-        if (user) {
-          // 登入用戶：使用帶記錄的設定方式
-          console.log('[useEffect:filteredFavorites] 登入用戶，使用帶記錄設定');
-          setCurrentFavoriteIdWithLog(minIdFavorite.id);
-        } else {
-          // 未登入用戶：直接設定，不記錄
-          console.log('[useEffect:filteredFavorites] 未登入用戶，直接設定 currentFavoriteId:', minIdFavorite.id);
-          setCurrentFavoriteId(minIdFavorite.id);
-          console.log('[useEffect:filteredFavorites] 已設定 currentFavoriteId 為:', minIdFavorite.id);
-        }
-        
-        storage.saveReferenceText(minIdFavorite.text);
-      }
-    } else {
-      console.log('[useEffect:filteredFavorites] 不需要更新 currentFavoriteId');
+      console.log('[useEffect:filteredFavorites] currentFavoriteId 不在篩選結果中，使用第一個結果');
+      const firstFavorite = filteredFavorites[0];
+      setReferenceText(firstFavorite.text);
+      setCurrentFavoriteId(firstFavorite.id);
+      storage.saveReferenceText(firstFavorite.text);
     }
-  }, [user, filteredFavorites, currentFavoriteId]); // 添加 currentFavoriteId 到依賴項
+  }, [filteredFavorites, currentFavoriteId]); // 只依賴篩選結果的變化
 
   useEffect(() => {
     // 只有登入用戶才存儲 currentFavoriteId 到 localStorage
