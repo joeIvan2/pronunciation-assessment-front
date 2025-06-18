@@ -1987,7 +1987,7 @@ const PronunciationAssessment: React.FC = () => {
 
   useEffect(() => {
     // 簡化的 filteredFavorites 邏輯：只處理當前 currentFavoriteId 不在篩選結果中的情況
-    console.log('[useEffect:filteredFavorites] currentFavoriteId:', currentFavoriteId, 'filteredFavorites:', filteredFavorites.map(f=>f.id));
+    // console.log('[useEffect:filteredFavorites] currentFavoriteId:', currentFavoriteId, 'filteredFavorites:', filteredFavorites.map(f=>f.id));
     
     if (
       currentFavoriteId !== null &&

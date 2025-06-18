@@ -726,11 +726,14 @@ export const applyLoadedData = (data: { favorites: Favorite[]; tags: Tag[] }): v
 export const updateSharedData = async (
   hash: string, 
   password: string,
-  uid?: string
+  uid?: string,
+  customTags?: Tag[],
+  customFavorites?: Favorite[]
 ): Promise<ShareResponse> => {
   try {
-    const tags = getTags();
-    const favorites = getFavorites();
+    // 優先使用傳入的數據，否則從 localStorage 讀取
+    const tags = customTags || getTags();
+    const favorites = customFavorites || getFavorites();
     
     // 動態導入Firebase存儲服務
     const { updateSharedData: firebaseUpdate } = await import('./firebaseStorage');

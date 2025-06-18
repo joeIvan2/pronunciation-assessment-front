@@ -43,6 +43,11 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
   // 分享歷史動畫效果
   const [showHistoryAnimation, setShowHistoryAnimation] = useState<boolean>(false);
   
+  // 確認對話框狀態
+  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
+  const [confirmMessage, setConfirmMessage] = useState<string>('');
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+  
   // 添加更新數據區塊的 ref
   const updateDataRef = useRef<HTMLDivElement>(null);
   
@@ -146,6 +151,25 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       return;
     }
 
+    // 檢查是否只有預設數據（可能在載入過程中）
+    if (favorites.length === 1 && favorites[0].id === '0') {
+      alert('數據正在載入中，請稍後再試');
+      return;
+    }
+
+    // 如果收藏數量很少，可能是剛匯入的數據，再次確認
+    if (favorites.length < 5) {
+      setConfirmMessage(`您目前有 ${favorites.length} 個收藏句子，確定要分享這些內容嗎？`);
+      setConfirmAction(() => () => executeShare());
+      setShowConfirmDialog(true);
+      return;
+    }
+
+    executeShare();
+  };
+
+  // 執行分享的實際邏輯
+  const executeShare = async () => {
     try {
       setIsSharing(true);
       setShareResult(null);
@@ -156,10 +180,10 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       // 清理自訂分享ID（移除特殊字符，只保留字母數字和中文）
       const cleanedCustomId = customShareId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fff-_]/g, '');
       
-      // 分享選中的句子（不分享標籤）
-      const result = await storage.shareTagsAndFavorites([], selectedFavoritesData, user.uid, cleanedCustomId || undefined);
-      
-      if (result.success && result.hash && result.editPassword && result.url) {
+              // 分享選中的句子（不分享標籤）
+        const result = await storage.shareTagsAndFavorites([], selectedFavoritesData, user.uid, cleanedCustomId || undefined);
+        
+        if (result.success && result.hash && result.editPassword && result.url) {
         // 創建直接導入鏈接但不再顯示
         const directLink = formatShareLink(result.hash);
         
@@ -282,10 +306,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       setIsUpdating(true);
       setUpdateResult(null);
       
-      // 記錄原始輸入用於診斷
-      console.log('更新數據請求:', { hashInput: updateHash.trim() });
-      
-      const result = await storage.updateSharedData(updateHash.trim(), updatePassword.trim(), user.uid);
+      const result = await storage.updateSharedData(updateHash.trim(), updatePassword.trim(), user.uid, tags, favorites);
       
       if (result.success) {
         setUpdateResult({
@@ -381,6 +402,19 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
         alert('無法自動複製，請手動選擇並複製文本：\n\n' + text);
       }
     }
+  };
+
+  // 處理確認對話框
+  const handleConfirm = () => {
+    setShowConfirmDialog(false);
+    if (confirmAction) {
+      confirmAction();
+    }
+  };
+
+  const handleCancel = () => {
+    setShowConfirmDialog(false);
+    setConfirmAction(null);
   };
   
   return (
@@ -1102,6 +1136,87 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
         }}
       />
+
+      {/* 確認對話框 */}
+      {showConfirmDialog && (
+        <div 
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000
+          }}
+          onClick={handleCancel}
+        >
+          <div 
+            style={{
+              backgroundColor: "var(--ios-card)",
+              borderRadius: "12px",
+              padding: "20px",
+              width: "90%",
+              maxWidth: "400px"
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ 
+              margin: "0 0 16px 0", 
+              color: "var(--ios-text)",
+              fontSize: "18px"
+            }}>
+              確認分享
+            </h3>
+            
+            <p style={{
+              margin: "0 0 20px 0",
+              color: "var(--ios-text)",
+              fontSize: "16px",
+              lineHeight: "1.5"
+            }}>
+              {confirmMessage}
+            </p>
+            
+            <div style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "12px"
+            }}>
+              <button
+                onClick={handleCancel}
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--ios-background-secondary)",
+                  color: "var(--ios-text)",
+                  border: "1px solid var(--ios-border)",
+                  borderRadius: "6px",
+                  cursor: "pointer"
+                }}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleConfirm}
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--ios-primary)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer"
+                }}
+              >
+                確定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
