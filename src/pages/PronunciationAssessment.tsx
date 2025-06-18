@@ -873,25 +873,48 @@ const PronunciationAssessment: React.FC = () => {
   // 取得 localStorage key
   const getCurrentFavoriteIdKey = (user: any) => user && user.uid ? `currentFavoriteId_${user.uid}` : 'currentFavoriteId_guest';
   
-  // 初始化 currentFavoriteId 狀態，優先讀 localStorage
+  // 初始化 currentFavoriteId 狀態，登入時讀取 localStorage，未登入時使用預設值 "0"
   const getInitialCurrentFavoriteId = (favorites: Favorite[], user: any) => {
+    // 如果未登入，直接返回預設值 "0"
+    if (!user) {
+      return "0";
+    }
+    
+    // 如果已登入，嘗試從 localStorage 讀取用戶專屬的值
     const key = getCurrentFavoriteIdKey(user);
     const storedId = localStorage.getItem(key);
     if (storedId && favorites.some(f => f.id === storedId)) {
       return storedId;
     }
+    
+    // 如果 localStorage 中沒有有效值，但有收藏項目，選擇 ID 最小的
     if (favorites.length > 0) {
       return favorites.reduce((min, f) => (f.id < min.id ? f : min), favorites[0]).id;
     }
-    return null;
+    
+    // 如果沒有收藏項目，返回預設值 "0"
+    return "0";
   };
   const setCurrentFavoriteIdWithLog = (id: string | null) => {
     console.log('currentFavoriteId:', id);
     setCurrentFavoriteId(id);
-    const key = getCurrentFavoriteIdKey(user);
-    if (id) localStorage.setItem(key, id);
+    
+    // 只有登入用戶才會存儲到 localStorage
+    if (user && id) {
+      const key = getCurrentFavoriteIdKey(user);
+      localStorage.setItem(key, id);
+    }
   };
   const [currentFavoriteId, setCurrentFavoriteId] = useState<string | null>(() => getInitialCurrentFavoriteId(favorites, user));
+  
+  // 用戶登入狀態變化時，更新 currentFavoriteId
+  useEffect(() => {
+    const newCurrentFavoriteId = getInitialCurrentFavoriteId(favorites, user);
+    if (newCurrentFavoriteId !== currentFavoriteId) {
+      setCurrentFavoriteId(newCurrentFavoriteId);
+      console.log(`用戶登入狀態變化，currentFavoriteId 更新為: ${newCurrentFavoriteId}`);
+    }
+  }, [user]); // 只依賴 user，不依賴 favorites 避免無限循環
   
   const loadFavorite = (id: string) => {
     const favorite = favorites.find(fav => fav.id === id);
@@ -1951,26 +1974,25 @@ const PronunciationAssessment: React.FC = () => {
   };
 
   useEffect(() => {
-    const key = getCurrentFavoriteIdKey(user);
-    const storedId = localStorage.getItem(key);
+    // 只有登入用戶才從 localStorage 讀取，未登入用戶使用預設邏輯
+    const storedId = user ? localStorage.getItem(getCurrentFavoriteIdKey(user)) : null;
     console.log('[useEffect] user:', user, 'currentFavoriteId:', currentFavoriteId, 'storedId:', storedId, 'filteredFavorites:', filteredFavorites.map(f=>f.id));
     
     // 確保類型一致：currentFavoriteId 應該是字符串或 null
-    // 修復類型不匹配問題：currentFavoriteId 應該始終是字符串或 null
     const currentIdString = currentFavoriteId;
     
     if (
       filteredFavorites.length > 0 &&
       (currentIdString === null || !filteredFavorites.some(f => f.id === currentIdString))
     ) {
-      if (storedId && filteredFavorites.some(f => f.id === storedId)) {
-        // localStorage 有且有效，直接跳到這一句
+      if (user && storedId && filteredFavorites.some(f => f.id === storedId)) {
+        // 登入用戶：localStorage 有且有效，直接跳到這一句
         const fav = filteredFavorites.find(f => f.id === storedId)!;
         setReferenceText(fav.text);
         setCurrentFavoriteIdWithLog(fav.id);
         storage.saveReferenceText(fav.text);
       } else {
-        // id 最小的那一句
+        // 未登入用戶或無有效 localStorage：使用 ID 最小的句子
         const minIdFavorite = filteredFavorites.reduce((min, f) => (f.id < min.id ? f : min), filteredFavorites[0]);
         setReferenceText(minIdFavorite.text);
         setCurrentFavoriteIdWithLog(minIdFavorite.id);
@@ -1980,7 +2002,8 @@ const PronunciationAssessment: React.FC = () => {
   }, [user, filteredFavorites, currentFavoriteId]); // 添加 currentFavoriteId 到依賴項
 
   useEffect(() => {
-    if (currentFavoriteId) {
+    // 只有登入用戶才存儲 currentFavoriteId 到 localStorage
+    if (user && currentFavoriteId) {
       const key = getCurrentFavoriteIdKey(user);
       localStorage.setItem(key, currentFavoriteId);
     }
