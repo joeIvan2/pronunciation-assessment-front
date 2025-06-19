@@ -769,23 +769,6 @@ const PronunciationAssessment: React.FC = () => {
       const trimmedText = currentText.trim();
       if (!trimmedText) continue;
       
-      // 檢查是否已存在相同文本
-      const existingFavorite = favorites.find(fav => fav.text === trimmedText);
-      if (existingFavorite) {
-        // 如果存在且不是批次新增，更新標籤並提示
-        if (!Array.isArray(text)) {
-          updateFavoriteTags(existingFavorite.id, tagIds.length ? tagIds : selectedTags);
-          // 顯示 shakeTip 系統提醒
-          setSystemTip("此句子已在我的最愛！已更新標籤。");
-          setTimeout(() => setSystemTip(null), 3000);
-          // 切換到我的最愛標籤頁
-          handleTabChange('favorites');
-          // 設置最後新增的ID為此已存在項目
-          setLastAddedFavoriteId(existingFavorite.id);
-        }
-        continue; // 跳過已存在的文本
-      }
-      
       // 創建新收藏項目
       const newId = currentNextId.toString();
       // 記錄第一個新新增的ID
@@ -805,7 +788,11 @@ const PronunciationAssessment: React.FC = () => {
     }
     
     // 如果沒有新增項目則直接返回
-    if (newFavorites.length === 0) return;
+    if (newFavorites.length === 0) {
+      setSystemTip("沒有有效的句子可以新增！");
+      setTimeout(() => setSystemTip(null), 3000);
+      return;
+    }
     
     // 合併所有收藏項目（不排序，保證傳入順序）
     const allFavorites = [...favorites, ...newFavorites];
