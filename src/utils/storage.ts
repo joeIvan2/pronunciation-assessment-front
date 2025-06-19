@@ -902,7 +902,32 @@ export const getAIVoice = (): string => {
 
 // 保存AI语音设置（不受登入狀態限制）
 export const saveAIVoice = (voice: string): void => {
-  localStorage.setItem('selectedAIVoice', JSON.stringify(voice));
+  try {
+    setItem('selectedAIVoice', voice);
+  } catch (e) {
+    console.log('無法保存AI語音設定，可能處於無痕模式');
+  }
+};
+
+// AI歷史記錄開關狀態管理（不受登入狀態限制）
+export const getAIHistoryEnabled = (): boolean => {
+  const item = localStorage.getItem('aiHistoryEnabled');
+  if (item === null) {
+    return false; // 預設為false（關閉）
+  }
+  try {
+    return item === 'true';
+  } catch {
+    return false;
+  }
+};
+
+export const saveAIHistoryEnabled = (enabled: boolean): void => {
+  try {
+    localStorage.setItem('aiHistoryEnabled', enabled.toString());
+  } catch (e) {
+    console.log('無法保存AI歷史記錄開關狀態，可能處於無痕模式');
+  }
 };
 
 // TTS缓存相关类型和函数

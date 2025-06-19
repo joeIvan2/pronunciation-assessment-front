@@ -1415,4 +1415,25 @@ h4 {
 }
 .auto-practice-btn.auto-practice-active .fa-robot {
   color: #007bff;
+}
+
+/* AI歷史記錄開關按鈕樣式 */
+.history-enabled {
+  background-color: transparent !important;
+  border: none !important;
+  color: var(--ios-success) !important;
+}
+
+.history-enabled:hover {
+  background-color: rgba(48, 209, 88, 0.1) !important;
+}
+
+.history-disabled {
+  background-color: transparent !important;
+  border: none !important;
+  color: var(--ios-gray) !important;
+}
+
+.history-disabled:hover {
+  background-color: rgba(152, 152, 159, 0.1) !important;
 } 

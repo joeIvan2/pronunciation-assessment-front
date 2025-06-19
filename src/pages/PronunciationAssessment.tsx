@@ -220,6 +220,21 @@ const PronunciationAssessment: React.FC = () => {
     };
   }, []);
 
+  // 監聽系統提示事件
+  useEffect(() => {
+    const handleSystemTip = (event: CustomEvent) => {
+      const { message } = event.detail;
+      setSystemTip(message);
+      setTimeout(() => setSystemTip(null), 3000);
+    };
+
+    window.addEventListener('showSystemTip', handleSystemTip as EventListener);
+
+    return () => {
+      window.removeEventListener('showSystemTip', handleSystemTip as EventListener);
+    };
+  }, []);
+
   // 初次載入時若為 iOS Facebook In-App 直接顯示 Modal
   useEffect(() => {
     if (isIOS() && isFacebookInApp()) {

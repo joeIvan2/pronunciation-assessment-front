@@ -122,12 +122,17 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
     false
   );
   
+  // AI歷史記錄開關狀態
+  const [isHistoryEnabled, setIsHistoryEnabled] = useState<boolean>(() => 
+    storage.getAIHistoryEnabled()
+  );
+  
   // 定義範例提示句
   const examplePrompts = [
     
     "針對圖片產生3個跟圖片內容有關的句子",
     "幫我產生5個高中三年級英文考100的人會寫出的短文(不要只有一句話)",
-    "客製化發音糾正：分析我的發音歷史記錄，幫我用這些字做一個短文",
+    "客製化發音糾正：分析我的發音歷史記錄，幫我用這些字做一個短文(需開啟傳送發音歷史記錄按鈕，在右上角麥克風圖案)",
     "幫我創造在腳踏車店，會講到的5個來回對話句子"
   ];
   
@@ -135,6 +140,20 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
   const handleExamplePromptClick = (exampleText: string) => {
     setPrompt(exampleText);
     storage.saveAIPrompt(exampleText);
+  };
+  
+  // 處理歷史記錄開關切換
+  const handleHistoryToggle = () => {
+    const newState = !isHistoryEnabled;
+    setIsHistoryEnabled(newState);
+    storage.saveAIHistoryEnabled(newState);
+    
+    // 顯示系統提示
+    const message = newState ? '已開啟發音歷史記錄發送' : '已關閉發音歷史記錄發送';
+    // 通過事件通知父組件顯示系統提示
+    window.dispatchEvent(new CustomEvent('showSystemTip', { 
+      detail: { message }
+    }));
   };
   
   // 自動保存計時器引用
@@ -437,14 +456,16 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
       // 準備發送給AI的數據
       const formData = new FormData();
       
-      // 只使用最新的30條發音記錄（已壓縮格式）
-      const latestHistoryRecords = storage
-        .getCompressedHistoryRecords()
-        .sort((a, b) => (b.g || 0) - (a.g || 0))
-        .slice(0, 30);
+      // 根據開關狀態決定是否包含歷史記錄
+      const historyRecordsToSend = isHistoryEnabled 
+        ? storage
+            .getCompressedHistoryRecords()
+            .sort((a, b) => (b.g || 0) - (a.g || 0))
+            .slice(0, 30)
+        : [];
 
       const jsonData = JSON.stringify({
-        historyRecords: latestHistoryRecords,
+        historyRecords: historyRecordsToSend,
         prompt: currentPrompt
       });
       formData.append('data', jsonData);
@@ -574,6 +595,14 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
           >
             <i className="fas fa-trash"></i>
           </button>
+          <button
+            onClick={handleHistoryToggle}
+            className={`control-button ${isHistoryEnabled ? 'history-enabled' : 'history-disabled'}`}
+            title={isHistoryEnabled ? '關閉發音歷史記錄發送' : '開啟發音歷史記錄發送'}
+            style={{ marginLeft: 4 }}
+          >
+            <i className="fas fa-microphone"></i>
+          </button>
         </div>
       </div>
 
@@ -601,7 +630,7 @@ const AIDataProcessor: React.FC<AIDataProcessorProps> = ({
             </button>
             <span 
               data-tooltip-id="ai-processor-tooltip"
-              data-tooltip-content="想要造句麼? 除了可以輸入您的造句指令之外，您也可以上傳相關圖片供AI分析，同時我們也會自動將您的過往發音紀錄發送給AI。注意：發音歷史為最新十次發音紀錄。"
+              data-tooltip-content={`想要造句麼? 除了可以輸入您的造句指令之外，您也可以上傳相關圖片供AI分析。${isHistoryEnabled ? '已開啟：會將您的過往發音紀錄發送給AI分析（最新30次）。' : '已關閉：不會發送發音歷史記錄。'}點擊上方麥克風按鈕可以切換此功能。`}
               style={{
                 color: 'var(--ios-text-secondary)',
                 marginLeft: '4px',
