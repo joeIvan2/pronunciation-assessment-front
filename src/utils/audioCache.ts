@@ -86,7 +86,7 @@ class AudioCacheManager {
             this.cache.set(key, item);
             this.blobCache.set(key, { blob, item });
             
-            console.log(`[音頻緩存] 恢復永久blob緩存: ${item.text.substring(0, 30)}...`);
+            // console.log(`[音頻緩存] 恢復永久blob緩存: ${item.text.substring(0, 30)}...`);
           } catch (e) {
             console.warn(`[音頻緩存] 恢復blob緩存失敗:`, e);
           }
@@ -144,7 +144,7 @@ class AudioCacheManager {
       };
       
       localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(blobCacheData));
-      console.log(`[音頻緩存] 已保存永久blob緩存: ${item.text.substring(0, 30)}...`);
+      // console.log(`[音頻緩存] 已保存永久blob緩存: ${item.text.substring(0, 30)}...`);
     } catch (e) {
       console.warn('[音頻緩存] 保存blob到 localStorage 失敗:', e);
     }
@@ -169,7 +169,7 @@ class AudioCacheManager {
     this.cache.set(key, item);
     this.saveToStorage();
     
-    console.log(`[音頻緩存] 已緩存音頻: ${text.substring(0, 30)}... (語音:${voice}, 過期時間:${new Date(item.expiresAt).toLocaleString()})`);
+    // console.log(`[音頻緩存] 已緩存音頻: ${text.substring(0, 30)}... (語音:${voice}, 過期時間:${new Date(item.expiresAt).toLocaleString()})`);
   }
 
   // 設置永久blob緩存
@@ -198,7 +198,7 @@ class AudioCacheManager {
     this.saveBlobToStorage(key, blob, item);
     this.saveToStorage();
     
-    console.log(`[音頻緩存] 已設置永久blob緩存: ${text.substring(0, 30)}... (語音:${voice})`);
+    // console.log(`[音頻緩存] 已設置永久blob緩存: ${text.substring(0, 30)}... (語音:${voice})`);
     return url;
   }
 

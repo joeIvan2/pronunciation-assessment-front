@@ -242,7 +242,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     rate?: number
   ): Promise<{ audio: HTMLAudioElement }> => {
     const startTime = getPerformanceTime();
-    console.log(`[${getTimeStamp()}] 開始WebM流式TTS: "${text.substring(0, 30)}..." 語音:${voice}`);
+    // console.log(`[${getTimeStamp()}] 開始WebM流式TTS: "${text.substring(0, 30)}..." 語音:${voice}`);
     
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
@@ -262,7 +262,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       if (audioCache.hasBlobCache(text, voice, rate)) {
         audioUrl = await audioCache.getAsync(text, voice, rate);
         if (audioUrl) {
-          console.log(`[${getTimeStamp()}] 使用永久blob緩存: ${audioUrl}`);
+          // console.log(`[${getTimeStamp()}] 使用永久blob緩存: ${audioUrl}`);
           fileInfo = '(永久blob緩存)';
         }
       }
@@ -271,7 +271,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       if (!audioUrl) {
         audioUrl = await audioCache.getAsync(text, voice, rate);
         if (audioUrl) {
-          console.log(`[${getTimeStamp()}] 使用緩存音頻: ${audioUrl}`);
+          // console.log(`[${getTimeStamp()}] 使用緩存音頻: ${audioUrl}`);
           fileInfo = '(緩存音頻)';
         }
       }
@@ -279,12 +279,12 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       // 如果沒有任何緩存，調用遠端API
       if (!audioUrl) {
         const apiStartTime = getPerformanceTime();
-        console.log(`[${getTimeStamp()}] 發送 nicetone.ai WebM API 請求: ${voice}`);
+        // console.log(`[${getTimeStamp()}] 發送 nicetone.ai WebM API 請求: ${voice}`);
         
         try {
           const data = await generateSpeechWithNicetone(text, voice);
           const apiEndTime = getPerformanceTime();
-          console.log(`[${getTimeStamp()}] nicetone.ai WebM API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
+          // console.log(`[${getTimeStamp()}] nicetone.ai WebM API 響應完成 (API耗時: ${formatDuration(apiEndTime - apiStartTime)})`);
           
           if (!data.success || !data.audioUrl) {
             throw new Error(data.error || "nicetone.ai WebM API 返回失敗");
@@ -302,8 +302,8 @@ export const useAzureSpeech = (): AzureSpeechResult => {
             audioUrl = await audioCache.setBlobPermanent(text, voice, blob, rate);
             fileInfo = `大小=${data.size} bytes, 類型=${data.type} (已設為永久blob緩存)`;
             
-            console.log(`[${getTimeStamp()}] WebM音頻blob永久緩存設置成功: ${audioUrl}`);
-            console.log(`[${getTimeStamp()}] WebM文件信息: ${fileInfo}`);
+            // console.log(`[${getTimeStamp()}] WebM音頻blob永久緩存設置成功: ${audioUrl}`);
+            // console.log(`[${getTimeStamp()}] WebM文件信息: ${fileInfo}`);
           } catch (blobError) {
             console.warn(`[${getTimeStamp()}] 設置永久blob緩存失敗，使用臨時URL:`, blobError);
             
@@ -342,7 +342,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
           hasStartedPlaying = true;
           const playTime = getPerformanceTime();
           const totalTime = playTime - startTime;
-          console.log(`[${getTimeStamp()}] WebM播放開始 (總耗時: ${formatDuration(totalTime)})`);
+          // console.log(`[${getTimeStamp()}] WebM播放開始 (總耗時: ${formatDuration(totalTime)})`);
         } catch (playError) {
           console.warn(`[${getTimeStamp()}] WebM播放嘗試失敗:`, playError);
           
@@ -382,19 +382,19 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       
       // 多個事件監聽，確保儘快開始播放
       audio.onloadeddata = () => {
-        console.log(`[${getTimeStamp()}] WebM音頻數據載入完成`);
+        // console.log(`[${getTimeStamp()}] WebM音頻數據載入完成`);
         tryToPlay();
       };
       
       audio.oncanplay = () => {
-        console.log(`[${getTimeStamp()}] WebM音頻可以開始播放`);
+        // console.log(`[${getTimeStamp()}] WebM音頻可以開始播放`);
         tryToPlay();
       };
       
       audio.onended = () => {
         const endTime = getPerformanceTime();
         const totalTime = endTime - startTime;
-        console.log(`[${getTimeStamp()}] WebM播放完成 (總耗時: ${formatDuration(totalTime)}) - ${fileInfo}`);
+        // console.log(`[${getTimeStamp()}] WebM播放完成 (總耗時: ${formatDuration(totalTime)}) - ${fileInfo}`);
         
         audioRef.current = null;
       };
@@ -417,7 +417,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
       
       // 立即開始加載WebM音頻
       audio.load();
-      console.log(`[${getTimeStamp()}] WebM音頻開始載入`);
+      // console.log(`[${getTimeStamp()}] WebM音頻開始載入`);
       
       setState(prev => ({ ...prev, isLoading: false }));
       return { audio };
@@ -451,7 +451,7 @@ export const useAzureSpeech = (): AzureSpeechResult => {
     
     // 停止音频播放但不清理 blob URL（讓緩存系統管理）
     if (audioRef.current) {
-      console.log(`[${getTimeStamp()}] 停止音頻播放（保留緩存）`);
+      // console.log(`[${getTimeStamp()}] 停止音頻播放（保留緩存）`);
       audioRef.current.pause();
       audioRef.current = null;
     }

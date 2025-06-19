@@ -139,7 +139,7 @@ export const generateSpeechWithNicetone = async (
 ): Promise<any> => {
   try {
     const apiUrl = `${NICETONE_API_URL}/api/tts-webm`;
-    console.log(`使用 nicetone.ai WebM流式TTS API: ${apiUrl}`);
+    // console.log(`使用 nicetone.ai WebM流式TTS API: ${apiUrl}`);
     
     // 使用查詢參數的方式傳遞參數，添加file=true進行流式播放
     const params = new URLSearchParams({
@@ -149,7 +149,7 @@ export const generateSpeechWithNicetone = async (
     });
     
     const fullUrl = `${apiUrl}?${params.toString()}`;
-    console.log(`WebM流式請求URL: ${fullUrl}`);
+    // console.log(`WebM流式請求URL: ${fullUrl}`);
     
     const response = await fetch(fullUrl, {
       method: 'GET',
@@ -163,8 +163,8 @@ export const generateSpeechWithNicetone = async (
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       
-      console.log(`nicetone.ai WebM流式TTS成功，生成blob URL:`, audioUrl);
-      console.log(`WebM文件大小: ${audioBlob.size} bytes，類型: ${audioBlob.type}`);
+      // console.log(`nicetone.ai WebM流式TTS成功，生成blob URL:`, audioUrl);
+      // console.log(`WebM文件大小: ${audioBlob.size} bytes，類型: ${audioBlob.type}`);
       
       return {
         success: true,

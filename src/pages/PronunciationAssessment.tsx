@@ -85,6 +85,15 @@ const PronunciationAssessment: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [favoritesLoaded, setFavoritesLoaded] = useState<boolean>(false);
 
+  // 通用的favorites排序函數，與UI顯示順序保持一致
+  const sortFavoritesByUI = (favorites: Favorite[]): Favorite[] => {
+    const collator = new Intl.Collator(undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+    return [...favorites].sort((a, b) => collator.compare(String(a.id), String(b.id)));
+  };
+
   // 根据当前選擇的標籤過濾收藏列表
   const filteredFavorites = useMemo(() => {
     if (selectedTags.length === 0) {
@@ -272,9 +281,10 @@ const PronunciationAssessment: React.FC = () => {
           const { loadUserFavorites } = await import('../utils/firebaseStorage');
           const favs = await loadUserFavorites(user.uid);
           if (favs.length) {
-            setFavorites(favs);
-            storage.saveFavorites(favs); // 覆蓋本地資料
-            setNextFavoriteId(storage.getNextFavoriteId(favs));
+            const sortedFavs = sortFavoritesByUI(favs);
+            setFavorites(sortedFavs);
+            storage.saveFavorites(sortedFavs); // 覆蓋本地資料
+            setNextFavoriteId(storage.getNextFavoriteId(sortedFavs));
           } else {
             setFavorites([]);
             // 如果是新用戶（沒有收藏），設定為首次用戶
@@ -292,7 +302,9 @@ const PronunciationAssessment: React.FC = () => {
         }
       })();
     } else {
-      setFavorites(storage.getFavorites());
+      const localFavorites = storage.getFavorites();
+      const sortedLocalFavorites = sortFavoritesByUI(localFavorites);
+      setFavorites(sortedLocalFavorites);
       setFavoritesLoaded(false);
       setIsFirstTimeUser(false);
     }
@@ -349,10 +361,11 @@ const PronunciationAssessment: React.FC = () => {
           // 與最新鏡像比較而非當前狀態，避免無限更新
           if (JSON.stringify(latestUpdateRef.current.favorites2) !== JSON.stringify(newFavorites)) {
             console.log('Firebase favorites2 數據變化，更新本地狀態');
-            latestUpdateRef.current.favorites2 = newFavorites;
-            setFavorites(newFavorites);
-            storage.saveFavorites(newFavorites);
-            setNextFavoriteId(storage.getNextFavoriteId(newFavorites));
+            const sortedFavorites = sortFavoritesByUI(newFavorites);
+            latestUpdateRef.current.favorites2 = sortedFavorites;
+            setFavorites(sortedFavorites);
+            storage.saveFavorites(sortedFavorites);
+            setNextFavoriteId(storage.getNextFavoriteId(sortedFavorites));
           }
         }
 
@@ -461,10 +474,11 @@ const PronunciationAssessment: React.FC = () => {
 
   // 處理匯入數據的回調函數
   const handleDataImported = async (newTags: Tag[], newFavorites: Favorite[]) => {
-    // 先更新本地狀態
+    // 先更新本地狀態，確保favorites按ID排序與UI一致
     setTags(newTags);
-    setFavorites(newFavorites);
-    setNextFavoriteId(storage.getNextFavoriteId(newFavorites));
+    const sortedFavorites = sortFavoritesByUI(newFavorites);
+    setFavorites(sortedFavorites);
+    setNextFavoriteId(storage.getNextFavoriteId(sortedFavorites));
     
     // 計算新的標籤ID
     if (newTags.length > 0) {
@@ -478,16 +492,16 @@ const PronunciationAssessment: React.FC = () => {
     // 如果用戶已登入，立即同步到Firebase並更新鏡像以防止監聽器覆蓋
     if (user) {
       try {
-        // 立即更新鏡像數據，防止監聽器用舊數據覆蓋
-        latestUpdateRef.current.favorites2 = newFavorites;
+        // 立即更新鏡像數據，防止監聽器用舊數據覆蓋（使用排序後的數據）
+        latestUpdateRef.current.favorites2 = sortedFavorites;
         latestUpdateRef.current.tags2 = newTags;
         
         console.log('開始同步匯入數據到Firebase...');
         
-        // 並行同步到Firebase
+        // 並行同步到Firebase（使用排序後的數據）
         const { saveUserFavorites, saveUserTags } = await import('../utils/firebaseStorage');
         await Promise.all([
-          saveUserFavorites(user.uid, newFavorites),
+          saveUserFavorites(user.uid, sortedFavorites),
           saveUserTags(user.uid, newTags)
         ]);
         
@@ -794,9 +808,11 @@ const PronunciationAssessment: React.FC = () => {
       return;
     }
     
-    // 合併所有收藏項目（不排序，保證傳入順序）
+    // 合併所有收藏項目並按ID排序，與UI顯示順序一致
     const allFavorites = [...favorites, ...newFavorites];
-    setFavorites(allFavorites);
+    const sortedFavorites = sortFavoritesByUI(allFavorites);
+    
+    setFavorites(sortedFavorites);
     
     // 更新 nextFavoriteId
     setNextFavoriteId(currentNextId);
@@ -806,7 +822,7 @@ const PronunciationAssessment: React.FC = () => {
       (async () => {
         try {
           const { saveUserFavorites } = await import('../utils/firebaseStorage');
-          await saveUserFavorites(user.uid, allFavorites);
+          await saveUserFavorites(user.uid, sortedFavorites);
           console.log('新增收藏已同步到 Firebase');
         } catch (err) {
           console.error('同步新增收藏到 Firebase 失敗:', err);
@@ -1015,7 +1031,7 @@ const PronunciationAssessment: React.FC = () => {
   // 前一條和下一條句子功能
   const goToPreviousSentence = () => {
     const currentIndex = filteredFavorites.findIndex(
-      fav => fav.text === referenceText
+      fav => fav.id === currentFavoriteId
     );
     if (filteredFavorites.length === 0) {
       return;
@@ -1037,7 +1053,7 @@ const PronunciationAssessment: React.FC = () => {
   
   const goToNextSentence = () => {
     const currentIndex = filteredFavorites.findIndex(
-      fav => fav.text === referenceText
+      fav => fav.id === currentFavoriteId
     );
     if (filteredFavorites.length === 0) {
       return;
@@ -2056,7 +2072,7 @@ const PronunciationAssessment: React.FC = () => {
     };
   }, [waitingForRandomBtnPos]);
 
-  // 全域快捷鍵：numpad enter/enter 觸發隨機或停止錄音（避免輸入框觸發）
+  // 全域快捷鍵：numpad enter/enter 觸發隨機或停止錄音，左右箭頭鍵導航（避免輸入框觸發）
   useEffect(() => {
     const isEditableElement = (el: Element | null): boolean => {
       if (!el) return false;
@@ -2068,17 +2084,102 @@ const PronunciationAssessment: React.FC = () => {
       if (isEditableElement(e.target as Element) || isEditableElement(activeEl)) {
         return;
       }
+      
       if (e.code === 'NumpadEnter' || e.code === 'Enter') {
         if (recorder.recording) {
           stopAssessment();
         } else if (favoritesLoaded) {
           goToRandomSentence();
         }
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        if (recorder.recording) {
+          stopAssessment();
+        } else if (favoritesLoaded && filteredFavorites.length > 0) {
+          // 獲取前一個句子的文本
+          const currentIndex = filteredFavorites.findIndex(
+            fav => fav.id === currentFavoriteId
+          );
+          let newIndex;
+          if (currentIndex === -1) {
+            newIndex = filteredFavorites.length - 1;
+          } else {
+            newIndex = (currentIndex - 1 + filteredFavorites.length) % filteredFavorites.length;
+          }
+          const target = filteredFavorites[newIndex];
+          if (target) {
+            // 先更新狀態
+            setReferenceText(target.text);
+            setCurrentFavoriteId(target.id);
+            storage.saveReferenceText(target.text);
+            setHighlightedFavoriteId(target.id);
+            // 播放新句子並根據自動練習模式決定是否錄音
+            setTimeout(async () => {
+              try {
+                setIsLoading(true);
+                setStreamLoading(true);
+                setError(null);
+                const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
+                if (isAutoPracticeMode) {
+                  handleAutoPracticeAfterSpeak(target.text);
+                }
+              } catch (error) {
+                console.error('播放前一句失敗:', error);
+                setError(`播放前一句失敗: ${error instanceof Error ? error.message : String(error)}`);
+              } finally {
+                setIsLoading(false);
+                setStreamLoading(false);
+              }
+            }, 100);
+          }
+        }
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        if (recorder.recording) {
+          stopAssessment();
+        } else if (favoritesLoaded && filteredFavorites.length > 0) {
+          // 獲取下一個句子的文本
+          const currentIndex = filteredFavorites.findIndex(
+            fav => fav.id === currentFavoriteId
+          );
+          let newIndex;
+          if (currentIndex === -1) {
+            newIndex = 0;
+          } else {
+            newIndex = (currentIndex + 1) % filteredFavorites.length;
+          }
+          const target = filteredFavorites[newIndex];
+          if (target) {
+            // 先更新狀態
+            setReferenceText(target.text);
+            setCurrentFavoriteId(target.id);
+            storage.saveReferenceText(target.text);
+            setHighlightedFavoriteId(target.id);
+            // 播放新句子並根據自動練習模式決定是否錄音
+            setTimeout(async () => {
+              try {
+                setIsLoading(true);
+                setStreamLoading(true);
+                setError(null);
+                const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
+                if (isAutoPracticeMode) {
+                  handleAutoPracticeAfterSpeak(target.text);
+                }
+              } catch (error) {
+                console.error('播放下一句失敗:', error);
+                setError(`播放下一句失敗: ${error instanceof Error ? error.message : String(error)}`);
+              } finally {
+                setIsLoading(false);
+                setStreamLoading(false);
+              }
+            }, 100);
+          }
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [recorder.recording, favoritesLoaded]);
+  }, [recorder.recording, favoritesLoaded, filteredFavorites.length, referenceText, selectedAIVoice, voiceSettings.rate, isAutoPracticeMode]);
 
   // 全域快捷鍵：空白鍵觸發撥放聲音（避免輸入框觸發）
   useEffect(() => {
@@ -2371,7 +2472,46 @@ const PronunciationAssessment: React.FC = () => {
                   <div className="button-row">
                     {/* 前一句按鈕 */}
                     <button
-                      onClick={goToPreviousSentence}
+                      onClick={() => {
+                        if (filteredFavorites.length > 0) {
+                          // 獲取前一個句子的文本
+                          const currentIndex = filteredFavorites.findIndex(
+                            fav => fav.id === currentFavoriteId
+                          );
+                          let newIndex;
+                          if (currentIndex === -1) {
+                            newIndex = filteredFavorites.length - 1;
+                          } else {
+                            newIndex = (currentIndex - 1 + filteredFavorites.length) % filteredFavorites.length;
+                          }
+                          const target = filteredFavorites[newIndex];
+                          if (target) {
+                            // 先更新狀態
+                            setReferenceText(target.text);
+                            setCurrentFavoriteId(target.id);
+                            storage.saveReferenceText(target.text);
+                            setHighlightedFavoriteId(target.id);
+                            // 播放新句子並根據自動練習模式決定是否錄音
+                            setTimeout(async () => {
+                              try {
+                                setIsLoading(true);
+                                setStreamLoading(true);
+                                setError(null);
+                                const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
+                                if (isAutoPracticeMode) {
+                                  handleAutoPracticeAfterSpeak(target.text);
+                                }
+                              } catch (error) {
+                                console.error('播放前一句失敗:', error);
+                                setError(`播放前一句失敗: ${error instanceof Error ? error.message : String(error)}`);
+                              } finally {
+                                setIsLoading(false);
+                                setStreamLoading(false);
+                              }
+                            }, 100);
+                          }
+                        }
+                      }}
                       disabled={filteredFavorites.length === 0}
                       className={`btn btn-nav btn-flex-third ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
                       title="上一個收藏句子"
@@ -2391,7 +2531,46 @@ const PronunciationAssessment: React.FC = () => {
                     
                     {/* 下一句按鈕 */}
                     <button
-                      onClick={goToNextSentence}
+                      onClick={() => {
+                        if (filteredFavorites.length > 0) {
+                          // 獲取下一個句子的文本
+                          const currentIndex = filteredFavorites.findIndex(
+                            fav => fav.id === currentFavoriteId
+                          );
+                          let newIndex;
+                          if (currentIndex === -1) {
+                            newIndex = 0;
+                          } else {
+                            newIndex = (currentIndex + 1) % filteredFavorites.length;
+                          }
+                          const target = filteredFavorites[newIndex];
+                          if (target) {
+                            // 先更新狀態
+                            setReferenceText(target.text);
+                            setCurrentFavoriteId(target.id);
+                            storage.saveReferenceText(target.text);
+                            setHighlightedFavoriteId(target.id);
+                            // 播放新句子並根據自動練習模式決定是否錄音
+                            setTimeout(async () => {
+                              try {
+                                setIsLoading(true);
+                                setStreamLoading(true);
+                                setError(null);
+                                const result = await azureSpeech.speakWithAIServerStream(target.text, selectedAIVoice, voiceSettings.rate);
+                                if (isAutoPracticeMode) {
+                                  handleAutoPracticeAfterSpeak(target.text);
+                                }
+                              } catch (error) {
+                                console.error('播放下一句失敗:', error);
+                                setError(`播放下一句失敗: ${error instanceof Error ? error.message : String(error)}`);
+                              } finally {
+                                setIsLoading(false);
+                                setStreamLoading(false);
+                              }
+                            }, 100);
+                          }
+                        }
+                      }}
                       disabled={filteredFavorites.length === 0}
                       className={`btn btn-nav btn-flex-third ${filteredFavorites.length === 0 ? 'btn-disabled' : ''}`}
                       title="下一個收藏句子"
