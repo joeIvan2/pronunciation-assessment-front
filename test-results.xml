@@ -1,6 +1,6 @@
-<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="55.451384">
-<testsuite name="url-login-test.js" timestamp="2025-07-03T15:10:46.292Z" hostname="Desktop Chrome" tests="1" failures="0" skipped="0" time="47.073" errors="0">
-<testcase name="URL 登入測試 › 測試 URL 參數自動登入" classname="url-login-test.js" time="47.073">
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="58.439337">
+<testsuite name="url-login-test.js" timestamp="2025-07-03T15:16:32.772Z" hostname="Desktop Chrome" tests="1" failures="0" skipped="0" time="50.356" errors="0">
+<testcase name="URL 登入測試 › 測試 URL 參數自動登入" classname="url-login-test.js" time="50.356">
 <system-out>
 <![CDATA[📋 測試檢查清單：
    ✅ URL 參數自動登入
@@ -21,7 +21,7 @@
   - Cookies: 2 個
   - LocalStorage: 1 個域名
 ⭐ 測試我的最愛功能...
-📝 測試文字: "Hello world test 07/03 下午11:10:54"
+📝 測試文字: "Hello world test 07/03 下午11:16:43"
    📝 新增我的最愛句子...
    ✅ 新增我的最愛句子完成
    📋 檢查我的最愛列表...
@@ -36,7 +36,7 @@
    📂 切換到標籤管理頁面...
    ✅ 切換到標籤頁面
    ➕ 新增標籤...
-   ✅ 輸入標籤名稱: 測試標籤_1751555457296
+   ✅ 輸入標籤名稱: 測試標籤_1751555807003
    ✅ 點擊新增標籤按鈕
    📋 檢查標籤列表...
    📊 標籤項目數: 1
@@ -79,7 +79,7 @@
    📸 生成AI回應頁面快照...
    ❌ AI產出句子功能測試失敗: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveScreenshot[2m([22m[32mexpected[39m[2m)[22m
 
-  481 pixels (ratio 0.01 of all image pixels) are different.
+  517 pixels (ratio 0.01 of all image pixels) are different.
 
 Expected: [33mC:\py\pronunciation\pronunciation-assessment-front\tests\url-login-test.js-snapshots\ai-response-page-Desktop-Chrome-win32.png[39m
 Received: [33mC:\py\pronunciation\pronunciation-assessment-front\test-results\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\ai-response-page-actual.png[39m
@@ -92,14 +92,14 @@ Call log:
 [2m    - disabled all CSS animations[22m
 [2m  - waiting for fonts to load...[22m
 [2m  - fonts loaded[22m
-[2m  - 481 pixels (ratio 0.01 of all image pixels) are different.[22m
+[2m  - 517 pixels (ratio 0.01 of all image pixels) are different.[22m
 [2m  - waiting 100ms before taking screenshot[22m
 [2m  - taking page screenshot[22m
 [2m    - disabled all CSS animations[22m
 [2m  - waiting for fonts to load...[22m
 [2m  - fonts loaded[22m
 [2m  - captured a stable screenshot[22m
-[2m  - 481 pixels (ratio 0.01 of all image pixels) are different.[22m
+[2m  - 517 pixels (ratio 0.01 of all image pixels) are different.[22m
 
 📸 進行快照測試和比對...
 📸 開始快照測試和比對流程...

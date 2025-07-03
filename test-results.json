@@ -249,7 +249,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 47073,
+                      "duration": 50356,
                       "errors": [],
                       "stdout": [
                         {
@@ -310,7 +310,7 @@
                           "text": "⭐ 測試我的最愛功能...\n"
                         },
                         {
-                          "text": "📝 測試文字: \"Hello world test 07/03 下午11:10:54\"\n"
+                          "text": "📝 測試文字: \"Hello world test 07/03 下午11:16:43\"\n"
                         },
                         {
                           "text": "   📝 新增我的最愛句子...\n"
@@ -355,7 +355,7 @@
                           "text": "   ➕ 新增標籤...\n"
                         },
                         {
-                          "text": "   ✅ 輸入標籤名稱: 測試標籤_1751555457296\n"
+                          "text": "   ✅ 輸入標籤名稱: 測試標籤_1751555807003\n"
                         },
                         {
                           "text": "   ✅ 點擊新增標籤按鈕\n"
@@ -478,7 +478,7 @@
                           "text": "   📸 生成AI回應頁面快照...\n"
                         },
                         {
-                          "text": "   ❌ AI產出句子功能測試失敗: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveScreenshot\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n  481 pixels (ratio 0.01 of all image pixels) are different.\n\nExpected: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\url-login-test.js-snapshots\\ai-response-page-Desktop-Chrome-win32.png\u001b[39m\nReceived: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-actual.png\u001b[39m\n    Diff: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-diff.png\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toHaveScreenshot(ai-response-page.png)\" with timeout 5000ms\u001b[22m\n\u001b[2m    - verifying given screenshot expectation\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - 481 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\u001b[2m  - waiting 100ms before taking screenshot\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - captured a stable screenshot\u001b[22m\n\u001b[2m  - 481 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\n"
+                          "text": "   ❌ AI產出句子功能測試失敗: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveScreenshot\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n  517 pixels (ratio 0.01 of all image pixels) are different.\n\nExpected: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\url-login-test.js-snapshots\\ai-response-page-Desktop-Chrome-win32.png\u001b[39m\nReceived: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-actual.png\u001b[39m\n    Diff: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-diff.png\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toHaveScreenshot(ai-response-page.png)\" with timeout 5000ms\u001b[22m\n\u001b[2m    - verifying given screenshot expectation\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - 517 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\u001b[2m  - waiting 100ms before taking screenshot\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - captured a stable screenshot\u001b[22m\n\u001b[2m  - 517 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\n"
                         },
                         {
                           "text": "📸 進行快照測試和比對...\n"
@@ -570,7 +570,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-07-03T15:10:46.982Z",
+                      "startTime": "2025-07-03T15:16:33.443Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -606,8 +606,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-07-03T15:10:43.345Z",
-    "duration": 55451.384,
+    "startTime": "2025-07-03T15:16:29.811Z",
+    "duration": 58439.337,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,

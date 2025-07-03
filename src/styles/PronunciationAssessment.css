@@ -1706,4 +1706,470 @@ h4 {
 
 .tag-manager-action-button.tag-manager-delete {
   background: var(--ios-danger);
+}
+
+/* ShareData Component Styles */
+.share-data-section {
+  margin-bottom: 20px;
+}
+
+.share-data-title {
+  margin-bottom: 10px;
+  color: var(--ios-text-primary);
+}
+
+.share-tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: var(--ios-background-secondary);
+  border-radius: 8px;
+}
+
+.share-tag-option {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--ios-border);
+  font-size: 14px;
+  font-weight: normal;
+  transition: all 0.2s ease;
+}
+
+.share-tag-option.selected {
+  font-weight: bold;
+  color: white;
+}
+
+.share-tag-option.all-selected {
+  background-color: #007AFF;
+  border-color: #007AFF;
+  color: white;
+}
+
+.share-tag-option.disabled {
+  opacity: 0.6;
+}
+
+.share-tag-checkbox {
+  margin-right: 6px;
+  pointer-events: none;
+}
+
+.share-sentences-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--ios-border);
+  border-radius: 8px;
+  background-color: var(--ios-background);
+}
+
+.share-sentences-header {
+  padding: 10px;
+  border-bottom: 1px solid var(--ios-border);
+  background-color: var(--ios-background-secondary);
+}
+
+.share-select-all-button {
+  font-size: 14px;
+  padding: 5px 10px;
+}
+
+.share-selected-count {
+  margin-left: 10px;
+  font-size: 14px;
+  color: var(--ios-text-secondary);
+}
+
+.share-sentences-list {
+  padding: 10px;
+}
+
+.share-sentence-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.share-sentence-item.selected {
+  background-color: var(--ios-background-secondary);
+}
+
+.share-sentence-checkbox {
+  margin-right: 10px;
+  margin-top: 2px;
+  pointer-events: none;
+}
+
+.share-sentence-content {
+  flex: 1;
+}
+
+.share-sentence-text {
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.share-sentence-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.share-sentence-tag {
+  padding: 2px 6px;
+  border-radius: 8px;
+  color: white;
+  font-size: 10px;
+}
+
+.share-empty-message {
+  padding: 20px;
+  text-align: center;
+  color: var(--ios-text-secondary);
+  font-size: 14px;
+}
+
+.share-count-info {
+  padding: 10px;
+  background-color: var(--ios-background-tertiary);
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid var(--ios-border);
+}
+
+.share-count-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ios-text-primary);
+}
+
+.share-input-group {
+  margin-bottom: 15px;
+}
+
+.share-password-input {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.share-action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.share-button {
+  background: var(--ios-primary);
+  color: var(--ios-text);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  flex: 1;
+  transition: all 0.2s ease;
+}
+
+.share-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.share-button.export {
+  background: var(--ios-success);
+}
+
+.share-history-section {
+  margin-top: 20px;
+}
+
+.share-history-section.history-highlight {
+  animation: highlightFlash 2s ease-in-out;
+}
+
+.share-history-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--ios-border);
+  border-radius: 8px;
+}
+
+.share-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.share-history-header {
+  min-width: 120px;
+}
+
+.share-history-header.hidden {
+  display: none;
+}
+
+.share-history-header.url {
+  min-width: 200px;
+}
+
+.share-history-header.password {
+  min-width: 120px;
+}
+
+.share-history-header.actions {
+  min-width: 100px;
+}
+
+.share-history-cell {
+  font-size: 11px;
+}
+
+.share-history-cell.hidden {
+  display: none;
+}
+
+.share-copy-container {
+  position: relative;
+  display: inline-block;
+}
+
+.share-copy-button {
+  padding: 3px 6px;
+  font-size: 10px;
+  background: var(--ios-primary);
+  color: var(--ios-text);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-copy-button:hover {
+  background: var(--ios-primary-dark);
+}
+
+.share-copied-message {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ios-success);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+.share-update-button {
+  padding: 3px 6px;
+  font-size: 10px;
+  background: var(--ios-warning);
+  color: var(--ios-text);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 4px;
+  transition: all 0.2s ease;
+}
+
+.share-delete-button {
+  padding: 3px 6px;
+  font-size: 10px;
+  background: var(--ios-danger);
+  color: var(--ios-text);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-import-section {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: var(--ios-background-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--ios-border);
+}
+
+.share-import-info {
+  color: var(--ios-text-secondary);
+  font-size: 14px;
+}
+
+.share-import-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+@keyframes highlightFlash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: var(--ios-primary-light); }
+}
+
+/* ShareData Table Styles */
+.share-table-container {
+  max-width: 100%;
+}
+
+.share-table {
+  width: 100%;
+  min-width: 600px;
+  font-size: 12px;
+}
+
+.share-table-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--ios-border);
+  border-radius: 4px 0 0 4px;
+  font-size: 14px;
+  background: rgba(20, 20, 24, 0.6);
+  color: var(--ios-text);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.share-table-input:hover {
+  background: rgba(30, 30, 34, 0.8);
+}
+
+.share-table-input:active {
+  background: rgba(40, 40, 44, 0.9);
+}
+
+.share-table-button {
+  padding: 8px 12px;
+  background-color: var(--ios-primary);
+  color: white;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+}
+
+.share-table-button:hover {
+  background-color: #0056b3;
+}
+
+.share-table-password-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--ios-border);
+  border-radius: 4px 0 0 4px;
+  font-size: 14px;
+  background: rgba(20, 20, 24, 0.6);
+  color: var(--ios-text);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.share-table-password-input:hover {
+  background: rgba(30, 30, 34, 0.8);
+}
+
+.share-table-password-input:active {
+  background: rgba(40, 40, 44, 0.9);
+}
+
+.share-table-actions {
+  display: flex;
+  gap: 4px;
+  flex-direction: column;
+}
+
+.share-table-action-button {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.share-copy-input-container {
+  display: flex;
+  width: 100%;
+}
+
+.share-export-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.share-tooltip-icon {
+  color: var(--ios-text-secondary);
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+/* Export Table Styles */
+.export-table-container {
+  overflow-x: auto;
+  background: rgba(30, 30, 34, 0.7);
+  border-radius: 8px;
+  border: 1px solid var(--ios-border);
+}
+
+.export-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.export-table-header {
+  border-bottom: 1px solid var(--ios-border);
+  text-align: left;
+}
+
+.export-table-header th {
+  padding: 8px;
+  white-space: nowrap;
+}
+
+.export-table-row {
+  border-bottom: 1px solid rgba(100, 100, 110, 0.2);
+}
+
+.export-table-cell {
+  padding: 8px;
+}
+
+.export-table-cell.nowrap {
+  white-space: nowrap;
+}
+
+.export-table-cell.secondary {
+  color: var(--ios-text-secondary);
+}
+
+.export-button {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.export-button.copy {
+  background: var(--ios-primary);
+}
+
+.export-button.download {
+  background: var(--ios-success);
+}
+
+.export-button.import {
+  background: var(--ios-warning);
 } 
