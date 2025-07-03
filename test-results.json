@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 1
+      "actualWorkers": 6
     },
     "preserveOutput": "always",
     "reporter": [
@@ -43,7 +43,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 6
         },
         "id": "Desktop Chrome",
         "name": "Desktop Chrome",
@@ -56,7 +56,13 @@
         ],
         "testMatch": [
           "**/*.spec.js",
-          "**/playwright-test.js"
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
         ],
         "timeout": 60000
       },
@@ -65,7 +71,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 6
         },
         "id": "Desktop Firefox",
         "name": "Desktop Firefox",
@@ -78,7 +84,13 @@
         ],
         "testMatch": [
           "**/*.spec.js",
-          "**/playwright-test.js"
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
         ],
         "timeout": 60000
       },
@@ -87,7 +99,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 6
         },
         "id": "Desktop Safari",
         "name": "Desktop Safari",
@@ -100,7 +112,13 @@
         ],
         "testMatch": [
           "**/*.spec.js",
-          "**/playwright-test.js"
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
         ],
         "timeout": 60000
       },
@@ -109,7 +127,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 6
         },
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
@@ -122,7 +140,13 @@
         ],
         "testMatch": [
           "**/*.spec.js",
-          "**/playwright-test.js"
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
         ],
         "timeout": 60000
       },
@@ -131,7 +155,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 6
         },
         "id": "Mobile Safari",
         "name": "Mobile Safari",
@@ -144,7 +168,13 @@
         ],
         "testMatch": [
           "**/*.spec.js",
-          "**/playwright-test.js"
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
         ],
         "timeout": 60000
       },
@@ -153,7 +183,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 6
         },
         "id": "Tablet",
         "name": "Tablet",
@@ -166,7 +196,13 @@
         ],
         "testMatch": [
           "**/*.spec.js",
-          "**/playwright-test.js"
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
         ],
         "timeout": 60000
       }
@@ -185,21 +221,21 @@
   },
   "suites": [
     {
-      "title": "playwright-test.js",
-      "file": "playwright-test.js",
+      "title": "url-login-test.js",
+      "file": "url-login-test.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "發音評估基準測試",
-          "file": "playwright-test.js",
-          "line": 14,
+          "title": "URL 登入測試",
+          "file": "url-login-test.js",
+          "line": 13,
           "column": 6,
           "specs": [
             {
-              "title": "基準測試 - 完整發音評估流程",
-              "ok": false,
+              "title": "測試 URL 參數自動登入",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -212,146 +248,778 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 7084,
-                      "error": {
-                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n",
-                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31",
-                        "location": {
-                          "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
-                          "column": 31,
-                          "line": 50
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
-                            "column": 31,
-                            "line": 50
-                          },
-                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m\n\u001b[2m    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31\u001b[22m"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 22335,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "🚀 開始基準測試 - 完整發音評估流程\n"
+                          "text": "📋 測試檢查清單：\n"
                         },
                         {
-                          "text": "✅ 頁面載入成功\n"
+                          "text": "   ✅ URL 參數自動登入\n"
                         },
                         {
-                          "text": "✅ 測試文字輸入完成\n"
+                          "text": "   ❌ 我的最愛功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ❌ 標籤功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能\n"
+                        },
+                        {
+                          "text": "   ✅ AI 造句功能\n"
+                        },
+                        {
+                          "text": "\n"
+                        },
+                        {
+                          "text": "🔑 開始測試 URL 參數自動登入...\n"
+                        },
+                        {
+                          "text": "🌐 導航到登入 URL: http://localhost:3000/?loginUser=test%40test.com&pwd=test0123\n"
+                        },
+                        {
+                          "text": "⏳ 等待登入處理...\n"
+                        },
+                        {
+                          "text": "📊 測試結果:\n"
+                        },
+                        {
+                          "text": "   - 登入狀態: ✅ 已登入\n"
+                        },
+                        {
+                          "text": "   - 當前 URL: http://localhost:3000/\n"
+                        },
+                        {
+                          "text": "✅ URL 登入成功！\n"
+                        },
+                        {
+                          "text": "💾 認證狀態已保存到 .auth/user.json\n"
+                        },
+                        {
+                          "text": "📊 認證統計：\n"
+                        },
+                        {
+                          "text": "  - Cookies: 2 個\n"
+                        },
+                        {
+                          "text": "  - LocalStorage: 1 個域名\n"
+                        },
+                        {
+                          "text": "⏭️ 跳過我的最愛功能測試\n"
+                        },
+                        {
+                          "text": "⏭️ 跳過標籤功能測試\n"
+                        },
+                        {
+                          "text": "🔗 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   🔗 開始分享功能測試...\n"
+                        },
+                        {
+                          "text": "   ✅ 新增測試句子完成\n"
+                        },
+                        {
+                          "text": "   📂 切換到分享與備份頁面...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到分享與備份頁面\n"
+                        },
+                        {
+                          "text": "   📤 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊分享按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享結果顯示\n"
+                        },
+                        {
+                          "text": "   📋 測試導出JSON功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊導出按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能測試完成\n"
+                        },
+                        {
+                          "text": "🤖 測試AI產出句子功能...\n"
+                        },
+                        {
+                          "text": "   🤖 開始AI產出句子功能測試...\n"
+                        },
+                        {
+                          "text": "   📊 記錄我的最愛初始數量...\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛初始數量: 0\n"
+                        },
+                        {
+                          "text": "   🔍 切換到 AI 造句幫手標籤頁...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到 AI 造句幫手標籤頁\n"
+                        },
+                        {
+                          "text": "   💡 測試範例提示...\n"
+                        },
+                        {
+                          "text": "   📝 輸入AI生成指令...\n"
+                        },
+                        {
+                          "text": "   ✅ 輸入提示詞: \"生成三個高中生應該會的英文句子\"\n"
+                        },
+                        {
+                          "text": "   🚀 測試AI生成功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊AI生成按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ AI回應顯示\n"
+                        },
+                        {
+                          "text": "   ⭐ 測試新增AI句子到收藏...\n"
+                        },
+                        {
+                          "text": "   ⚠️ 未找到新增收藏按鈕\n"
+                        },
+                        {
+                          "text": "   📊 檢查我的最愛數量變化...\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛當前數量: 0\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛初始數量: 0\n"
+                        },
+                        {
+                          "text": "   ⚠️ 我的最愛數量沒有變化，AI句子可能沒有自動添加\n"
+                        },
+                        {
+                          "text": "   ✅ AI產出句子功能測試完成\n"
+                        },
+                        {
+                          "text": "🏁 URL 登入測試完成\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-07-03T06:59:35.514Z",
+                      "startTime": "2025-07-03T12:10:33.382Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\error-context.md"
-                        },
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\trace.zip"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
-                        "column": 31,
-                        "line": 50
-                      }
-                    },
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "571331557c1311f9cd53-57534348fea6b4d7859c",
+              "file": "url-login-test.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "測試 URL 參數自動登入",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Firefox",
+                  "projectName": "Desktop Firefox",
+                  "results": [
                     {
                       "workerIndex": 1,
-                      "parallelIndex": 0,
+                      "parallelIndex": 1,
                       "status": "failed",
-                      "duration": 7023,
+                      "duration": 2,
                       "error": {
-                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n",
-                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31",
-                        "location": {
-                          "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
-                          "column": 31,
-                          "line": 50
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m"
+                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
                       },
                       "errors": [
                         {
-                          "location": {
-                            "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
-                            "column": 31,
-                            "line": 50
-                          },
-                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m\n\u001b[2m    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31\u001b[22m"
+                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
                         }
                       ],
-                      "stdout": [
-                        {
-                          "text": "🚀 開始基準測試 - 完整發音評估流程\n"
-                        },
-                        {
-                          "text": "✅ 頁面載入成功\n"
-                        },
-                        {
-                          "text": "✅ 測試文字輸入完成\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
-                      "retry": 1,
-                      "startTime": "2025-07-03T06:59:43.955Z",
+                      "retry": 0,
+                      "startTime": "2025-07-03T12:10:33.454Z",
                       "annotations": [],
                       "attachments": [
                         {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\test-failed-1.png"
-                        },
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Firefox\\trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 3,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
                         {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\error-context.md"
-                        },
+                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-07-03T12:10:35.564Z",
+                      "annotations": [],
+                      "attachments": [
                         {
                           "name": "trace",
                           "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\trace.zip"
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Firefox-retry1\\trace.zip"
                         }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
-                        "column": 31,
-                        "line": 50
-                      }
+                      ]
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "f9b8abd56f3360353b17-e8858d910cf4101c8261",
-              "file": "playwright-test.js",
-              "line": 29,
+              "id": "571331557c1311f9cd53-88c5fba0d10aca6307a2",
+              "file": "url-login-test.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "測試 URL 參數自動登入",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Safari",
+                  "projectName": "Desktop Safari",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 3,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-03T12:10:33.270Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Safari\\trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 10,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-07-03T12:10:35.247Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Safari-retry1\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "571331557c1311f9cd53-feb2784a6659cbf024dc",
+              "file": "url-login-test.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "測試 URL 參數自動登入",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 22773,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "📋 測試檢查清單：\n"
+                        },
+                        {
+                          "text": "   ✅ URL 參數自動登入\n"
+                        },
+                        {
+                          "text": "   ❌ 我的最愛功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ❌ 標籤功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能\n"
+                        },
+                        {
+                          "text": "   ✅ AI 造句功能\n"
+                        },
+                        {
+                          "text": "\n"
+                        },
+                        {
+                          "text": "🔑 開始測試 URL 參數自動登入...\n"
+                        },
+                        {
+                          "text": "🌐 導航到登入 URL: http://localhost:3000/?loginUser=test%40test.com&pwd=test0123\n"
+                        },
+                        {
+                          "text": "⏳ 等待登入處理...\n"
+                        },
+                        {
+                          "text": "📊 測試結果:\n"
+                        },
+                        {
+                          "text": "   - 登入狀態: ✅ 已登入\n"
+                        },
+                        {
+                          "text": "   - 當前 URL: http://localhost:3000/\n"
+                        },
+                        {
+                          "text": "✅ URL 登入成功！\n"
+                        },
+                        {
+                          "text": "💾 認證狀態已保存到 .auth/user.json\n"
+                        },
+                        {
+                          "text": "📊 認證統計：\n"
+                        },
+                        {
+                          "text": "  - Cookies: 2 個\n"
+                        },
+                        {
+                          "text": "  - LocalStorage: 1 個域名\n"
+                        },
+                        {
+                          "text": "⏭️ 跳過我的最愛功能測試\n"
+                        },
+                        {
+                          "text": "⏭️ 跳過標籤功能測試\n"
+                        },
+                        {
+                          "text": "🔗 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   🔗 開始分享功能測試...\n"
+                        },
+                        {
+                          "text": "   ✅ 新增測試句子完成\n"
+                        },
+                        {
+                          "text": "   📂 切換到分享與備份頁面...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到分享與備份頁面\n"
+                        },
+                        {
+                          "text": "   📤 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊分享按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享結果顯示\n"
+                        },
+                        {
+                          "text": "   📋 測試導出JSON功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊導出按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能測試完成\n"
+                        },
+                        {
+                          "text": "🤖 測試AI產出句子功能...\n"
+                        },
+                        {
+                          "text": "   🤖 開始AI產出句子功能測試...\n"
+                        },
+                        {
+                          "text": "   📊 記錄我的最愛初始數量...\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛初始數量: 0\n"
+                        },
+                        {
+                          "text": "   🔍 切換到 AI 造句幫手標籤頁...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到 AI 造句幫手標籤頁\n"
+                        },
+                        {
+                          "text": "   💡 測試範例提示...\n"
+                        },
+                        {
+                          "text": "   📝 輸入AI生成指令...\n"
+                        },
+                        {
+                          "text": "   ✅ 輸入提示詞: \"生成三個高中生應該會的英文句子\"\n"
+                        },
+                        {
+                          "text": "   🚀 測試AI生成功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊AI生成按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ AI回應顯示\n"
+                        },
+                        {
+                          "text": "   ⭐ 測試新增AI句子到收藏...\n"
+                        },
+                        {
+                          "text": "   ⚠️ 未找到新增收藏按鈕\n"
+                        },
+                        {
+                          "text": "   📊 檢查我的最愛數量變化...\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛當前數量: 0\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛初始數量: 0\n"
+                        },
+                        {
+                          "text": "   ⚠️ 我的最愛數量沒有變化，AI句子可能沒有自動添加\n"
+                        },
+                        {
+                          "text": "   ✅ AI產出句子功能測試完成\n"
+                        },
+                        {
+                          "text": "🏁 URL 登入測試完成\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-03T12:10:33.405Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "571331557c1311f9cd53-afc3ef6d3770580ce199",
+              "file": "url-login-test.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "測試 URL 參數自動登入",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "failed",
+                      "duration": 3,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-03T12:10:33.354Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Mobile-Safari\\trace.zip"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 4,
+                      "status": "failed",
+                      "duration": 3,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-07-03T12:10:35.347Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Mobile-Safari-retry1\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "571331557c1311f9cd53-3ed31182d910623166b0",
+              "file": "url-login-test.js",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "測試 URL 參數自動登入",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Tablet",
+                  "projectName": "Tablet",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 22276,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "📋 測試檢查清單：\n"
+                        },
+                        {
+                          "text": "   ✅ URL 參數自動登入\n"
+                        },
+                        {
+                          "text": "   ❌ 我的最愛功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ❌ 標籤功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能\n"
+                        },
+                        {
+                          "text": "   ✅ AI 造句功能\n"
+                        },
+                        {
+                          "text": "\n"
+                        },
+                        {
+                          "text": "🔑 開始測試 URL 參數自動登入...\n"
+                        },
+                        {
+                          "text": "🌐 導航到登入 URL: http://localhost:3000/?loginUser=test%40test.com&pwd=test0123\n"
+                        },
+                        {
+                          "text": "⏳ 等待登入處理...\n"
+                        },
+                        {
+                          "text": "📊 測試結果:\n"
+                        },
+                        {
+                          "text": "   - 登入狀態: ✅ 已登入\n"
+                        },
+                        {
+                          "text": "   - 當前 URL: http://localhost:3000/\n"
+                        },
+                        {
+                          "text": "✅ URL 登入成功！\n"
+                        },
+                        {
+                          "text": "💾 認證狀態已保存到 .auth/user.json\n"
+                        },
+                        {
+                          "text": "📊 認證統計：\n"
+                        },
+                        {
+                          "text": "  - Cookies: 2 個\n"
+                        },
+                        {
+                          "text": "  - LocalStorage: 1 個域名\n"
+                        },
+                        {
+                          "text": "⏭️ 跳過我的最愛功能測試\n"
+                        },
+                        {
+                          "text": "⏭️ 跳過標籤功能測試\n"
+                        },
+                        {
+                          "text": "🔗 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   🔗 開始分享功能測試...\n"
+                        },
+                        {
+                          "text": "   ✅ 新增測試句子完成\n"
+                        },
+                        {
+                          "text": "   📂 切換到分享與備份頁面...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到分享與備份頁面\n"
+                        },
+                        {
+                          "text": "   📤 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊分享按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享結果顯示\n"
+                        },
+                        {
+                          "text": "   📋 測試導出JSON功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊導出按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能測試完成\n"
+                        },
+                        {
+                          "text": "🤖 測試AI產出句子功能...\n"
+                        },
+                        {
+                          "text": "   🤖 開始AI產出句子功能測試...\n"
+                        },
+                        {
+                          "text": "   📊 記錄我的最愛初始數量...\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛初始數量: 0\n"
+                        },
+                        {
+                          "text": "   🔍 切換到 AI 造句幫手標籤頁...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到 AI 造句幫手標籤頁\n"
+                        },
+                        {
+                          "text": "   💡 測試範例提示...\n"
+                        },
+                        {
+                          "text": "   📝 輸入AI生成指令...\n"
+                        },
+                        {
+                          "text": "   ✅ 輸入提示詞: \"生成三個高中生應該會的英文句子\"\n"
+                        },
+                        {
+                          "text": "   🚀 測試AI生成功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊AI生成按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ AI回應顯示\n"
+                        },
+                        {
+                          "text": "   ⭐ 測試新增AI句子到收藏...\n"
+                        },
+                        {
+                          "text": "   ⚠️ 未找到新增收藏按鈕\n"
+                        },
+                        {
+                          "text": "   📊 檢查我的最愛數量變化...\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛當前數量: 0\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛初始數量: 0\n"
+                        },
+                        {
+                          "text": "   ⚠️ 我的最愛數量沒有變化，AI句子可能沒有自動添加\n"
+                        },
+                        {
+                          "text": "   ✅ AI產出句子功能測試完成\n"
+                        },
+                        {
+                          "text": "🏁 URL 登入測試完成\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-03T12:10:33.279Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "571331557c1311f9cd53-a2eeb1c241b568b1bca8",
+              "file": "url-login-test.js",
+              "line": 14,
               "column": 3
             }
           ]
@@ -361,11 +1029,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-07-03T06:59:34.673Z",
-    "duration": 16905.529000000002,
-    "expected": 0,
+    "startTime": "2025-07-03T12:10:31.785Z",
+    "duration": 25139.675000000003,
+    "expected": 3,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 3,
     "flaky": 0
   }
 }

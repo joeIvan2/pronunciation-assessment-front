@@ -5,6 +5,8 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   type User
 } from 'firebase/auth';
@@ -15,6 +17,8 @@ interface UseFirebaseAuthReturn {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithFacebook: () => Promise<void>;
+  signInWithEmailPassword: (email: string, password: string) => Promise<void>;
+  createAccountWithEmailPassword: (email: string, password: string) => Promise<void>;
   signOutUser: () => Promise<void>;
 }
 
@@ -159,6 +163,30 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
     }
   };
 
+  // Email/Password 登入功能
+  const signInWithEmailPassword = async (email: string, password: string): Promise<void> => {
+    try {
+      console.log('嘗試使用 Email/Password 登入:', email);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Email/Password 登入成功:', userCredential.user.email);
+    } catch (error: any) {
+      console.error('Email/Password 登入失敗:', error);
+      throw error;
+    }
+  };
+
+  // Email/Password 註冊功能
+  const createAccountWithEmailPassword = async (email: string, password: string): Promise<void> => {
+    try {
+      console.log('嘗試使用 Email/Password 創建帳號:', email);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Email/Password 帳號創建成功:', userCredential.user.email);
+    } catch (error: any) {
+      console.error('Email/Password 帳號創建失敗:', error);
+      throw error;
+    }
+  };
+
   const signOutUser = async (): Promise<void> => {
     try {
       await signOut(auth);
@@ -174,6 +202,8 @@ export const useFirebaseAuth = (): UseFirebaseAuthReturn => {
     loading,
     signInWithGoogle,
     signInWithFacebook,
+    signInWithEmailPassword,
+    createAccountWithEmailPassword,
     signOutUser,
   };
 };

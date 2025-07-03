@@ -136,7 +136,7 @@ const PronunciationAssessment: React.FC = () => {
   const recorder = useRecorder();
   const backendSpeech = useBackendSpeech();
   const azureSpeech = useAzureSpeech();
-  const { user, signInWithGoogle, signOutUser, loading: userLoading } = useFirebaseAuth();
+  const { user, signInWithGoogle, signInWithEmailPassword, signOutUser, loading: userLoading } = useFirebaseAuth();
 
   // Google 登入按鈕永遠顯示，不再隱藏
   const disableGoogle = false;
@@ -284,6 +284,29 @@ const PronunciationAssessment: React.FC = () => {
       storage.saveTopActiveTab('ai');
     }
   }, []);
+
+  // 檢查URL參數是否包含登入參數
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginUser = urlParams.get('loginUser');
+    const pwd = urlParams.get('pwd');
+    
+    if (loginUser && pwd && !user && !userLoading) {
+      console.log('🔑 檢測到URL登入參數，嘗試自動登入:', loginUser);
+      
+      // 自動登入
+      signInWithEmailPassword(loginUser, pwd)
+        .then(() => {
+          console.log('✅ URL參數自動登入成功');
+          // 清除URL參數（可選）
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+        })
+        .catch((error) => {
+          console.error('❌ URL參數自動登入失敗:', error);
+        });
+    }
+  }, [user, userLoading, signInWithEmailPassword]);
 
   // 自動練習模式不需要自動清理，保持開關狀態
 
