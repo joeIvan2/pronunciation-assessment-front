@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 6
+      "actualWorkers": 1
     },
     "preserveOutput": "always",
     "reporter": [
@@ -43,7 +43,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 1
         },
         "id": "Desktop Chrome",
         "name": "Desktop Chrome",
@@ -71,7 +71,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 1
         },
         "id": "Desktop Firefox",
         "name": "Desktop Firefox",
@@ -99,7 +99,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 1
         },
         "id": "Desktop Safari",
         "name": "Desktop Safari",
@@ -127,7 +127,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 1
         },
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
@@ -155,7 +155,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 1
         },
         "id": "Mobile Safari",
         "name": "Mobile Safari",
@@ -183,7 +183,7 @@
         "repeatEach": 1,
         "retries": 1,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 1
         },
         "id": "Tablet",
         "name": "Tablet",
@@ -249,7 +249,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 22335,
+                      "duration": 16206,
                       "errors": [],
                       "stdout": [
                         {
@@ -259,16 +259,16 @@
                           "text": "   ✅ URL 參數自動登入\n"
                         },
                         {
-                          "text": "   ❌ 我的最愛功能（新增/修改/刪除）\n"
+                          "text": "   ✅ 我的最愛功能（新增/修改/刪除）\n"
                         },
                         {
                           "text": "   ❌ 標籤功能（新增/修改/刪除）\n"
                         },
                         {
-                          "text": "   ✅ 分享功能\n"
+                          "text": "   ❌ 分享功能\n"
                         },
                         {
-                          "text": "   ✅ AI 造句功能\n"
+                          "text": "   ❌ AI 造句功能\n"
                         },
                         {
                           "text": "\n"
@@ -307,100 +307,112 @@
                           "text": "  - LocalStorage: 1 個域名\n"
                         },
                         {
-                          "text": "⏭️ 跳過我的最愛功能測試\n"
+                          "text": "⭐ 測試我的最愛功能...\n"
+                        },
+                        {
+                          "text": "📝 測試文字: \"Hello world test 07/03 下午10:44:52\"\n"
+                        },
+                        {
+                          "text": "   📝 新增我的最愛句子...\n"
+                        },
+                        {
+                          "text": "   ✅ 新增我的最愛句子完成\n"
+                        },
+                        {
+                          "text": "   📋 檢查我的最愛列表...\n"
+                        },
+                        {
+                          "text": "   📊 我的最愛列表項目數: 1\n"
+                        },
+                        {
+                          "text": "   ✏️ 測試編輯我的最愛...\n"
+                        },
+                        {
+                          "text": "   ✅ 編輯我的最愛完成\n"
+                        },
+                        {
+                          "text": "   🗑️ 測試刪除我的最愛...\n"
+                        },
+                        {
+                          "text": "   ✅ 刪除我的最愛完成\n"
+                        },
+                        {
+                          "text": "   ✅ 我的最愛功能測試完成\n"
                         },
                         {
                           "text": "⏭️ 跳過標籤功能測試\n"
                         },
                         {
-                          "text": "🔗 測試分享功能...\n"
+                          "text": "⏭️ 跳過分享功能測試\n"
                         },
                         {
-                          "text": "   🔗 開始分享功能測試...\n"
+                          "text": "⏭️ 跳過AI產出句子功能測試\n"
                         },
                         {
-                          "text": "   ✅ 新增測試句子完成\n"
+                          "text": "📸 進行快照測試和比對...\n"
                         },
                         {
-                          "text": "   📂 切換到分享與備份頁面...\n"
+                          "text": "📸 開始快照測試和比對流程...\n"
                         },
                         {
-                          "text": "   ✅ 切換到分享與備份頁面\n"
+                          "text": "🧹 完全清空所有數據以確保乾淨狀態...\n"
                         },
                         {
-                          "text": "   📤 測試分享功能...\n"
+                          "text": "   🧹 開始清空所有數據...\n"
                         },
                         {
-                          "text": "   ✅ 點擊分享按鈕\n"
+                          "text": "   📝 清空發音評分textarea...\n"
                         },
                         {
-                          "text": "   ✅ 分享結果顯示\n"
+                          "text": "   ✅ 發音評分textarea已清空\n"
                         },
                         {
-                          "text": "   📋 測試導出JSON功能...\n"
+                          "text": "   🤖 清空AI造句幫手textarea...\n"
                         },
                         {
-                          "text": "   ✅ 點擊導出按鈕\n"
+                          "text": "   ⭐ 清空我的最愛數據...\n"
                         },
                         {
-                          "text": "   ✅ 分享功能測試完成\n"
+                          "text": "   ✅ 我的最愛已經是空的，無需清空\n"
                         },
                         {
-                          "text": "🤖 測試AI產出句子功能...\n"
+                          "text": "   🏷️ 清空標籤數據...\n"
                         },
                         {
-                          "text": "   🤖 開始AI產出句子功能測試...\n"
+                          "text": "   🏷️ 開始清空標籤數據...\n"
                         },
                         {
-                          "text": "   📊 記錄我的最愛初始數量...\n"
+                          "text": "   ✅ 標籤數據已清空（刪除了 0 個標籤）\n"
                         },
                         {
-                          "text": "   📋 我的最愛初始數量: 0\n"
+                          "text": "   ✅ 所有數據清空完成\n"
                         },
                         {
-                          "text": "   🔍 切換到 AI 造句幫手標籤頁...\n"
+                          "text": "📸 拍攝清空後的主頁面快照...\n"
                         },
                         {
-                          "text": "   ✅ 切換到 AI 造句幫手標籤頁\n"
+                          "text": "✅ 清空後的主頁面快照完成\n"
                         },
                         {
-                          "text": "   💡 測試範例提示...\n"
+                          "text": "📸 拍攝清空後的我的最愛頁面快照...\n"
                         },
                         {
-                          "text": "   📝 輸入AI生成指令...\n"
+                          "text": "✅ 清空後的我的最愛頁面快照完成\n"
                         },
                         {
-                          "text": "   ✅ 輸入提示詞: \"生成三個高中生應該會的英文句子\"\n"
+                          "text": "🔍 進行快照比對驗證...\n"
                         },
                         {
-                          "text": "   🚀 測試AI生成功能...\n"
+                          "text": "   ✅ 快照文件已生成，Playwright 將自動進行比對\n"
                         },
                         {
-                          "text": "   ✅ 點擊AI生成按鈕\n"
+                          "text": "   📋 如果快照有差異，測試將會失敗並顯示差異\n"
                         },
                         {
-                          "text": "   ✅ AI回應顯示\n"
+                          "text": "   📁 快照文件位置: tests/url-login-test.js-snapshots/\n"
                         },
                         {
-                          "text": "   ⭐ 測試新增AI句子到收藏...\n"
-                        },
-                        {
-                          "text": "   ⚠️ 未找到新增收藏按鈕\n"
-                        },
-                        {
-                          "text": "   📊 檢查我的最愛數量變化...\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛當前數量: 0\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛初始數量: 0\n"
-                        },
-                        {
-                          "text": "   ⚠️ 我的最愛數量沒有變化，AI句子可能沒有自動添加\n"
-                        },
-                        {
-                          "text": "   ✅ AI產出句子功能測試完成\n"
+                          "text": "✅ 快照測試和比對完成\n"
                         },
                         {
                           "text": "🏁 URL 登入測試完成\n"
@@ -408,7 +420,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-07-03T12:10:33.382Z",
+                      "startTime": "2025-07-03T14:44:47.082Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -420,607 +432,6 @@
               "file": "url-login-test.js",
               "line": 14,
               "column": 3
-            },
-            {
-              "title": "測試 URL 參數自動登入",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Desktop Firefox",
-                  "projectName": "Desktop Firefox",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "failed",
-                      "duration": 2,
-                      "error": {
-                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
-                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                      },
-                      "errors": [
-                        {
-                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-07-03T12:10:33.454Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Firefox\\trace.zip"
-                        }
-                      ]
-                    },
-                    {
-                      "workerIndex": 8,
-                      "parallelIndex": 1,
-                      "status": "failed",
-                      "duration": 3,
-                      "error": {
-                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
-                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                      },
-                      "errors": [
-                        {
-                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\firefox-1488\\firefox\\firefox.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 1,
-                      "startTime": "2025-07-03T12:10:35.564Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Firefox-retry1\\trace.zip"
-                        }
-                      ]
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "571331557c1311f9cd53-88c5fba0d10aca6307a2",
-              "file": "url-login-test.js",
-              "line": 14,
-              "column": 3
-            },
-            {
-              "title": "測試 URL 參數自動登入",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Desktop Safari",
-                  "projectName": "Desktop Safari",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "failed",
-                      "duration": 3,
-                      "error": {
-                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
-                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                      },
-                      "errors": [
-                        {
-                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-07-03T12:10:33.270Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Safari\\trace.zip"
-                        }
-                      ]
-                    },
-                    {
-                      "workerIndex": 6,
-                      "parallelIndex": 2,
-                      "status": "failed",
-                      "duration": 10,
-                      "error": {
-                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
-                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                      },
-                      "errors": [
-                        {
-                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 1,
-                      "startTime": "2025-07-03T12:10:35.247Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Safari-retry1\\trace.zip"
-                        }
-                      ]
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "571331557c1311f9cd53-feb2784a6659cbf024dc",
-              "file": "url-login-test.js",
-              "line": 14,
-              "column": 3
-            },
-            {
-              "title": "測試 URL 參數自動登入",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Chrome",
-                  "projectName": "Mobile Chrome",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 22773,
-                      "errors": [],
-                      "stdout": [
-                        {
-                          "text": "📋 測試檢查清單：\n"
-                        },
-                        {
-                          "text": "   ✅ URL 參數自動登入\n"
-                        },
-                        {
-                          "text": "   ❌ 我的最愛功能（新增/修改/刪除）\n"
-                        },
-                        {
-                          "text": "   ❌ 標籤功能（新增/修改/刪除）\n"
-                        },
-                        {
-                          "text": "   ✅ 分享功能\n"
-                        },
-                        {
-                          "text": "   ✅ AI 造句功能\n"
-                        },
-                        {
-                          "text": "\n"
-                        },
-                        {
-                          "text": "🔑 開始測試 URL 參數自動登入...\n"
-                        },
-                        {
-                          "text": "🌐 導航到登入 URL: http://localhost:3000/?loginUser=test%40test.com&pwd=test0123\n"
-                        },
-                        {
-                          "text": "⏳ 等待登入處理...\n"
-                        },
-                        {
-                          "text": "📊 測試結果:\n"
-                        },
-                        {
-                          "text": "   - 登入狀態: ✅ 已登入\n"
-                        },
-                        {
-                          "text": "   - 當前 URL: http://localhost:3000/\n"
-                        },
-                        {
-                          "text": "✅ URL 登入成功！\n"
-                        },
-                        {
-                          "text": "💾 認證狀態已保存到 .auth/user.json\n"
-                        },
-                        {
-                          "text": "📊 認證統計：\n"
-                        },
-                        {
-                          "text": "  - Cookies: 2 個\n"
-                        },
-                        {
-                          "text": "  - LocalStorage: 1 個域名\n"
-                        },
-                        {
-                          "text": "⏭️ 跳過我的最愛功能測試\n"
-                        },
-                        {
-                          "text": "⏭️ 跳過標籤功能測試\n"
-                        },
-                        {
-                          "text": "🔗 測試分享功能...\n"
-                        },
-                        {
-                          "text": "   🔗 開始分享功能測試...\n"
-                        },
-                        {
-                          "text": "   ✅ 新增測試句子完成\n"
-                        },
-                        {
-                          "text": "   📂 切換到分享與備份頁面...\n"
-                        },
-                        {
-                          "text": "   ✅ 切換到分享與備份頁面\n"
-                        },
-                        {
-                          "text": "   📤 測試分享功能...\n"
-                        },
-                        {
-                          "text": "   ✅ 點擊分享按鈕\n"
-                        },
-                        {
-                          "text": "   ✅ 分享結果顯示\n"
-                        },
-                        {
-                          "text": "   📋 測試導出JSON功能...\n"
-                        },
-                        {
-                          "text": "   ✅ 點擊導出按鈕\n"
-                        },
-                        {
-                          "text": "   ✅ 分享功能測試完成\n"
-                        },
-                        {
-                          "text": "🤖 測試AI產出句子功能...\n"
-                        },
-                        {
-                          "text": "   🤖 開始AI產出句子功能測試...\n"
-                        },
-                        {
-                          "text": "   📊 記錄我的最愛初始數量...\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛初始數量: 0\n"
-                        },
-                        {
-                          "text": "   🔍 切換到 AI 造句幫手標籤頁...\n"
-                        },
-                        {
-                          "text": "   ✅ 切換到 AI 造句幫手標籤頁\n"
-                        },
-                        {
-                          "text": "   💡 測試範例提示...\n"
-                        },
-                        {
-                          "text": "   📝 輸入AI生成指令...\n"
-                        },
-                        {
-                          "text": "   ✅ 輸入提示詞: \"生成三個高中生應該會的英文句子\"\n"
-                        },
-                        {
-                          "text": "   🚀 測試AI生成功能...\n"
-                        },
-                        {
-                          "text": "   ✅ 點擊AI生成按鈕\n"
-                        },
-                        {
-                          "text": "   ✅ AI回應顯示\n"
-                        },
-                        {
-                          "text": "   ⭐ 測試新增AI句子到收藏...\n"
-                        },
-                        {
-                          "text": "   ⚠️ 未找到新增收藏按鈕\n"
-                        },
-                        {
-                          "text": "   📊 檢查我的最愛數量變化...\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛當前數量: 0\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛初始數量: 0\n"
-                        },
-                        {
-                          "text": "   ⚠️ 我的最愛數量沒有變化，AI句子可能沒有自動添加\n"
-                        },
-                        {
-                          "text": "   ✅ AI產出句子功能測試完成\n"
-                        },
-                        {
-                          "text": "🏁 URL 登入測試完成\n"
-                        }
-                      ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-07-03T12:10:33.405Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "571331557c1311f9cd53-afc3ef6d3770580ce199",
-              "file": "url-login-test.js",
-              "line": 14,
-              "column": 3
-            },
-            {
-              "title": "測試 URL 參數自動登入",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Mobile Safari",
-                  "projectName": "Mobile Safari",
-                  "results": [
-                    {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
-                      "status": "failed",
-                      "duration": 3,
-                      "error": {
-                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
-                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                      },
-                      "errors": [
-                        {
-                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-07-03T12:10:33.354Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Mobile-Safari\\trace.zip"
-                        }
-                      ]
-                    },
-                    {
-                      "workerIndex": 7,
-                      "parallelIndex": 4,
-                      "status": "failed",
-                      "duration": 3,
-                      "error": {
-                        "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
-                        "stack": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                      },
-                      "errors": [
-                        {
-                          "message": "Error: browserType.launch: Executable doesn't exist at C:\\Users\\dream\\AppData\\Local\\ms-playwright\\webkit-2182\\Playwright.exe\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 1,
-                      "startTime": "2025-07-03T12:10:35.347Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Mobile-Safari-retry1\\trace.zip"
-                        }
-                      ]
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "571331557c1311f9cd53-3ed31182d910623166b0",
-              "file": "url-login-test.js",
-              "line": 14,
-              "column": 3
-            },
-            {
-              "title": "測試 URL 參數自動登入",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "Tablet",
-                  "projectName": "Tablet",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 22276,
-                      "errors": [],
-                      "stdout": [
-                        {
-                          "text": "📋 測試檢查清單：\n"
-                        },
-                        {
-                          "text": "   ✅ URL 參數自動登入\n"
-                        },
-                        {
-                          "text": "   ❌ 我的最愛功能（新增/修改/刪除）\n"
-                        },
-                        {
-                          "text": "   ❌ 標籤功能（新增/修改/刪除）\n"
-                        },
-                        {
-                          "text": "   ✅ 分享功能\n"
-                        },
-                        {
-                          "text": "   ✅ AI 造句功能\n"
-                        },
-                        {
-                          "text": "\n"
-                        },
-                        {
-                          "text": "🔑 開始測試 URL 參數自動登入...\n"
-                        },
-                        {
-                          "text": "🌐 導航到登入 URL: http://localhost:3000/?loginUser=test%40test.com&pwd=test0123\n"
-                        },
-                        {
-                          "text": "⏳ 等待登入處理...\n"
-                        },
-                        {
-                          "text": "📊 測試結果:\n"
-                        },
-                        {
-                          "text": "   - 登入狀態: ✅ 已登入\n"
-                        },
-                        {
-                          "text": "   - 當前 URL: http://localhost:3000/\n"
-                        },
-                        {
-                          "text": "✅ URL 登入成功！\n"
-                        },
-                        {
-                          "text": "💾 認證狀態已保存到 .auth/user.json\n"
-                        },
-                        {
-                          "text": "📊 認證統計：\n"
-                        },
-                        {
-                          "text": "  - Cookies: 2 個\n"
-                        },
-                        {
-                          "text": "  - LocalStorage: 1 個域名\n"
-                        },
-                        {
-                          "text": "⏭️ 跳過我的最愛功能測試\n"
-                        },
-                        {
-                          "text": "⏭️ 跳過標籤功能測試\n"
-                        },
-                        {
-                          "text": "🔗 測試分享功能...\n"
-                        },
-                        {
-                          "text": "   🔗 開始分享功能測試...\n"
-                        },
-                        {
-                          "text": "   ✅ 新增測試句子完成\n"
-                        },
-                        {
-                          "text": "   📂 切換到分享與備份頁面...\n"
-                        },
-                        {
-                          "text": "   ✅ 切換到分享與備份頁面\n"
-                        },
-                        {
-                          "text": "   📤 測試分享功能...\n"
-                        },
-                        {
-                          "text": "   ✅ 點擊分享按鈕\n"
-                        },
-                        {
-                          "text": "   ✅ 分享結果顯示\n"
-                        },
-                        {
-                          "text": "   📋 測試導出JSON功能...\n"
-                        },
-                        {
-                          "text": "   ✅ 點擊導出按鈕\n"
-                        },
-                        {
-                          "text": "   ✅ 分享功能測試完成\n"
-                        },
-                        {
-                          "text": "🤖 測試AI產出句子功能...\n"
-                        },
-                        {
-                          "text": "   🤖 開始AI產出句子功能測試...\n"
-                        },
-                        {
-                          "text": "   📊 記錄我的最愛初始數量...\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛初始數量: 0\n"
-                        },
-                        {
-                          "text": "   🔍 切換到 AI 造句幫手標籤頁...\n"
-                        },
-                        {
-                          "text": "   ✅ 切換到 AI 造句幫手標籤頁\n"
-                        },
-                        {
-                          "text": "   💡 測試範例提示...\n"
-                        },
-                        {
-                          "text": "   📝 輸入AI生成指令...\n"
-                        },
-                        {
-                          "text": "   ✅ 輸入提示詞: \"生成三個高中生應該會的英文句子\"\n"
-                        },
-                        {
-                          "text": "   🚀 測試AI生成功能...\n"
-                        },
-                        {
-                          "text": "   ✅ 點擊AI生成按鈕\n"
-                        },
-                        {
-                          "text": "   ✅ AI回應顯示\n"
-                        },
-                        {
-                          "text": "   ⭐ 測試新增AI句子到收藏...\n"
-                        },
-                        {
-                          "text": "   ⚠️ 未找到新增收藏按鈕\n"
-                        },
-                        {
-                          "text": "   📊 檢查我的最愛數量變化...\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛當前數量: 0\n"
-                        },
-                        {
-                          "text": "   📋 我的最愛初始數量: 0\n"
-                        },
-                        {
-                          "text": "   ⚠️ 我的最愛數量沒有變化，AI句子可能沒有自動添加\n"
-                        },
-                        {
-                          "text": "   ✅ AI產出句子功能測試完成\n"
-                        },
-                        {
-                          "text": "🏁 URL 登入測試完成\n"
-                        }
-                      ],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2025-07-03T12:10:33.279Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "571331557c1311f9cd53-a2eeb1c241b568b1bca8",
-              "file": "url-login-test.js",
-              "line": 14,
-              "column": 3
             }
           ]
         }
@@ -1029,11 +440,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-07-03T12:10:31.785Z",
-    "duration": 25139.675000000003,
-    "expected": 3,
+    "startTime": "2025-07-03T14:44:43.276Z",
+    "duration": 24484.904000000002,
+    "expected": 1,
     "skipped": 0,
-    "unexpected": 3,
+    "unexpected": 0,
     "flaky": 0
   }
 }

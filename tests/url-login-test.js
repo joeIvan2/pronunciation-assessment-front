@@ -4,10 +4,10 @@ const fs = require('fs');
 // 測試項目檢查清單配置
 const TEST_CHECKLIST = {
   login: true,           // ✅ URL 參數自動登入
-  favorites: false,       // ✅ 我的最愛功能（新增/修改/刪除）
+  favorites: true,       // ✅ 我的最愛功能（新增/修改/刪除）
   tags: false,           // ✅ 標籤功能（新增/修改/刪除）
-  share: true,         // ❌ 分享功能
-  ai: true            // ❌ AI 造句功能
+  share: false,         // ❌ 分享功能
+  ai: false            // ❌ AI 造句功能
 };
 
 test.describe('URL 登入測試', () => {
@@ -65,12 +65,10 @@ test.describe('URL 登入測試', () => {
     if (isLoggedIn) {
       console.log('✅ URL 登入成功！');
       
-      // 創建 .auth 目錄
+      // 保存認證狀態
       if (!fs.existsSync('.auth')) {
         fs.mkdirSync('.auth');
       }
-      
-      // 保存認證狀態
       const storageState = await page.context().storageState();
       fs.writeFileSync('.auth/user.json', JSON.stringify(storageState, null, 2));
       console.log('💾 認證狀態已保存到 .auth/user.json');
@@ -108,6 +106,10 @@ test.describe('URL 登入測試', () => {
       } else {
         console.log('⏭️ 跳過AI產出句子功能測試');
       }
+      
+      // 最後進行快照測試和比對
+      console.log('📸 進行快照測試和比對...');
+      await performScreenshotTests(page);
       
     } else {
       console.log('❌ URL 登入失敗');
@@ -403,6 +405,15 @@ async function testAIGenerateFunction(page) {
         const aiResponseVisible = await page.locator('.section-header:has-text("AI 回應")').isVisible();
         if (aiResponseVisible) {
           console.log('   ✅ AI回應顯示');
+          
+          // 確保頁面滾動到頂部
+          await page.evaluate(() => window.scrollTo(0, 0));
+          await page.waitForTimeout(500);
+          
+          // 生成AI回應頁面快照
+          console.log('   📸 生成AI回應頁面快照...');
+          await expect(page).toHaveScreenshot('ai-response-page.png');
+          console.log('   ✅ AI回應頁面快照生成完成');
         } else {
           console.log('   ⚠️ 未找到AI回應');
         }
@@ -466,5 +477,233 @@ async function testAIGenerateFunction(page) {
     
   } catch (error) {
     console.log(`   ❌ AI產出句子功能測試失敗: ${error.message}`);
+  }
+}
+
+/**
+ * 清空測試數據以確保快照一致性（保留用戶登入狀態）
+ */
+async function clearUserData(page) {
+  try {
+    console.log('🧹 清空測試數據（保留用戶登入狀態）...');
+    
+    // 先清空標籤數據（通過UI操作）
+    await clearTagsData(page);
+    
+    // 然後清空我的最愛數據（通過UI操作）
+    await clearFavoritesData(page);
+    
+    // 只清空非用戶相關的測試數據
+    await page.evaluate(() => {
+      localStorage.removeItem('sentences');
+      localStorage.removeItem('assessment-history');
+      localStorage.removeItem('history');
+      // 保留 userSettings 和其他用戶登入相關數據
+    });
+    
+    // 等待UI更新
+    await page.waitForTimeout(1000);
+    
+    console.log('   ✅ 測試數據已清空（用戶登入狀態已保留）');
+  } catch (error) {
+    console.log(`   ⚠️ 清空測試數據失敗: ${error.message}`);
+  }
+}
+
+/**
+ * 清空標籤數據
+ */
+async function clearTagsData(page) {
+  try {
+    console.log('   🏷️ 開始清空標籤數據...');
+    
+    // 切換到我的最愛標籤頁
+    const favoritesTab = page.locator('button.tab-button:has-text("我的最愛")');
+    if (await favoritesTab.isVisible()) {
+      await favoritesTab.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    // 點擊標籤按鈕
+    const tagsButton = page.locator('button:has-text("🏷️ 標籤")');
+    if (await tagsButton.isVisible()) {
+      await tagsButton.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    // 移除之前的對話框處理器
+    page.removeAllListeners('dialog');
+    
+    // 設置對話框事件處理器
+    page.on('dialog', async dialog => {
+      console.log(`   📋 標籤刪除確認對話框: ${dialog.message()}`);
+      if (dialog.message().includes('確定要刪除標籤')) {
+        await dialog.accept();
+        console.log('   ✅ 已確認刪除標籤');
+      } else {
+        await dialog.dismiss();
+      }
+    });
+    
+    // 刪除所有標籤
+    let deleteButton = page.locator('button:has-text("刪除")').first();
+    let deleteCount = 0;
+    
+    while (await deleteButton.isVisible() && deleteCount < 50) { // 防止無限循環
+      await deleteButton.click();
+      await page.waitForTimeout(1000); // 等待刪除操作完成
+      deleteCount++;
+      
+      // 重新查找下一個刪除按鈕
+      deleteButton = page.locator('button:has-text("刪除")').first();
+    }
+    
+    console.log(`   ✅ 標籤數據已清空（刪除了 ${deleteCount} 個標籤）`);
+  } catch (error) {
+    console.log(`   ⚠️ 清空標籤數據失敗: ${error.message}`);
+  }
+}
+
+/**
+ * 清空我的最愛數據
+ */
+async function clearFavoritesData(page) {
+  try {
+    // 切換到我的最愛標籤頁
+    const favoritesTab = page.locator('button.tab-button:has-text("我的最愛")');
+    if (await favoritesTab.isVisible()) {
+      await favoritesTab.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    // 點擊句子按鈕
+    const sentenceButton = page.locator('button:has-text("📝 句子")');
+    if (await sentenceButton.isVisible()) {
+      await sentenceButton.click();
+      await page.waitForTimeout(1000);
+    }
+    
+    // 檢查是否有我的最愛項目
+    const favoriteItems = await page.locator('.favorite-item').count();
+    if (favoriteItems === 0) {
+      console.log('   ✅ 我的最愛已經是空的，無需清空');
+      return;
+    }
+    
+    console.log(`   🗑️ 發現 ${favoriteItems} 個我的最愛項目，使用清空所有句子功能...`);
+    
+    // 使用應用內建的"清空所有句子"按鈕
+    const clearAllButton = page.locator('button:has-text("清空所有句子")');
+    if (await clearAllButton.isVisible() && await clearAllButton.isEnabled()) {
+      // 移除之前的對話框處理器
+      page.removeAllListeners('dialog');
+      
+      // 設置對話框事件處理器（在點擊按鈕之前）
+      page.on('dialog', async dialog => {
+        console.log(`   📋 清空句子確認對話框: ${dialog.message()}`);
+        if (dialog.message().includes('確定要清空')) {
+          await dialog.accept();
+          console.log('   ✅ 已確認清空操作');
+        } else {
+          await dialog.dismiss();
+        }
+      });
+      
+      // 點擊清空按鈕
+      await clearAllButton.click();
+      await page.waitForTimeout(2000); // 等待清空操作完成
+      
+      console.log('   ✅ 我的最愛數據已清空（使用清空所有句子功能）');
+    } else {
+      console.log('   ⚠️ 清空所有句子按鈕不可用，可能沒有句子需要清空');
+    }
+  } catch (error) {
+    console.log(`   ⚠️ 清空我的最愛數據失敗: ${error.message}`);
+  }
+}
+
+/**
+ * 進行快照測試和比對
+ */
+async function performScreenshotTests(page) {
+  try {
+    console.log('📸 開始快照測試和比對流程...');
+    
+    // 1. 完全清空所有數據，確保乾淨的測試狀態
+    console.log('🧹 完全清空所有數據以確保乾淨狀態...');
+    await clearAllData(page);
+    
+    // 確保頁面滾動到頂部
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(1000);
+    
+    // 2. 拍攝完全清空後的主頁面快照
+    console.log('📸 拍攝清空後的主頁面快照...');
+    await expect(page).toHaveScreenshot('homepage-clean.png', {
+      fullPage: true,
+      animations: 'disabled'
+    });
+    console.log('✅ 清空後的主頁面快照完成');
+    
+    // 3. 拍攝清空後的我的最愛頁面快照
+    console.log('📸 拍攝清空後的我的最愛頁面快照...');
+    await expect(page).toHaveScreenshot('favorites-clean.png', {
+      fullPage: true,
+      animations: 'disabled'
+    });
+    console.log('✅ 清空後的我的最愛頁面快照完成');
+    
+    // 4. 驗證快照比對
+    console.log('🔍 進行快照比對驗證...');
+    console.log('   ✅ 快照文件已生成，Playwright 將自動進行比對');
+    console.log('   📋 如果快照有差異，測試將會失敗並顯示差異');
+    console.log('   📁 快照文件位置: tests/url-login-test.js-snapshots/');
+    
+    console.log('✅ 快照測試和比對完成');
+    
+  } catch (error) {
+    console.log(`❌ 快照測試失敗: ${error.message}`);
+    throw error; // 重新拋出錯誤以確保測試失敗
+  }
+}
+
+/**
+ * 清空所有數據（包括textarea內容）
+ */
+async function clearAllData(page) {
+  try {
+    console.log('   🧹 開始清空所有數據...');
+    
+    // 1. 清空主要的textarea（發音評分）
+    console.log('   📝 清空發音評分textarea...');
+    const mainTextarea = page.locator('textarea[placeholder*="輸入或粘貼要練習的文本"]');
+    if (await mainTextarea.isVisible()) {
+      await mainTextarea.fill('');
+      console.log('   ✅ 發音評分textarea已清空');
+    }
+    
+    // 2. 清空AI造句幫手textarea（如果存在）
+    console.log('   🤖 清空AI造句幫手textarea...');
+    const aiTextarea = page.locator('textarea[placeholder*="AI"], textarea[placeholder*="造句"]');
+    if (await aiTextarea.isVisible()) {
+      await aiTextarea.fill('');
+      console.log('   ✅ AI造句幫手textarea已清空');
+    }
+    
+    // 3. 清空我的最愛數據
+    console.log('   ⭐ 清空我的最愛數據...');
+    await clearFavoritesData(page);
+    
+    // 4. 清空標籤數據
+    console.log('   🏷️ 清空標籤數據...');
+    await clearTagsData(page);
+    
+    // 5. 等待清空操作完成
+    await page.waitForTimeout(1000);
+    
+    console.log('   ✅ 所有數據清空完成');
+    
+  } catch (error) {
+    console.log(`   ❌ 清空數據失敗: ${error.message}`);
   }
 }
