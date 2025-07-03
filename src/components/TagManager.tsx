@@ -26,9 +26,8 @@ const TagManager: React.FC<TagManagerProps> = ({
     <div>
       {!isExpanded && (
         <h3 
-          className="section-header special-title"
+          className="section-header special-title tag-manager-header"
           onClick={onToggleExpand}
-          style={{ cursor: 'pointer' }}
         >
           管理標籤
         </h3>
@@ -37,33 +36,17 @@ const TagManager: React.FC<TagManagerProps> = ({
       {isExpanded && (
         <>
           {/* 新增新標籤 */}
-          <div style={{ 
-            marginBottom: 16, 
-            background: "var(--ios-card)", 
-            padding: 12, 
-            borderRadius: 12,
-            border: "1px solid var(--ios-border)"
-          }}>
-            <h4 style={{ 
-              color: "var(--ios-primary)", 
-              margin: "0 0 8px 0",
-              fontSize: 15,
-              fontWeight: 600
-            }}>{editingTagId ? "編輯標籤" : "新增新標籤"}</h4>
-            <div style={{ display: "flex", gap: 8 }}>
+          <div className="tag-manager-container">
+            <h4 className="tag-manager-title">
+              {editingTagId ? "編輯標籤" : "新增新標籤"}
+            </h4>
+            <div className="tag-manager-input-row">
               <input 
                 type="text" 
                 placeholder="標籤名稱..." 
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
-                style={{ 
-                  padding: 8, 
-                  borderRadius: 12, 
-                  border: "1px solid var(--ios-border)", 
-                  background: "rgba(20, 20, 24, 0.7)", 
-                  color: "var(--ios-text)", 
-                  flexGrow: 1 
-                }} 
+                className="tag-manager-input"
               />
               
               <button 
@@ -82,16 +65,7 @@ const TagManager: React.FC<TagManagerProps> = ({
                   
                   setNewTagName('');
                 }} 
-                style={{ 
-                  padding: "0 12px", 
-                  background: "var(--ios-success)", 
-                  color: "var(--ios-text)", 
-                  border: "none", 
-                  borderRadius: 12, 
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  fontWeight: 500
-                }}
+                className="tag-manager-button"
               >
                 {editingTagId ? "更新" : "新增"}
               </button>
@@ -102,16 +76,7 @@ const TagManager: React.FC<TagManagerProps> = ({
                     setEditingTagId(null);
                     setNewTagName('');
                   }} 
-                  style={{ 
-                    padding: "0 12px", 
-                    background: "var(--ios-danger)", 
-                    color: "var(--ios-text)", 
-                    border: "none", 
-                    borderRadius: 12, 
-                    cursor: "pointer",
-                    fontSize: "13px",
-                    fontWeight: 500
-                  }}
+                  className="tag-manager-button tag-manager-cancel"
                 >
                   取消
                 </button>
@@ -121,55 +86,28 @@ const TagManager: React.FC<TagManagerProps> = ({
           
           {/* 標籤列表 */}
           <div>
-            <h4 style={{ 
-              color: "var(--ios-primary)", 
-              margin: "0 0 8px 0",
-              fontSize: 15,
-              fontWeight: 600
-            }}>現有標籤</h4>
-            <ul style={{ listStyle: "none", padding: 0 }}>
+            <h4 className="tag-manager-title">現有標籤</h4>
+            <ul className="tag-manager-list">
               {tags.map(tag => (
                 <li 
                   key={tag.tagId} 
-                  style={{
-                    padding: 12,
-                    background: "var(--ios-card)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
-                    borderRadius: 12,
-                    border: "1px solid var(--ios-border)"
-                  }}
+                  className="tag-manager-list-item"
                 >
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ 
-                      width: 16, 
-                      height: 16, 
-                      borderRadius: 16, 
-                      background: tag.color,
-                      marginRight: 8
-                    }}></span>
-                    <span style={{ color: "var(--ios-text)" }}>{tag.name}</span>
-                    <span style={{ color: "var(--ios-text-secondary)", marginLeft: 8, fontSize: 12 }}>ID: {tag.tagId}</span>
+                  <div className="tag-manager-item-info">
+                    <span 
+                      className="tag-manager-color-dot"
+                      style={{ backgroundColor: tag.color }}
+                    ></span>
+                    <span className="tag-manager-item-name">{tag.name}</span>
+                    <span className="tag-manager-item-id">ID: {tag.tagId}</span>
                   </div>
-                  <div>
+                  <div className="tag-manager-item-actions">
                     <button
                       onClick={() => {
                         setEditingTagId(tag.tagId);
                         setNewTagName(tag.name);
                       }}
-                      style={{ 
-                        background: "var(--ios-primary)", 
-                        color: "var(--ios-text)", 
-                        border: "none", 
-                        borderRadius: 12, 
-                        padding: "4px 8px",
-                        marginRight: 4,
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: 500
-                      }}
+                      className="tag-manager-action-button"
                     >
                       編輯
                     </button>
@@ -179,16 +117,7 @@ const TagManager: React.FC<TagManagerProps> = ({
                           onDeleteTag(tag.tagId);
                         }
                       }}
-                      style={{ 
-                        background: "var(--ios-danger)", 
-                        color: "var(--ios-text)", 
-                        border: "none", 
-                        borderRadius: 12, 
-                        padding: "4px 8px",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: 500
-                      }}
+                      className="tag-manager-action-button tag-manager-delete"
                     >
                       刪除
                     </button>

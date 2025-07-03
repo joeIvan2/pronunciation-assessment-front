@@ -1,5 +1,6 @@
 import React from 'react';
 import '../styles/VoicePicker.css';
+import '../styles/PronunciationAssessment.css';
 import { getVoiceOptions, SPEED_RANGE } from '../config/voiceConfig';
 import { Tooltip } from 'react-tooltip';
 
@@ -30,11 +31,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
         <span 
           data-tooltip-id="ai-voice-tooltip"
           data-tooltip-content="使用AI合成語音進行朗讀"
-          style={{
-            color: 'var(--ios-text-secondary)',
-            marginLeft: '4px',
-            cursor: 'pointer'
-          }}
+          className="voice-picker-tooltip-icon"
         >
           <i className="fas fa-question-circle" />
         </span>
@@ -43,20 +40,7 @@ const VoicePicker: React.FC<VoicePickerProps> = ({
         id="ai-voice-tooltip"
         openOnClick
         clickable
-        style={{
-          backgroundColor: 'var(--ios-background-secondary, #f2f2f7)',
-          color: 'var(--ios-text-primary, #000000)',
-          border: '1px solid var(--ios-border-color, #c6c6c8)',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          lineHeight: '1.5',
-          maxWidth: '300px',
-          whiteSpace: 'normal',
-          wordWrap: 'break-word',
-          zIndex: 9999,
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-        }}
+        className="voice-picker-tooltip"
       />
 
       <div className="voice-picker-content">

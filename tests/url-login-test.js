@@ -5,9 +5,9 @@ const fs = require('fs');
 const TEST_CHECKLIST = {
   login: true,           // ✅ URL 參數自動登入
   favorites: true,       // ✅ 我的最愛功能（新增/修改/刪除）
-  tags: false,           // ✅ 標籤功能（新增/修改/刪除）
-  share: false,         // ❌ 分享功能
-  ai: false            // ❌ AI 造句功能
+  tags: true,           // ✅ 標籤功能（新增/修改/刪除）
+  share: true,         // ❌ 分享功能
+  ai: true            // ❌ AI 造句功能
 };
 
 test.describe('URL 登入測試', () => {
@@ -290,10 +290,19 @@ async function testShareFunction(page) {
     // 3. 測試分享功能
     console.log('   📤 測試分享功能...');
     
+    // 移除之前的對話框處理器，避免衝突
+    page.removeAllListeners('dialog');
+    
     // 設置對話框處理器（處理分享確認對話框）
     page.on('dialog', async dialog => {
       console.log(`   🔔 處理對話框: ${dialog.message()}`);
-      await dialog.accept(); // 確認分享
+      if (dialog.message().includes('確定要分享') || dialog.message().includes('分享這些內容')) {
+        await dialog.accept(); // 確認分享
+        console.log('   ✅ 已確認分享操作');
+      } else {
+        await dialog.dismiss(); // 取消其他對話框
+        console.log('   ❌ 取消其他對話框');
+      }
     });
     
     const shareButton = page.locator('button:has-text("生成分享鏈接")');
@@ -629,15 +638,38 @@ async function performScreenshotTests(page) {
   try {
     console.log('📸 開始快照測試和比對流程...');
     
-    // 1. 完全清空所有數據，確保乾淨的測試狀態
+    // 1. 先確保回到發音評分主頁面
+    console.log('🏠 切換回發音評分主頁面...');
+    const pronunciationTab = page.getByRole('button', { name: '🎯 發音評分' });
+    if (await pronunciationTab.isVisible()) {
+      await pronunciationTab.click();
+      await page.waitForTimeout(1000);
+      console.log('   ✅ 已切換到發音評分頁面');
+    } else {
+      console.log('   ⚠️ 未找到發音評分頁面按鈕，嘗試其他方法...');
+      // 嘗試點擊主要頁籤
+      const mainTab = page.locator('button.tab-button').first();
+      if (await mainTab.isVisible()) {
+        await mainTab.click();
+        await page.waitForTimeout(1000);
+      }
+    }
+    
+    // 2. 完全清空所有數據，確保乾淨的測試狀態
     console.log('🧹 完全清空所有數據以確保乾淨狀態...');
     await clearAllData(page);
+    
+    // 3. 再次確保在正確的頁面上
+    if (await pronunciationTab.isVisible()) {
+      await pronunciationTab.click();
+      await page.waitForTimeout(500);
+    }
     
     // 確保頁面滾動到頂部
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(1000);
     
-    // 2. 拍攝完全清空後的主頁面快照
+    // 4. 拍攝完全清空後的主頁面快照
     console.log('📸 拍攝清空後的主頁面快照...');
     await expect(page).toHaveScreenshot('homepage-clean.png', {
       fullPage: true,
@@ -645,15 +677,22 @@ async function performScreenshotTests(page) {
     });
     console.log('✅ 清空後的主頁面快照完成');
     
-    // 3. 拍攝清空後的我的最愛頁面快照
-    console.log('📸 拍攝清空後的我的最愛頁面快照...');
-    await expect(page).toHaveScreenshot('favorites-clean.png', {
-      fullPage: true,
-      animations: 'disabled'
-    });
-    console.log('✅ 清空後的我的最愛頁面快照完成');
+    // 5. 切換到我的最愛頁面並拍攝快照
+    console.log('📸 切換到我的最愛頁面並拍攝快照...');
+    const favoritesTab = page.locator('button.tab-button:has-text("我的最愛")');
+    if (await favoritesTab.isVisible()) {
+      await favoritesTab.click();
+      await page.waitForTimeout(1000);
+      
+      // 拍攝清空後的我的最愛頁面快照
+      await expect(page).toHaveScreenshot('favorites-clean.png', {
+        fullPage: true,
+        animations: 'disabled'
+      });
+      console.log('✅ 清空後的我的最愛頁面快照完成');
+    }
     
-    // 4. 驗證快照比對
+    // 6. 驗證快照比對
     console.log('🔍 進行快照比對驗證...');
     console.log('   ✅ 快照文件已生成，Playwright 將自動進行比對');
     console.log('   📋 如果快照有差異，測試將會失敗並顯示差異');
