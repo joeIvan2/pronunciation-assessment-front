@@ -23,3 +23,28 @@ yarn-debug.log*
 yarn-error.log*
 
 youdao_api_key.json
+
+# Logs
+logs
+*.log
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+.env
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+
+# Authentication files
+.auth/
+
+# Task files
+# tasks.json
+# tasks/ 

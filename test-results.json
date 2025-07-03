@@ -1,0 +1,371 @@
+{
+  "config": {
+    "configFile": "C:\\py\\pronunciation\\pronunciation-assessment-front\\playwright.config.js",
+    "rootDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "test-results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Desktop Chrome",
+        "name": "Desktop Chrome",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Desktop Firefox",
+        "name": "Desktop Firefox",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Desktop Safari",
+        "name": "Desktop Safari",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Tablet",
+        "name": "Tablet",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.53.2",
+    "workers": 8,
+    "webServer": {
+      "command": "npm start",
+      "port": 3000,
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "playwright-test.js",
+      "file": "playwright-test.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "發音評估基準測試",
+          "file": "playwright-test.js",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "基準測試 - 完整發音評估流程",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7084,
+                      "error": {
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31",
+                        "location": {
+                          "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
+                          "column": 31,
+                          "line": 50
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
+                            "column": 31,
+                            "line": 50
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m\n\u001b[2m    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31\u001b[22m"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "🚀 開始基準測試 - 完整發音評估流程\n"
+                        },
+                        {
+                          "text": "✅ 頁面載入成功\n"
+                        },
+                        {
+                          "text": "✅ 測試文字輸入完成\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-03T06:59:35.514Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
+                        "column": 31,
+                        "line": 50
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7023,
+                      "error": {
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31",
+                        "location": {
+                          "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
+                          "column": 31,
+                          "line": 50
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
+                            "column": 31,
+                            "line": 50
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button').filter({ hasText: /開始錄音|開始|Start/i }).first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 48 |\u001b[39m       hasText\u001b[33m:\u001b[39m \u001b[35m/開始錄音|開始|Start/i\u001b[39m \n \u001b[90m 49 |\u001b[39m     })\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(startButton)\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mawait\u001b[39m startButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m     console\u001b[33m.\u001b[39mlog(\u001b[32m'✅ 點擊開始錄音按鈕'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m     \u001b[0m\n\u001b[2m    at C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js:50:31\u001b[22m"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "🚀 開始基準測試 - 完整發音評估流程\n"
+                        },
+                        {
+                          "text": "✅ 頁面載入成功\n"
+                        },
+                        {
+                          "text": "✅ 測試文字輸入完成\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-07-03T06:59:43.955Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\playwright-test.js-發音評估基準測試-基準測試---完整發音評估流程-Desktop-Chrome-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\playwright-test.js",
+                        "column": 31,
+                        "line": 50
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "f9b8abd56f3360353b17-e8858d910cf4101c8261",
+              "file": "playwright-test.js",
+              "line": 29,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-07-03T06:59:34.673Z",
+    "duration": 16905.529000000002,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

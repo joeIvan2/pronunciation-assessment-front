@@ -2,9 +2,11 @@
 // 發音評估應用程式自動化測試配置
 
 module.exports = {
-  testDir: './',
-  timeout: 30000,
-  retries: 2,
+  testDir: './tests',
+  testMatch: ['**/*.spec.js', '**/playwright-test.js'],
+  testIgnore: ['src/**/*.test.js', 'src/**/*.spec.js', 'jest.config.js', 'setupTests.js'],
+  timeout: 60000,
+  retries: 1,
   use: {
     baseURL: 'http://localhost:3000',
     headless: process.env.HEADLESS === 'true',
@@ -56,6 +58,7 @@ module.exports = {
     command: 'npm start',
     port: 3000,
     reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
   reporter: [
     ['html'],
