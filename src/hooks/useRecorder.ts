@@ -1,14 +1,16 @@
 import { useState, useRef } from 'react';
+import { RecorderOptions } from '../types/speech';
 
-interface RecorderState {
+// 本地定義的錄音器狀態 (與 speech.ts 中的稍有不同，保持向後兼容)
+interface LocalRecorderState {
   recording: boolean;
   audioData: Blob | null;
   error: string | null;
   streamingActive: boolean; // 新增streaming狀態
 }
 
-interface RecorderResult extends RecorderState {
-  startRecording: () => Promise<void>;
+interface LocalRecorderResult extends LocalRecorderState {
+  startRecording: (options?: RecorderOptions) => Promise<void>;
   stopRecording: () => void;
   resetRecording: () => void;
   // 新增streaming相關方法
@@ -16,8 +18,8 @@ interface RecorderResult extends RecorderState {
   stopStreamingRecording: () => void;
 }
 
-export const useRecorder = (): RecorderResult => {
-  const [state, setState] = useState<RecorderState>({
+export const useRecorder = (): LocalRecorderResult => {
+  const [state, setState] = useState<LocalRecorderState>({
     recording: false,
     audioData: null,
     error: null,
