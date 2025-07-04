@@ -54,19 +54,19 @@ jobs:
         
     - name: Upload Playwright Report
       uses: actions/upload-artifact@v4
-      if: failure()
       with:
         name: playwright-report-${{ matrix.node-version }}
         path: playwright-report/
         retention-days: 30
+        if-no-files-found: error
         
     - name: Upload Jest Coverage
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: jest-coverage-${{ matrix.node-version }}
         path: coverage/
         retention-days: 30
+        if-no-files-found: error
 
   visual-regression:
     runs-on: ubuntu-latest
@@ -109,8 +109,8 @@ jobs:
         
     - name: Upload Visual Regression Report
       uses: actions/upload-artifact@v4
-      if: failure()
       with:
         name: visual-regression-report
         path: test-results/
-        retention-days: 30 
+        retention-days: 30
+        if-no-files-found: error 
