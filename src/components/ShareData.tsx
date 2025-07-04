@@ -157,14 +157,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       return;
     }
 
-    // 如果收藏數量很少，可能是剛匯入的數據，再次確認
-    if (favorites.length < 5) {
-      setConfirmMessage(`您目前有 ${favorites.length} 個收藏句子，確定要分享這些內容嗎？`);
-      setConfirmAction(() => () => executeShare());
-      setShowConfirmDialog(true);
-      return;
-    }
-
+    // 直接執行分享，不再需要數量確認
     executeShare();
   };
 

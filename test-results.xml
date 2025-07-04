@@ -1,6 +1,6 @@
-<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="58.439337">
-<testsuite name="url-login-test.js" timestamp="2025-07-03T15:16:32.772Z" hostname="Desktop Chrome" tests="1" failures="0" skipped="0" time="50.356" errors="0">
-<testcase name="URL 登入測試 › 測試 URL 參數自動登入" classname="url-login-test.js" time="50.356">
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="59.888318">
+<testsuite name="url-login-test.js" timestamp="2025-07-04T04:30:12.612Z" hostname="Desktop Chrome" tests="1" failures="0" skipped="0" time="48.823" errors="0">
+<testcase name="URL 登入測試 › 測試 URL 參數自動登入" classname="url-login-test.js" time="48.823">
 <system-out>
 <![CDATA[📋 測試檢查清單：
    ✅ URL 參數自動登入
@@ -21,7 +21,7 @@
   - Cookies: 2 個
   - LocalStorage: 1 個域名
 ⭐ 測試我的最愛功能...
-📝 測試文字: "Hello world test 07/03 下午11:16:43"
+📝 測試文字: "Hello world test 07/04 下午12:30:22"
    📝 新增我的最愛句子...
    ✅ 新增我的最愛句子完成
    📋 檢查我的最愛列表...
@@ -36,7 +36,7 @@
    📂 切換到標籤管理頁面...
    ✅ 切換到標籤頁面
    ➕ 新增標籤...
-   ✅ 輸入標籤名稱: 測試標籤_1751555807003
+   ✅ 輸入標籤名稱: 測試標籤_1751603425436
    ✅ 點擊新增標籤按鈕
    📋 檢查標籤列表...
    📊 標籤項目數: 1
