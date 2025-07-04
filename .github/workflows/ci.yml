@@ -42,7 +42,7 @@ jobs:
           playwright-chrome-${{ runner.os }}-
       
     - name: Install Playwright Chrome only
-      run: npx playwright install chromium --with-deps
+      run: npx playwright install chromium
       timeout-minutes: 10
       
     - name: Run Playwright E2E tests (Chrome only)
@@ -96,7 +96,7 @@ jobs:
           playwright-chrome-${{ runner.os }}-
       
     - name: Install Playwright Chrome only
-      run: npx playwright install chromium --with-deps
+      run: npx playwright install chromium
       timeout-minutes: 10
       
     - name: Run Visual Regression Tests (Chrome only)
