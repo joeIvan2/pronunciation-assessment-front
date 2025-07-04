@@ -46,7 +46,7 @@ jobs:
       timeout-minutes: 10
       
     - name: Run Playwright E2E tests (Chrome only)
-      run: npm run test:e2e:ci -- --update-snapshots
+      run: npm run test:e2e:ci
       timeout-minutes: 8
       env:
         CI: true
