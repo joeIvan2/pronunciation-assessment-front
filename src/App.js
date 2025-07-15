@@ -21,6 +21,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<PronunciationAssessment />} />
           <Route path="/intro" element={<Landing />} />
+          <Route path="/intro-en" element={<Landing />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/data-deletion" element={<DataDeletionPage />} />
           <Route path="/practice/:slug" element={<PronunciationAssessment />} />

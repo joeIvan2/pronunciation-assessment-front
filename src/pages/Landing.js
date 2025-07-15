@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import "./styles/main.css"
+import { translations } from "../translations/landing"
 
 // 圖標組件 (使用 SVG 圖標，藍色單色線條風格)
 const Mic = () => (
@@ -97,6 +99,9 @@ const MessageSquare = () => (
 
 export default function PronunciationPlatform() {
   const [activeSection, setActiveSection] = useState("hero")
+  const location = useLocation();
+  const lang = location.pathname.includes('/intro-en') ? 'en' : 'zh';
+  const t = translations[lang];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -143,13 +148,13 @@ export default function PronunciationPlatform() {
 
             <div className="navbar-menu">
               {[
-                { id: "hero", label: "首頁" },
-                { id: "features", label: "功能特色" },
-                { id: "technology", label: "技術架構" },
-                { id: "users", label: "應用場景" },
-                { id: "benefits", label: "預期效益" },
-                { id: "team", label: "團隊介紹" },
-                { id: "roadmap", label: "發展藍圖" },
+                { id: "hero", label: t.nav_home },
+                { id: "features", label: t.nav_features },
+                { id: "technology", label: t.nav_technology },
+                { id: "users", label: t.nav_users },
+                { id: "benefits", label: t.nav_benefits },
+                { id: "team", label: t.nav_team },
+                { id: "roadmap", label: t.nav_roadmap },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -162,7 +167,7 @@ export default function PronunciationPlatform() {
             </div>
 
             <button className="navbar-cta" onClick={() => window.open("/", "_self")}>
-              立即體驗
+              {t.nav_cta}
             </button>
           </div>
         </div>
@@ -183,26 +188,26 @@ export default function PronunciationPlatform() {
               </div>
             </div>
 
-            <p className="hero-description">AI 智慧發音教練，讓你自信開口說出完美英語！</p>
+            <p className="hero-description">{t.hero_subtitle}</p>
 
             <div className="hero-buttons">
               <button className="hero-button-primary" onClick={() => window.open("/", "_self")}>
                 <Play />
-                觀看演示
+                {t.hero_button_primary}
               </button>
               <button className="hero-button-secondary" onClick={() => window.open("/", "_self")}>
                 <BookOpen />
-                了解更多
+                {t.hero_button_secondary}
               </button>
             </div>
 
             {/* Stats */}
             <div className="hero-stats">
               {[
-                { number: "50萬+", label: "預期服務家庭" },
-                { number: "3,000+", label: "目標企業客戶" },
-                { number: "34", label: "支援語言數" },
-                { number: "AI驅動", label: "智慧發音評估" },
+                { number: t.stat_1_number, label: t.stat_1_label },
+                { number: t.stat_2_number, label: t.stat_2_label },
+                { number: t.stat_3_number, label: t.stat_3_label },
+                { number: "AI Driven", label: t.stat_4_label },
               ].map((stat, index) => (
                 <div key={index} className="hero-stat">
                   <div className="hero-stat-number">{stat.number}</div>
@@ -218,47 +223,47 @@ export default function PronunciationPlatform() {
       <section id="features" className="section section-white">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">核心功能特色</h2>
-            <p className="section-subtitle">整合多項 AI 技術，提供全方位的英語發音學習解決方案</p>
+            <h2 className="section-title">{t.features_title}</h2>
+            <p className="section-subtitle">{t.features_subtitle}</p>
           </div>
 
           <div className="grid-3">
             {[
               {
                 icon: <Mic />,
-                title: "智慧發音評估",
-                description: "基於 Microsoft Azure 語音服務，提供準確度、流暢度、完整度、韻律四維度評分",
-                features: ["即時錄音評估", "音素級別分析", "可調整嚴格程度", "詳細錯誤偵測"],
+                title: t.feature_1_title,
+                description: t.feature_1_desc,
+                features: t.feature_1_items,
               },
               {
                 icon: <Brain />,
-                title: "AI 智慧助理",
-                description: "個人化學習建議，根據發音評估結果提供專業改進方案",
-                features: ["學習建議", "錯誤分析", "練習推薦", "圖文輸入支援"],
+                title: t.feature_2_title,
+                description: t.feature_2_desc,
+                features: t.feature_2_items,
               },
               {
                 icon: <BookOpen />,
-                title: "多元文字輸入",
-                description: "支援手動輸入、語音轉文字、OCR 圖片識別等多種輸入方式",
-                features: ["手動輸入", "語音轉文字", "OCR 識別", "智慧格式化"],
+                title: t.feature_3_title,
+                description: t.feature_3_desc,
+                features: t.feature_3_items,
               },
               {
                 icon: <Volume2 />,
-                title: "語音合成播放",
-                description: "多種 AI 語音角色，支援語速調節，提供標準發音示範",
-                features: ["多語音選擇", "語速調節", "標準示範", "自然流暢"],
+                title: t.feature_4_title,
+                description: t.feature_4_desc,
+                features: t.feature_4_items,
               },
               {
                 icon: <Star />,
-                title: "收藏標籤系統",
-                description: "智慧收藏管理，自訂標籤分類，支援批次操作",
-                features: ["一鍵收藏", "標籤管理", "分類篩選", "批次操作"],
+                title: t.feature_5_title,
+                description: t.feature_5_desc,
+                features: t.feature_5_items,
               },
               {
                 icon: <Cloud />,
-                title: "雲端分享同步",
-                description: "跨裝置資料同步，安全的雲端分享機制",
-                features: ["雲端分享", "跨裝置同步", "版本控制", "隱私保護"],
+                title: t.feature_6_title,
+                description: t.feature_6_desc,
+                features: t.feature_6_items,
               },
             ].map((feature, index) => (
               <div key={index} className="card">
@@ -289,19 +294,19 @@ export default function PronunciationPlatform() {
       <section id="technology" className="section section-gradient-blue">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">技術架構</h2>
-            <p className="section-subtitle">採用最新 AI 技術，構建穩定可靠的學習平台</p>
+            <h2 className="section-title">{t.tech_title}</h2>
+            <p className="section-subtitle">{t.tech_subtitle}</p>
           </div>
 
           <div className="tech-grid">
             <div>
-              <h3 className="section-title">前端技術堆疊</h3>
+              <h3 className="section-title">{t.tech_stack_title}</h3>
               <div className="tech-list">
                 {[
-                  { tech: "React 18", desc: "現代化使用者介面框架" },
-                  { tech: "TypeScript", desc: "型別安全的 JavaScript 超集" },
-                  { tech: "CSS3", desc: "響應式設計和 iOS 風格介面" },
-                  { tech: "Web Audio API", desc: "音訊錄製和處理" },
+                  { tech: "React 18", desc: t.tech_stack_1 },
+                  { tech: "TypeScript", desc: t.tech_stack_2 },
+                  { tech: "CSS3", desc: t.tech_stack_3 },
+                  { tech: "Web Audio API", desc: t.tech_stack_4 },
                 ].map((item, index) => (
                   <div key={index} className="tech-item">
                     <div className="tech-bullet"></div>
@@ -313,7 +318,7 @@ export default function PronunciationPlatform() {
                 ))}
               </div>
 
-              <h3 className="section-title mt-8">核心相依套件</h3>
+              <h3 className="section-title mt-8">{t.tech_dependencies_title}</h3>
               <div className="tech-badges">
                 {[
                   "microsoft-cognitiveservices-speech-sdk",
@@ -329,23 +334,53 @@ export default function PronunciationPlatform() {
               </div>
             </div>
 
-            <div className="tech-structure">
-              <h3 className="tech-structure-title">專案結構</h3>
-              <div className="file-tree">
-                <div className="file-tree-item">src/</div>
-                <div className="file-tree-item file-tree-folder">├── components/</div>
-                <div className="file-tree-item file-tree-file">   ├── FavoriteList.tsx</div>
-                <div className="file-tree-item file-tree-file">   ├── TagManager.tsx</div>
-                <div className="file-tree-item file-tree-file">   ├── ShareData.tsx</div>
-                <div className="file-tree-item file-tree-file">   └── AIDataProcessor.tsx</div>
-                <div className="file-tree-item file-tree-folder">├── hooks/</div>
-                <div className="file-tree-item file-tree-file">   ├── useRecorder.ts</div>
-                <div className="file-tree-item file-tree-file">   ├── useAzureSpeech.ts</div>
-                <div className="file-tree-item file-tree-file">   └── useBackendSpeech.ts</div>
-                <div className="file-tree-item file-tree-folder">├── pages/</div>
-                <div className="file-tree-item file-tree-folder">├── utils/</div>
-                <div className="file-tree-item file-tree-folder">├── types/</div>
-                <div className="file-tree-item file-tree-folder">└── styles/</div>
+            <div className="tech-breakdown">
+              <h3 className="tech-structure-title">{t.tech_breakdown_title}</h3>
+              <p className="section-subtitle" style={{textAlign: 'left', marginBottom: '2rem'}} dangerouslySetInnerHTML={{ __html: t.tech_breakdown_subtitle }}></p>
+              <div className="tech-files-grid">
+                <div className="tech-file-card">
+                  <h4>{t.file_analysis_1_title}</h4>
+                  <h5>{t.file_analysis_1_subtitle}</h5>
+                  <p dangerouslySetInnerHTML={{ __html: t.file_analysis_1_desc }}></p>
+                    <ul>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_1_item_1 }}></li>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_1_item_2 }}></li>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_1_item_3 }}></li>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_1_item_4 }}></li>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_1_item_5 }}></li>
+                    </ul>
+                  <p dangerouslySetInnerHTML={{ __html: t.file_analysis_1_conclusion }}></p>
+                </div>
+                <div className="tech-file-card">
+                  <h4>{t.file_analysis_2_title}</h4>
+                  <h5>{t.file_analysis_2_subtitle}</h5>
+                  <p dangerouslySetInnerHTML={{ __html: t.file_analysis_2_desc }}></p>
+                    <ul>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_2_item_1 }}></li>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_2_item_2 }}></li>
+                        <li dangerouslySetInnerHTML={{ __html: t.file_analysis_2_item_3 }}></li>
+                    </ul>
+                </div>
+                <div className="tech-file-card">
+                  <h4>{t.file_analysis_3_title}</h4>
+                  <h5>{t.file_analysis_3_subtitle}</h5>
+                  <p dangerouslySetInnerHTML={{ __html: t.file_analysis_3_desc }}></p>
+                </div>
+                <div className="tech-file-card">
+                  <h4>{t.file_analysis_4_title}</h4>
+                  <h5>{t.file_analysis_4_subtitle}</h5>
+                  <p dangerouslySetInnerHTML={{ __html: t.file_analysis_4_desc }}></p>
+                </div>
+                <div className="tech-file-card">
+                  <h4>{t.file_analysis_5_title}</h4>
+                  <h5>{t.file_analysis_5_subtitle}</h5>
+                  <p dangerouslySetInnerHTML={{ __html: t.file_analysis_5_desc }}></p>
+                </div>
+                <div className="tech-file-card">
+                  <h4>{t.file_analysis_6_title}</h4>
+                  <h5>{t.file_analysis_6_subtitle}</h5>
+                  <p dangerouslySetInnerHTML={{ __html: t.file_analysis_6_desc }}></p>
+                </div>
               </div>
             </div>
           </div>
@@ -356,54 +391,47 @@ export default function PronunciationPlatform() {
       <section id="users" className="section section-white">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">應用場景</h2>
-            <p className="section-subtitle">服務多元使用者群體，滿足不同學習需求</p>
+            <h2 className="section-title">{t.users_title}</h2>
+            <p className="section-subtitle">{t.users_subtitle}</p>
           </div>
 
           <div className="grid-2">
             {[
               {
                 icon: <Target />,
-                title: "備考學生群體",
-                description: "面臨聽力理解困難與口說恐懼的雙重挑戰",
-                solutions: [
-                  "安全的個人化練習環境",
-                  "多維度發音評估了解錯誤位置",
-                  "AI 智慧助理提供改進建議",
-                  "語音合成支援多種語速調節",
-                ],
-                impact: "預期提升口說成績平均 20%，獲得 40% 市場佔有率",
+                title: t.user_1_title,
+                description: t.user_1_desc,
+                solutions_title: t.user_1_solution_title,
+                solutions: t.user_1_solutions,
+                impact_title: t.user_1_impact_title,
+                impact: t.user_1_impact,
               },
               {
                 icon: <Users />,
-                title: "工作忙碌的職業父母",
-                description: "面臨子女英語學習輔導困境",
-                solutions: [
-                  "OCR 文字辨識技術拍攝課文自動生成練習",
-                  "Microsoft Azure 語音服務多維度評估",
-                  "AI 智慧助理個人化建議",
-                  "學習歷程保留功能",
-                ],
-                impact: "預期服務全台超過 50 萬個家庭",
+                title: t.user_2_title,
+                description: t.user_2_desc,
+                solutions_title: t.user_2_solution_title,
+                solutions: t.user_2_solutions,
+                impact_title: t.user_2_impact_title,
+                impact: t.user_2_impact,
               },
               {
                 icon: <Globe />,
-                title: "赴海外工作專業人士",
-                description: "面臨專業術語發音訓練資源匱乏",
-                solutions: [
-                  "支援專業術語輸入",
-                  "AI 自動生成相關情境句子",
-                  "標籤管理系統按產業別分類",
-                  "雲端同步跨裝置學習進度",
-                ],
-                impact: "特別適合電子業等特殊領域從業人員",
+                title: t.user_3_title,
+                description: t.user_3_desc,
+                solutions_title: t.user_3_solution_title,
+                solutions: t.user_3_solutions,
+                impact_title: t.user_3_impact_title,
+                impact: t.user_3_impact,
               },
               {
                 icon: <Award />,
-                title: "醫療機構管理者",
-                description: "面臨同仁專業英語溝通能力不足問題",
-                solutions: ["醫療專業英語訓練模組", "健檢流程對話練習", "醫療術語發音訓練", "跨文化溝通技巧培訓"],
-                impact: "預期服務全台 500 家醫療機構，年創造 5 億元營收",
+                title: t.user_4_title,
+                description: t.user_4_desc,
+                solutions_title: t.user_4_solution_title,
+                solutions: t.user_4_solutions,
+                impact_title: t.user_4_impact_title,
+                impact: t.user_4_impact,
               },
             ].map((user, index) => (
               <div key={index} className="card user-card">
@@ -420,7 +448,7 @@ export default function PronunciationPlatform() {
                 </div>
                 <div className="card-content">
                   <div className="user-solutions">
-                    <h4 className="user-solutions-title">解決方案：</h4>
+                    <h4 className="user-solutions-title">{user.solutions_title}</h4>
                     <ul className="card-features">
                       {user.solutions.map((solution, idx) => (
                         <li key={idx} className="user-solution">
@@ -431,7 +459,7 @@ export default function PronunciationPlatform() {
                     </ul>
                   </div>
                   <div className="user-impact">
-                    <h4 className="user-impact-title">預期影響：</h4>
+                    <h4 className="user-impact-title">{user.impact_title}</h4>
                     <p className="user-impact-text">{user.impact}</p>
                   </div>
                 </div>
@@ -445,38 +473,26 @@ export default function PronunciationPlatform() {
       <section id="benefits" className="section section-gradient-green">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">預期效益</h2>
-            <p className="section-subtitle">創造龐大商業價值，推動台灣邁向國際化數位學習社會</p>
+            <h2 className="section-title">{t.benefits_title}</h2>
+            <p className="section-subtitle">{t.benefits_subtitle}</p>
           </div>
 
           <div className="grid-3">
             {[
               {
-                category: "教育領域",
+                category: t.benefit_1_category,
                 icon: <BookOpen />,
-                benefits: [
-                  { metric: "40-60%", desc: "學生英語口說能力提升" },
-                  { metric: "50萬", desc: "預期服務家庭數量" },
-                  { metric: "15-20分鐘", desc: "家長每日投入時間" },
-                ],
+                benefits: t.benefit_1_metrics,
               },
               {
-                category: "企業培訓",
+                category: t.benefit_2_category,
                 icon: <TrendingUp />,
-                benefits: [
-                  { metric: "200億元", desc: "台灣年英語培訓市場" },
-                  { metric: "20%", desc: "預期市場佔有率" },
-                  { metric: "40億元", desc: "預期年營收" },
-                ],
+                benefits: t.benefit_2_metrics,
               },
               {
-                category: "社會影響",
+                category: t.benefit_3_category,
                 icon: <Users />,
-                benefits: [
-                  { metric: "30-50%", desc: "偏鄉學生英語能力提升" },
-                  { metric: "前5名", desc: "台灣英語能力亞洲排名目標" },
-                  { metric: "125萬", desc: "新住民及外籍移工服務對象" },
-                ],
+                benefits: t.benefit_3_metrics,
               },
             ].map((section, index) => (
               <div key={index} className="card benefits-card">
@@ -502,26 +518,26 @@ export default function PronunciationPlatform() {
 
           {/* Future Expansion */}
           <div className="benefits-expansion">
-            <h3 className="benefits-expansion-title">未來擴展效益</h3>
+            <h3 className="benefits-expansion-title">{t.expansion_title}</h3>
             <div className="expansion-grid">
               {[
                 {
-                  title: "多語言平台發展",
-                  desc: "34種語言支援",
-                  target: "10年內服務全球1,000萬使用者",
-                  revenue: "年營收500億元",
+                  title: t.expansion_1_title,
+                  desc: t.expansion_1_desc,
+                  target: t.expansion_1_target,
+                  revenue: t.expansion_1_revenue,
                 },
                 {
-                  title: "VR學習生態建構",
-                  desc: "VR英語學習環境",
-                  target: "開創沉浸式學習市場",
-                  revenue: "創造100億元新興市場價值",
+                  title: t.expansion_2_title,
+                  desc: t.expansion_2_desc,
+                  target: t.expansion_2_target,
+                  revenue: t.expansion_2_revenue,
                 },
                 {
-                  title: "企業White Label服務",
-                  desc: "專屬語言學習系統",
-                  target: "服務1,000家機構客戶",
-                  revenue: "年營收100億元",
+                  title: t.expansion_3_title,
+                  desc: t.expansion_3_desc,
+                  target: t.expansion_3_target,
+                  revenue: t.expansion_3_revenue,
                 },
               ].map((item, index) => (
                 <div key={index} className="expansion-item">
@@ -542,31 +558,31 @@ export default function PronunciationPlatform() {
       <section id="team" className="section section-white">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">團隊介紹</h2>
-            <p className="section-subtitle">經驗豐富的創業團隊，結合學術背景與實務經驗</p>
+            <h2 className="section-title">{t.team_title}</h2>
+            <p className="section-subtitle">{t.team_subtitle}</p>
           </div>
 
           <div className="grid-3">
             {[
               {
-                name: "王意騏",
-                role: "創辦人",
-                education: "國立政治大學資訊管理學系研究所畢業 (2008-2009)",
-                experience: "宏煜國際貿易股份有限公司創辦人 (2010至今)",
+                name: t.member_1_name,
+                role: t.member_1_role,
+                education: t.member_1_edu,
+                experience: t.member_1_exp,
                 avatar: "/nicetoneBlack.webp",
               },
               {
-                name: "蕭伊貽",
-                role: "行銷主管",
-                education: "國立政治大學資訊管理學系研究所畢業 (2009-2010)",
-                experience: "宏煜國際貿易股份有限公司行銷主管 (2010至今)",
+                name: t.member_2_name,
+                role: t.member_2_role,
+                education: t.member_2_edu,
+                experience: t.member_2_exp,
                 avatar: "/nicetoneBlack.webp",
               },
               {
-                name: "王楷珩",
-                role: "未來使用者代表",
-                education: "再興小學一年級就讀中 (2024-2025)",
-                experience: "代表新世代學習者觀點",
+                name: t.member_3_name,
+                role: t.member_3_role,
+                education: t.member_3_edu,
+                experience: t.member_3_exp,
                 avatar: "/nicetoneBlack.webp",
               },
             ].map((member, index) => (
@@ -581,12 +597,12 @@ export default function PronunciationPlatform() {
                 <div className="card-content">
                   <div className="team-details">
                     <div>
-                      <span className="team-detail-label">學歷：</span>
+                      <span className="team-detail-label">{t.detail_label_edu}</span>
                       <br />
                       {member.education}
                     </div>
                     <div>
-                      <span className="team-detail-label">經歷：</span>
+                      <span className="team-detail-label">{t.detail_label_exp}</span>
                       <br />
                       {member.experience}
                     </div>
@@ -602,8 +618,8 @@ export default function PronunciationPlatform() {
       <section id="roadmap" className="section section-gradient-purple">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">發展藍圖</h2>
-            <p className="section-subtitle">持續創新，引領語言學習技術發展</p>
+            <h2 className="section-title">{t.roadmap_title}</h2>
+            <p className="section-subtitle">{t.roadmap_subtitle}</p>
           </div>
 
           <div className="space-y-12">
@@ -611,10 +627,10 @@ export default function PronunciationPlatform() {
             <div className="roadmap-section">
               <div className="roadmap-header completed">
                 <CheckCircle />
-                <h3 className="roadmap-title">已實作完成</h3>
+                <h3 className="roadmap-title">{t.roadmap_section_1_title}</h3>
               </div>
               <div className="grid-4">
-                {["智慧發音評估", "AI智慧助理系統", "語音合成與多語音技術", "多模態文字輸入"].map((feature, index) => (
+                {t.roadmap_section_1_items.map((feature, index) => (
                   <div key={index} className="roadmap-feature">
                     <div className="roadmap-feature-content">
                       <CheckCircle />
@@ -629,41 +645,10 @@ export default function PronunciationPlatform() {
             <div className="roadmap-section">
               <div className="roadmap-header upcoming">
                 <Zap />
-                <h3 className="roadmap-title">即將推出</h3>
+                <h3 className="roadmap-title">{t.roadmap_section_2_title}</h3>
               </div>
               <div className="roadmap-upcoming-grid">
-                {[
-                  {
-                    title: "多語言介面支援",
-                    desc: "支援34種語言學習",
-                    status: "開發中",
-                  },
-                  {
-                    title: "語音對話練習",
-                    desc: "即時AI對話互動",
-                    status: "測試階段",
-                  },
-                  {
-                    title: "社群學習功能",
-                    desc: "學習夥伴配對",
-                    status: "設計階段",
-                  },
-                  {
-                    title: "遊戲成就激勵系統",
-                    desc: "AI動態難度調整",
-                    status: "開發中",
-                  },
-                  {
-                    title: "虛擬化身AVATAR",
-                    desc: "增加學習真實性",
-                    status: "規劃中",
-                  },
-                  {
-                    title: "AI客製化PODCAST",
-                    desc: "24小時個人化內容",
-                    status: "概念驗證",
-                  },
-                ].map((feature, index) => (
+                {t.roadmap_section_2_items.map((feature, index) => (
                   <div key={index} className="roadmap-upcoming-card">
                     <div className="roadmap-upcoming-header">
                       <div className="roadmap-upcoming-title-row">
@@ -681,23 +666,10 @@ export default function PronunciationPlatform() {
             <div className="roadmap-section">
               <div className="roadmap-header longterm">
                 <Globe />
-                <h3 className="roadmap-title">長期規劃</h3>
+                <h3 className="roadmap-title">{t.roadmap_section_3_title}</h3>
               </div>
               <div className="roadmap-longterm-grid">
-                {[
-                  {
-                    title: "企業White Label服務",
-                    desc: "服務企業內訓或學習組織，提供客製化解決方案",
-                    timeline: "2-3年內",
-                    impact: "預期服務1,000家機構",
-                  },
-                  {
-                    title: "VR英文學習環境",
-                    desc: "結合VEO3 SORA等AI影像生成，創造沉浸式學習體驗",
-                    timeline: "3-5年內",
-                    impact: "開創100億元新興市場",
-                  },
-                ].map((vision, index) => (
+                {t.roadmap_section_3_items.map((vision, index) => (
                   <div key={index} className="roadmap-longterm-card">
                     <div className="roadmap-longterm-header">
                       <h4 className="roadmap-longterm-title">{vision.title}</h4>
@@ -718,16 +690,16 @@ export default function PronunciationPlatform() {
       {/* CTA Section */}
       <section className="section section-cta">
         <div className="cta-container">
-          <h2 className="cta-title">準備好開始您的發音學習之旅了嗎？</h2>
-          <p className="cta-subtitle">加入我們，體驗最先進的 AI 發音評估技術，讓英語學習更精準、更有效</p>
+          <h2 className="cta-title">{t.cta_title}</h2>
+          <p className="cta-subtitle">{t.cta_subtitle}</p>
           <div className="cta-buttons">
             <button className="cta-button-primary" onClick={() => window.open("/", "_self")}>
               <Play />
-              立即體驗
+              {t.cta_button_primary}
             </button>
             <button className="cta-button-secondary" onClick={() => window.open("mailto:contact@nicetone.ai", "_blank")}>
               <MessageSquare />
-              聯繫我們
+              {t.cta_button_secondary}
             </button>
           </div>
         </div>
@@ -745,28 +717,22 @@ export default function PronunciationPlatform() {
                 />
               </div>
               <p className="footer-description">
-                nicetone.ai - 基於 Microsoft Azure 語音服務的智慧發音評估平台，
-                提供專業的英語發音分析、學習管理和資料分享功能。
+                {t.footer_desc}
               </p>
-              <div className="footer-copyright">© 2025 nicetone.ai. All rights reserved.</div>
+              <div className="footer-copyright">{t.footer_copyright}</div>
             </div>
 
             <div>
-              <h3 className="footer-section-title">產品功能</h3>
+              <h3 className="footer-section-title">{t.footer_links_1_title}</h3>
               <ul className="footer-list">
-                <li>智慧發音評估</li>
-                <li>AI 智慧助理</li>
-                <li>語音合成播放</li>
-                <li>雲端分享同步</li>
+                {t.footer_links_1_items.map((item, i) => <li key={i}>{item}</li>)}
               </ul>
             </div>
 
             <div>
-              <h3 className="footer-section-title">聯繫資訊</h3>
+              <h3 className="footer-section-title">{t.footer_links_2_title}</h3>
               <ul className="footer-list">
-                <li>台灣</li>
-                <li>ifanoski@gmail.com</li>
-                <li>創立於 2010 年</li>
+                {t.footer_links_2_items.map((item, i) => <li key={i}>{item}</li>)}
               </ul>
             </div>
           </div>
@@ -774,4 +740,4 @@ export default function PronunciationPlatform() {
       </footer>
     </div>
   )
-} 
+}
