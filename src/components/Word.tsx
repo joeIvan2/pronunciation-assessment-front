@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Word as WordType, WordAssessment, Phoneme } from '../types/speech';
 import ErrorTypeTag from './ErrorTypeTag';
+import '../styles/PronunciationAssessment.css';
 
 interface WordProps {
   word: WordType;
@@ -29,29 +30,10 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
   const [showDictModal, setShowDictModal] = useState(false);
 
   return (
-    <div className={`word-container ${isSelected ? 'word-selected' : ''}`} style={{
-      display: 'inline-flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      margin: '8px',
-      width: '70px',
-      maxWidth: '80px',
-      overflow: 'visible',
-      zIndex: isSelected ? 9999 : 1
-    }}>
+    <div className={`word-container ${isSelected ? 'word-selected' : ''}`}>
       {/* 分數顯示 */}
       {assessment?.AccuracyScore !== undefined && (
-        <div style={{
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: '#fff',
-          marginBottom: '4px',
-          background: 'rgba(0, 0, 0, 0.5)',
-          padding: '2px 6px',
-          borderRadius: '8px',
-          minWidth: '20px',
-          textAlign: 'center'
-        }}>
+        <div className="word-score">
           {Math.round(assessment.AccuracyScore)}
         </div>
       )}
@@ -59,27 +41,16 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
       {/* 單詞本身 */}
       <div 
         onClick={onClick}
-        style={{
-          color: getScoreColor(assessment?.AccuracyScore),
-          fontWeight: hasError ? 'bold' : 'normal',
-          cursor: 'pointer',
-          padding: '4px',
-          marginBottom: '4px',
-          textAlign: 'center'
-        }}
+        className={`word-text ${hasError ? 'word-has-error' : ''}`}
+        style={{ color: getScoreColor(assessment?.AccuracyScore) }}
       >
         {word.Word}
       </div>
       
       {/* 錯誤標籤 - 內聯顯示而非絕對定位 */}
       {hasError && (
-        <div style={{ 
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '4px'
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+        <div className="word-error-container">
+          <span className={`word-error-span ${assessment?.ErrorType === 'Omission' ? 'word-omission' : ''}`}
             onClick={assessment?.ErrorType === 'Omission' ? onClick : undefined}
           >
             <ErrorTypeTag 
@@ -92,33 +63,12 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
 
       {/* 音素 Tooltip（Omission 也要顯示 popup，即使沒有 Phonemes） */}
       {isSelected && (
-        <div className="phoneme-details-popup" style={{ 
-          position: 'absolute', 
-          top: '100%', 
-          left: '50%', 
-          transform: 'translateX(-50%)',
-          background: '#23272f',
-          padding: '10px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-          zIndex: 9999,
-          marginTop: '8px',
-          minWidth: '120px',
-        }}>
+        <div className="phoneme-details-popup">
           {/* 音素列表或提示 */}
           {word.Phonemes && word.Phonemes.length > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <div className="phoneme-details-content">
               <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 40
-                }}
+                className="phoneme-dict-button"
                 title="查字典2"
                 onClick={e => {
                   e.stopPropagation();
@@ -130,7 +80,7 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
               </button>
               <div>
                 {word.Phonemes.map((p: Phoneme, i: number) => (
-                  <div key={i} style={{ color: '#ddd', margin: '6px 0', textAlign: 'left' }}>
+                  <div key={i} className="phoneme-list">
                     {p.Phoneme}: <span style={{ color: getScoreColor(p.PronunciationAssessment?.AccuracyScore) }}>
                       {p.PronunciationAssessment?.AccuracyScore ?? '-'}
                     </span>
@@ -139,18 +89,9 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+            <div className="phoneme-empty-container">
               <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: 80
-                }}
+                className="phoneme-dict-button phoneme-dict-large"
                 title="查字典3"
                 onClick={e => {
                   e.stopPropagation();
@@ -167,9 +108,9 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
 
       {/* 字典 Modal（用 Portal 保證永遠在最上層） */}
       {showDictModal && ReactDOM.createPortal(
-        <div className="login-modal-overlay" style={{ zIndex: 99999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }} onClick={() => setShowDictModal(false)}>
-          <div className="login-modal-content" style={{ zIndex: 99999, width: 420, maxWidth: '90vw', height: 600, maxHeight: '90vh', padding: 0, position: 'relative', margin: 'auto', top: 0, left: 0, right: 0, bottom: 0 }} onClick={e => e.stopPropagation()}>
-            <button className="login-modal-close" style={{ position: 'absolute', top: 8, right: 8, zIndex: 100000 }} onClick={() => setShowDictModal(false)}>
+        <div className="word-dict-modal-overlay" onClick={() => setShowDictModal(false)}>
+          <div className="word-dict-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="word-dict-modal-close" onClick={() => setShowDictModal(false)}>
               <i className="fas fa-times"></i>
             </button>
             <iframe
@@ -177,15 +118,13 @@ const Word: React.FC<WordProps> = ({ word, index, isSelected, onClick }) => {
               width="100%"
               height="100%"
               frameBorder="0"
-              style={{ border: 0, borderRadius: 12, minHeight: 580 }}
+              className="word-dict-iframe"
               title="Youdao Dictionary"
             />
           </div>
         </div>,
         document.body
       )}
-
-
     </div>
   );
 };

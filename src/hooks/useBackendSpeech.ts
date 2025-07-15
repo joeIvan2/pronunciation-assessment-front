@@ -1,32 +1,13 @@
 import { useState, useRef, useCallback } from 'react';
 import { sendAssessmentRequest, sendTTSRequest, BACKEND_URL, API_PATHS } from '../utils/api';
 import { blobToBase64 } from './useRecorder';
-import { SpeechAssessmentResult } from '../types/speech';
+import { 
+  SpeechAssessmentResult, 
+  BackendSpeechState, 
+  BackendSpeechResult 
+} from '../types/speech';
 
-interface BackendSpeechState {
-  isLoading: boolean;
-  error: string | null;
-  isStreaming: boolean;
-  streamProgress: number;
-}
-
-interface BackendSpeechResult extends BackendSpeechState {
-  assessWithBackend: (
-    audioBlob: Blob,
-    referenceText: string,
-    strictMode: boolean
-  ) => Promise<SpeechAssessmentResult | null>;
-  
-  speakWithBackend: (text: string) => Promise<void>;
-  startStreamingAssessment: (
-    referenceText: string,
-    strictMode: boolean,
-    onProgress?: (progress: number) => void,
-    onPartialResult?: (result: Partial<SpeechAssessmentResult>) => void
-  ) => Promise<(chunk: Blob) => void>;
-  stopStreamingAssessment: () => Promise<SpeechAssessmentResult | null>;
-  sendAudioChunk: (chunk: Blob) => Promise<void>;
-}
+// 接口定義已移至 ../types/speech.ts
 
 export const useBackendSpeech = (): BackendSpeechResult => {
   const [state, setState] = useState<BackendSpeechState>({

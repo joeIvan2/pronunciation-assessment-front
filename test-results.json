@@ -1,0 +1,616 @@
+{
+  "config": {
+    "configFile": "C:\\py\\pronunciation\\pronunciation-assessment-front\\playwright.config.js",
+    "rootDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "test-results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Desktop Chrome",
+        "name": "Desktop Chrome",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Desktop Firefox",
+        "name": "Desktop Firefox",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Desktop Safari",
+        "name": "Desktop Safari",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "C:/py/pronunciation/pronunciation-assessment-front/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Tablet",
+        "name": "Tablet",
+        "testDir": "C:/py/pronunciation/pronunciation-assessment-front/tests",
+        "testIgnore": [
+          "src/**/*.test.js",
+          "src/**/*.spec.js",
+          "jest.config.js",
+          "setupTests.js"
+        ],
+        "testMatch": [
+          "**/*.spec.js",
+          "**/playwright-test.js",
+          "**/auth-*.js",
+          "**/manual-*.js",
+          "**/extract-*.js",
+          "**/stealth-*.js",
+          "**/debug-*.js",
+          "**/*-test.js"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.53.2",
+    "workers": 8,
+    "webServer": {
+      "command": "npm start",
+      "port": 3000,
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "url-login-test.js",
+      "file": "url-login-test.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "URL 登入測試",
+          "file": "url-login-test.js",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "測試 URL 參數自動登入",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Desktop Chrome",
+                  "projectName": "Desktop Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 48823,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "📋 測試檢查清單：\n"
+                        },
+                        {
+                          "text": "   ✅ URL 參數自動登入\n"
+                        },
+                        {
+                          "text": "   ✅ 我的最愛功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ✅ 標籤功能（新增/修改/刪除）\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能\n"
+                        },
+                        {
+                          "text": "   ✅ AI 造句功能\n"
+                        },
+                        {
+                          "text": "\n"
+                        },
+                        {
+                          "text": "🔑 開始測試 URL 參數自動登入...\n"
+                        },
+                        {
+                          "text": "🌐 導航到登入 URL: http://localhost:3000/?loginUser=test%40test.com&pwd=test0123\n"
+                        },
+                        {
+                          "text": "⏳ 等待登入處理...\n"
+                        },
+                        {
+                          "text": "📊 測試結果:\n"
+                        },
+                        {
+                          "text": "   - 登入狀態: ✅ 已登入\n"
+                        },
+                        {
+                          "text": "   - 當前 URL: http://localhost:3000/\n"
+                        },
+                        {
+                          "text": "✅ URL 登入成功！\n"
+                        },
+                        {
+                          "text": "💾 認證狀態已保存到 .auth/user.json\n"
+                        },
+                        {
+                          "text": "📊 認證統計：\n"
+                        },
+                        {
+                          "text": "  - Cookies: 2 個\n"
+                        },
+                        {
+                          "text": "  - LocalStorage: 1 個域名\n"
+                        },
+                        {
+                          "text": "⭐ 測試我的最愛功能...\n"
+                        },
+                        {
+                          "text": "📝 測試文字: \"Hello world test 07/04 下午12:30:22\"\n"
+                        },
+                        {
+                          "text": "   📝 新增我的最愛句子...\n"
+                        },
+                        {
+                          "text": "   ✅ 新增我的最愛句子完成\n"
+                        },
+                        {
+                          "text": "   📋 檢查我的最愛列表...\n"
+                        },
+                        {
+                          "text": "   📊 我的最愛列表項目數: 1\n"
+                        },
+                        {
+                          "text": "   ✏️ 測試編輯我的最愛...\n"
+                        },
+                        {
+                          "text": "   ✅ 編輯我的最愛完成\n"
+                        },
+                        {
+                          "text": "   🗑️ 測試刪除我的最愛...\n"
+                        },
+                        {
+                          "text": "   ✅ 刪除我的最愛完成\n"
+                        },
+                        {
+                          "text": "   ✅ 我的最愛功能測試完成\n"
+                        },
+                        {
+                          "text": "🏷️ 測試標籤功能...\n"
+                        },
+                        {
+                          "text": "   🏷️ 開始標籤功能測試...\n"
+                        },
+                        {
+                          "text": "   📂 切換到標籤管理頁面...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到標籤頁面\n"
+                        },
+                        {
+                          "text": "   ➕ 新增標籤...\n"
+                        },
+                        {
+                          "text": "   ✅ 輸入標籤名稱: 測試標籤_1751603425436\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊新增標籤按鈕\n"
+                        },
+                        {
+                          "text": "   📋 檢查標籤列表...\n"
+                        },
+                        {
+                          "text": "   📊 標籤項目數: 1\n"
+                        },
+                        {
+                          "text": "   ✏️ 測試編輯標籤...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊編輯標籤按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 修改標籤名稱\n"
+                        },
+                        {
+                          "text": "   ✅ 更新標籤完成\n"
+                        },
+                        {
+                          "text": "   🗑️ 測試刪除標籤...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊刪除標籤按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 標籤功能測試完成\n"
+                        },
+                        {
+                          "text": "🔗 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   🔗 開始分享功能測試...\n"
+                        },
+                        {
+                          "text": "   ✅ 新增測試句子完成\n"
+                        },
+                        {
+                          "text": "   📂 切換到分享與備份頁面...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到分享與備份頁面\n"
+                        },
+                        {
+                          "text": "   📤 測試分享功能...\n"
+                        },
+                        {
+                          "text": "   🔔 處理對話框: 數據正在載入中，請稍後再試\n"
+                        },
+                        {
+                          "text": "   ❌ 取消其他對話框\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊分享按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享結果顯示\n"
+                        },
+                        {
+                          "text": "   📋 測試導出JSON功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊導出按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ 分享功能測試完成\n"
+                        },
+                        {
+                          "text": "🤖 測試AI產出句子功能...\n"
+                        },
+                        {
+                          "text": "   🤖 開始AI產出句子功能測試...\n"
+                        },
+                        {
+                          "text": "   📂 切換到我的最愛標籤頁...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到我的最愛標籤頁\n"
+                        },
+                        {
+                          "text": "   📝 點擊句子按鈕...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊句子按鈕\n"
+                        },
+                        {
+                          "text": "   📊 記錄我的最愛初始數量...\n"
+                        },
+                        {
+                          "text": "   📋 我的最愛初始數量: 1\n"
+                        },
+                        {
+                          "text": "   🔍 切換到 AI 造句幫手標籤頁...\n"
+                        },
+                        {
+                          "text": "   ✅ 切換到 AI 造句幫手標籤頁\n"
+                        },
+                        {
+                          "text": "   💡 測試範例提示...\n"
+                        },
+                        {
+                          "text": "   📝 輸入AI生成指令...\n"
+                        },
+                        {
+                          "text": "   ✅ 輸入提示詞: \"生成三個高中生應該會的英文句子\"\n"
+                        },
+                        {
+                          "text": "   🚀 測試AI生成功能...\n"
+                        },
+                        {
+                          "text": "   ✅ 點擊AI生成按鈕\n"
+                        },
+                        {
+                          "text": "   ✅ AI回應顯示\n"
+                        },
+                        {
+                          "text": "   📸 生成AI回應頁面快照...\n"
+                        },
+                        {
+                          "text": "   ❌ AI產出句子功能測試失敗: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveScreenshot\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n  517 pixels (ratio 0.01 of all image pixels) are different.\n\nExpected: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\url-login-test.js-snapshots\\ai-response-page-Desktop-Chrome-win32.png\u001b[39m\nReceived: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-actual.png\u001b[39m\n    Diff: \u001b[33mC:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-diff.png\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toHaveScreenshot(ai-response-page.png)\" with timeout 5000ms\u001b[22m\n\u001b[2m    - verifying given screenshot expectation\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - 517 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\u001b[2m  - waiting 100ms before taking screenshot\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - captured a stable screenshot\u001b[22m\n\u001b[2m  - 517 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\n"
+                        },
+                        {
+                          "text": "📸 進行快照測試和比對...\n"
+                        },
+                        {
+                          "text": "📸 開始快照測試和比對流程...\n"
+                        },
+                        {
+                          "text": "🏠 切換回發音評分主頁面...\n"
+                        },
+                        {
+                          "text": "   ⚠️ 未找到發音評分頁面按鈕，嘗試其他方法...\n"
+                        },
+                        {
+                          "text": "🧹 完全清空所有數據以確保乾淨狀態...\n"
+                        },
+                        {
+                          "text": "   🧹 開始清空所有數據...\n"
+                        },
+                        {
+                          "text": "   📝 清空發音評分textarea...\n"
+                        },
+                        {
+                          "text": "   ✅ 發音評分textarea已清空\n"
+                        },
+                        {
+                          "text": "   🤖 清空AI造句幫手textarea...\n"
+                        },
+                        {
+                          "text": "   ⭐ 清空我的最愛數據...\n"
+                        },
+                        {
+                          "text": "   🗑️ 發現 4 個我的最愛項目，使用清空所有句子功能...\n"
+                        },
+                        {
+                          "text": "   📋 清空句子確認對話框: 確定要清空所有收藏句子嗎？此操作無法復原。\n"
+                        },
+                        {
+                          "text": "   ✅ 已確認清空操作\n"
+                        },
+                        {
+                          "text": "   📋 清空句子確認對話框: 已清空所有收藏！\n"
+                        },
+                        {
+                          "text": "   ✅ 我的最愛數據已清空（使用清空所有句子功能）\n"
+                        },
+                        {
+                          "text": "   🏷️ 清空標籤數據...\n"
+                        },
+                        {
+                          "text": "   🏷️ 開始清空標籤數據...\n"
+                        },
+                        {
+                          "text": "   ✅ 標籤數據已清空（刪除了 0 個標籤）\n"
+                        },
+                        {
+                          "text": "   ✅ 所有數據清空完成\n"
+                        },
+                        {
+                          "text": "📸 拍攝清空後的主頁面快照...\n"
+                        },
+                        {
+                          "text": "✅ 清空後的主頁面快照完成\n"
+                        },
+                        {
+                          "text": "📸 切換到我的最愛頁面並拍攝快照...\n"
+                        },
+                        {
+                          "text": "✅ 清空後的我的最愛頁面快照完成\n"
+                        },
+                        {
+                          "text": "🔍 進行快照比對驗證...\n"
+                        },
+                        {
+                          "text": "   ✅ 快照文件已生成，Playwright 將自動進行比對\n"
+                        },
+                        {
+                          "text": "   📋 如果快照有差異，測試將會失敗並顯示差異\n"
+                        },
+                        {
+                          "text": "   📁 快照文件位置: tests/url-login-test.js-snapshots/\n"
+                        },
+                        {
+                          "text": "✅ 快照測試和比對完成\n"
+                        },
+                        {
+                          "text": "🏁 URL 登入測試完成\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-04T04:30:13.320Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "ai-response-page-expected.png",
+                          "contentType": "image/png",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\tests\\url-login-test.js-snapshots\\ai-response-page-Desktop-Chrome-win32.png"
+                        },
+                        {
+                          "name": "ai-response-page-actual.png",
+                          "contentType": "image/png",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-actual.png"
+                        },
+                        {
+                          "name": "ai-response-page-diff.png",
+                          "contentType": "image/png",
+                          "path": "C:\\py\\pronunciation\\pronunciation-assessment-front\\test-results\\url-login-test.js-URL-登入測試-測試-URL-參數自動登入-Desktop-Chrome\\ai-response-page-diff.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "571331557c1311f9cd53-57534348fea6b4d7859c",
+              "file": "url-login-test.js",
+              "line": 14,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-07-04T04:30:09.680Z",
+    "duration": 59888.318,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

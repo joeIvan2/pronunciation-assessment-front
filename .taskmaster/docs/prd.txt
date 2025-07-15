@@ -1,0 +1,90 @@
+PronunciationAssessment 減量重構 — 產品需求文件（PRD）
+
+1. 背景與目標
+現有 PronunciationAssessment.tsx 超過 3 000 行，集錄音、評分、UI 與狀態管理於一體，維護及平台遷移 (Web → Expo) 皆困難。目標是在保持既有 UI/功能不變的前提下，將該檔案拆分為多個 < 200 行的元件與 hooks，並建立持續測試機制確保任何減量不破壞樣式與功能。
+
+成功指標 (KPIs)
+指標                   量化目標
+File Size             單一檔案 ≤ 200 行
+減量覆蓋率              100 % 需求功能搬移完成
+Playwright 測試通過率    100 %
+視覺回歸 (CSS)          Snapshot diff = 0
+
+2. 用戶影響
+現有使用者：功能、操作流程與外觀必須完全一致。
+開發者：閱讀與調試成本降低；可持續演進至行動平台。
+
+3. 範圍
+3.1 納入
+拆分並重構 PronunciationAssessment.tsx：
+UI 元件：RecorderPanel, ResultPanel, ControlsBar, ScoreBar, WordsDisplay …
+邏輯 hooks：useRecording, useAssessmentFlow, useUploadAndScore 等。
+建立 CI 工作流程：
+npm run test → Jest 單元測試
+npm run test:e2e → Playwright 執行 playwright-test.js
+CSS Snapshot 比對 (Playwright screenshot & diff)
+
+3.2 排除
+任何新功能或 UI 改版。
+後端 API 介面調整。
+
+4. 技術方案
+主題            做法
+核心邏輯抽離     提升至 packages/core；無 DOM 依賴
+元件拆分        每個可視區域/職責一檔，並添加 Storybook story 便於視覺回歸
+狀態管理        React Context 或 Zustand 於本地，只儲存 UI/錄音流程
+型別安全        全程 TypeScript；新增公共 types/speech.ts
+測試           Jest + React Testing Library (單元)，Playwright (E2E + 視覺回歸)
+CI            GitHub Actions；push PR → 安裝依賴 → 測試 → 視覺比對失敗即 blocking
+
+5. 里程碑與工作分解
+里程碑                週次    主要工作                                      Definition of Done
+M1 – 測試基線         1       ◎ 建立 Jest + Playwright 基線               CI 綠燈；E2E 測試腳本 playwright-test.js 成功
+                              ◎ 錄製首批 CSS snapshot
+M2 – Hooks 抽離      2       ◎ 建立 packages/core/useSpeech 等共用 hooks  現有 Web 功能正常；測試通過
+M3 – UI 元件拆分 (Part 1) 3   拆 RecorderPanel, ControlsBar               每檔 < 200 行；E2E 綠燈
+M4 – UI 元件拆分 (Part 2) 4   拆 ScoreBar, WordsDisplay                   同上
+M5 – 流程 hook + 整合     5   useAssessmentFlow 管整體邏輯                視覺與功能無差異
+M6 – 完成 & 文件化       6   更新 README，新增架構圖                      Code Review 通過；CI 綠燈
+
+6. 測試策略
+單元測試 (Jest)
+hooks 邏輯：錄音起止、API 呼叫、錯誤處理。
+
+E2E 測試 (Playwright)
+脚本：playwright-test.js
+用例 A：開始錄音 → 結束 → 送出 → 顯示分數
+用例 B：切換語音 → 評分重新計算
+CSS Regression：每用例拍攝 .png 快照與上一版 diff，閾值 0。失敗則 CI block。
+
+執行時機
+每次 PR：自動跑 Jest + Playwright
+本地開發：建議 npx playwright test --ui 隨碼即測
+
+7. 風險與緩解
+風險                 影響                緩解措施
+Snapshot 偽陽性過多    PR 受阻             設置 mask 區塊、僅比較主要容器
+隱性 CSS 衝突        部分元件位移          Storybook + 視覺回歸 覆蓋
+測試耗時上升          PR 等待時間延長       Playwright shard + 並行執行
+
+8. 守門條件 (Gate)
+任何減量改動必須：
+通過 jest --coverage (≥ 70 %)
+通過 playwright-test.js 及 CSS snapshot 比對
+PR description 附：改動檔案清單 + 測試截圖
+若上述任一失敗，PR 不得合併。
+
+附錄 A – Playwright 測試腳本 (概要)
+// playwright-test.js
+import { test, expect } from '@playwright/test';
+
+test('錄音評分流程', async ({ page }) => {
+  await page.goto('http://localhost:3000');
+  await page.getByRole('button', { name: '開始錄音' }).click();
+  await page.waitForTimeout(4000);
+  await page.getByRole('button', { name: '結束並送出' }).click();
+  await expect(page.getByTestId('score-value')).toHaveText(/\d+/);
+  await expect(page).toHaveScreenshot();
+});
+
+本文件專注於 PronunciationAssessment 減量重構；行動 App 遷移 PRD 另行維護。 

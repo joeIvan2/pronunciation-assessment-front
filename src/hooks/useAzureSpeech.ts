@@ -1,6 +1,11 @@
 import { useState, useRef } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
-import { SpeechAssessmentResult } from '../types/speech';
+import { 
+  SpeechAssessmentResult, 
+  AzureSpeechState, 
+  AzureSpeechOptions, 
+  AzureSpeechResult 
+} from '../types/speech';
 import { generateSpeechWithNicetone } from '../utils/api';
 import { DEFAULT_VOICE } from '../config/voiceConfig';
 import { audioCache } from '../utils/audioCache';
@@ -29,39 +34,7 @@ const formatDuration = (duration: number): string => {
   }
 };
 
-interface AzureSpeechState {
-  isLoading: boolean;
-  error: string | null;
-}
-
-interface AzureSpeechOptions {
-  key: string;
-  region: string;
-}
-
-interface AzureSpeechResult extends AzureSpeechState {
-  assessWithAzure: (
-    referenceText: string,
-    strictMode: boolean,
-    options: AzureSpeechOptions
-  ) => Promise<SpeechAssessmentResult | null>;
-  
-  speakWithAzure: (
-    text: string,
-    options: AzureSpeechOptions
-  ) => Promise<void>;
-  
-  speakWithAIServerStream: (
-    text: string,
-    voice?: string, // 支持的選項：bella, nicole, sarah (女性), adam, michael (男性)
-    rate?: number
-  ) => Promise<{ audio: HTMLAudioElement }>;
-  
-  cancelAzureSpeech: () => void;
-
-  // Check if the internal audio element is currently playing
-  isAudioPlaying: () => boolean;
-}
+// 接口定義已移至 ../types/speech.ts
 
 export const useAzureSpeech = (): AzureSpeechResult => {
   const [state, setState] = useState<AzureSpeechState>({

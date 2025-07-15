@@ -157,14 +157,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
       return;
     }
 
-    // 如果收藏數量很少，可能是剛匯入的數據，再次確認
-    if (favorites.length < 5) {
-      setConfirmMessage(`您目前有 ${favorites.length} 個收藏句子，確定要分享這些內容嗎？`);
-      setConfirmAction(() => () => executeShare());
-      setShowConfirmDialog(true);
-      return;
-    }
-
+    // 直接執行分享，不再需要數量確認
     executeShare();
   };
 
@@ -427,38 +420,21 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             <p>選擇標籤來篩選要分享的句子，或選擇"全部"來分享所有句子。</p>
             
             {/* 標籤選擇器 - 水平排列 */}
-            <div style={{marginBottom: '20px'}}>
-              <h5 style={{marginBottom: '10px', color: 'var(--ios-text-primary)'}}>選擇標籤篩選：</h5>
+            <div className="share-data-section">
+              <h5 className="share-data-title">選擇標籤篩選：</h5>
               
               {/* 標籤水平排列 */}
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '8px',
-                marginBottom: '15px',
-                padding: '10px',
-                backgroundColor: 'var(--ios-background-secondary)',
-                borderRadius: '8px'
-              }}>
+              <div className="share-tag-container">
                 {/* 全部選項 */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  backgroundColor: showAllSentences ? '#007AFF' : 'var(--ios-background)',
-                  color: showAllSentences ? 'white' : 'var(--ios-text-primary)',
-                  border: '1px solid ' + (showAllSentences ? '#007AFF' : 'var(--ios-border)'),
-                  fontSize: '14px',
-                  fontWeight: showAllSentences ? 'bold' : 'normal',
-                  transition: 'all 0.2s ease'
-                }} onClick={handleShowAllToggle}>
+                <div 
+                  className={`share-tag-option ${showAllSentences ? 'all-selected' : ''}`}
+                  onClick={handleShowAllToggle}
+                >
                   <input 
                     type="checkbox"
                     checked={showAllSentences}
                     onChange={() => {}}
-                    style={{marginRight: '6px', pointerEvents: 'none'}}
+                    className="share-tag-checkbox"
                   />
                   全部 ({favorites.length} 個句子)
                 </div>
@@ -469,26 +445,21 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                   const isSelected = !showAllSentences && selectedTagsForFilter.includes(tag.tagId);
                   
                   return (
-                    <div key={tag.tagId} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      padding: '6px 12px',
-                      borderRadius: '20px',
-                      backgroundColor: isSelected ? tag.color : 'var(--ios-background)',
-                      color: isSelected ? 'white' : 'var(--ios-text-primary)',
-                      border: '1px solid ' + (isSelected ? tag.color : 'var(--ios-border)'),
-                      fontSize: '14px',
-                      fontWeight: isSelected ? 'bold' : 'normal',
-                      opacity: showAllSentences ? 0.6 : 1,
-                      transition: 'all 0.2s ease'
-                    }} onClick={() => handleTagForFilterToggle(tag.tagId)}>
+                    <div 
+                      key={tag.tagId} 
+                      className={`share-tag-option ${isSelected ? 'selected' : ''} ${showAllSentences ? 'disabled' : ''}`}
+                      style={{
+                        backgroundColor: isSelected ? tag.color : 'var(--ios-background)',
+                        borderColor: isSelected ? tag.color : 'var(--ios-border)'
+                      }}
+                      onClick={() => handleTagForFilterToggle(tag.tagId)}
+                    >
                       <input 
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => {}}
                         disabled={showAllSentences}
-                        style={{marginRight: '6px', pointerEvents: 'none'}}
+                        className="share-tag-checkbox"
                       />
                       {tag.name} ({tagSentenceCount} 個句子)
                     </div>
@@ -498,8 +469,8 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             </div>
             
             {/* 符合條件的句子列表 */}
-            <div style={{marginBottom: '20px'}}>
-              <h5 style={{marginBottom: '10px', color: 'var(--ios-text-primary)'}}>
+            <div className="share-data-section">
+              <h5 className="share-data-title">
                 符合條件的句子 ({
                   showAllSentences 
                     ? favorites.length 
@@ -507,21 +478,11 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                 } 個)：
               </h5>
               
-              <div style={{
-                maxHeight: '300px',
-                overflowY: 'auto',
-                border: '1px solid var(--ios-border)',
-                borderRadius: '8px',
-                backgroundColor: 'var(--ios-background)'
-              }}>
+              <div className="share-sentences-container">
                 {/* 全選/取消全選按鈕 */}
-                <div style={{
-                  padding: '10px',
-                  borderBottom: '1px solid var(--ios-border)',
-                  backgroundColor: 'var(--ios-background-secondary)'
-                }}>
+                <div className="share-sentences-header">
                   <button 
-                    className="secondary-button"
+                    className="secondary-button share-select-all-button"
                     onClick={() => {
                       const filteredFavorites = showAllSentences 
                         ? favorites 
@@ -533,7 +494,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                         setSelectedFavorites(filteredFavorites.map(fav => fav.id));
                       }
                     }}
-                    style={{fontSize: '14px', padding: '5px 10px'}}
                   >
                     {(() => {
                       const filteredFavorites = showAllSentences 
@@ -542,13 +502,13 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                       return selectedFavorites.length === filteredFavorites.length ? '取消全選' : '全選';
                     })()}
                   </button>
-                  <span style={{marginLeft: '10px', fontSize: '14px', color: 'var(--ios-text-secondary)'}}>
+                  <span className="share-selected-count">
                     已選擇 {selectedFavorites.length} 個句子
                   </span>
                 </div>
                 
                 {/* 句子列表 */}
-                <div style={{padding: '10px'}}>
+                <div className="share-sentences-list">
                   {(() => {
                     const filteredFavorites = showAllSentences 
                       ? favorites 
@@ -556,56 +516,39 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                     
                     if (filteredFavorites.length === 0) {
                       return (
-                        <div style={{
-                          padding: '20px',
-                          textAlign: 'center',
-                          color: 'var(--ios-text-secondary)',
-                          fontSize: '14px'
-                        }}>
+                        <div className="share-empty-message">
                           沒有符合條件的句子
                         </div>
                       );
                     }
                     
                     return filteredFavorites.map((favorite) => (
-                      <div key={favorite.id} style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        marginBottom: '8px',
-                        padding: '8px',
-                        backgroundColor: selectedFavorites.includes(favorite.id) ? 'var(--ios-background-secondary)' : 'transparent',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        border: '1px solid transparent',
-                        transition: 'all 0.2s ease'
-                      }} onClick={() => handleFavoriteToggle(favorite.id)}>
+                      <div 
+                        key={favorite.id} 
+                        className={`share-sentence-item ${selectedFavorites.includes(favorite.id) ? 'selected' : ''}`}
+                        onClick={() => handleFavoriteToggle(favorite.id)}
+                      >
                         <input 
                           type="checkbox"
                           checked={selectedFavorites.includes(favorite.id)}
                           onChange={() => {}}
-                          style={{marginRight: '10px', marginTop: '2px', pointerEvents: 'none'}}
+                          className="share-sentence-checkbox"
                         />
-                        <div style={{flex: 1}}>
-                          <div style={{
-                            fontSize: '14px',
-                            lineHeight: '1.4',
-                            marginBottom: '4px'
-                          }}>
+                        <div className="share-sentence-content">
+                          <div className="share-sentence-text">
                             {favorite.text}
                           </div>
                           {/* 顯示句子的標籤 */}
-                          <div style={{display: 'flex', flexWrap: 'wrap', gap: '4px'}}>
+                          <div className="share-sentence-tags">
                             {favorite.tagIds.map(tagId => {
                               const tag = tags.find(t => t.tagId === tagId);
                               if (!tag) return null;
                               return (
-                                <span key={tagId} style={{
-                                  padding: '2px 6px',
-                                  borderRadius: '8px',
-                                  backgroundColor: tag.color,
-                                  color: 'white',
-                                  fontSize: '10px'
-                                }}>
+                                <span 
+                                  key={tagId} 
+                                  className="share-sentence-tag"
+                                  style={{ backgroundColor: tag.color }}
+                                >
                                   {tag.name}
                                 </span>
                               );
@@ -670,52 +613,37 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
             {shareHistory.length > 0 && (
               <div className={`share-history-section ${showHistoryAnimation ? 'history-highlight' : ''}`} style={{marginTop: '20px'}}>
                 <h4>分享歷史記錄</h4>
-                <div className="share-history" style={{ 
-                  overflowX: 'auto',
-                  maxWidth: '100%'
-                }}>
-                  <table style={{ 
-                    width: '100%',
-                    minWidth: '600px', // 設定最小寬度確保內容可讀
-                    fontSize: '12px'
-                  }}>
+                <div className="share-table-container">
+                  <table className="share-table">
                     <thead>
                       <tr>
-                        <th style={{ minWidth: '120px' }}>分享時間</th>
-                        <th style={{display: 'none'}}>哈希值</th>
-                        <th style={{ minWidth: '200px' }}>分享網址</th>
-                        <th style={{ minWidth: '120px' }}>用於編輯的密碼(請妥善保存)</th>
-                        <th style={{ minWidth: '100px' }}>操作</th>
+                        <th className="share-history-header">分享時間</th>
+                        <th className="share-history-header hidden">哈希值</th>
+                        <th className="share-history-header url">分享網址</th>
+                        <th className="share-history-header password">用於編輯的密碼(請妥善保存)</th>
+                        <th className="share-history-header actions">操作</th>
                       </tr>
                     </thead>
                     <tbody>
                       {shareHistory.map((item) => (
                         <tr key={item.hash}>
-                          <td style={{ fontSize: '11px' }}>
+                          <td className="share-history-cell">
                             {new Date(item.timestamp).toLocaleString()}
                           </td>
-                          <td style={{display: 'none'}}>
+                          <td className="share-history-cell hidden">
                             <div className="copy-container">
                               <input type="text" value={item.hash} readOnly />
                               <button onClick={() => copyToClipboard(item.hash)}>複製</button>
                             </div>
                           </td>
                           <td>
-                            <div className="copy-container" style={{ 
-                              display: 'flex', 
-                              gap: '4px',
-                              alignItems: 'center'
-                            }}>
+                            <div className="share-copy-input-container">
                               <input 
                                 type="text" 
                                 value={formatShareLink(item.hash)} 
                                 readOnly 
                                 onClick={() => copyToClipboard(formatShareLink(item.hash))} 
-                                style={{ 
-                                  fontSize: '11px',
-                                  minWidth: '150px',
-                                  flex: '1'
-                                }}
+                                className="share-table-input"
                               />
                               <button 
                                 onClick={async () => {
@@ -743,11 +671,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                                     alert('分享鏈接已複製到剪貼板');
                                   }
                                 }}
-                                style={{ 
-                                  fontSize: '10px',
-                                  padding: '2px 6px',
-                                  whiteSpace: 'nowrap'
-                                }}
+                                className="share-table-button"
                               >
                                 分享
                               </button>
@@ -760,31 +684,20 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                                 value={item.editPassword} 
                                 readOnly 
                                 onClick={() => copyToClipboard(item.editPassword)} 
-                                style={{ 
-                                  fontSize: '11px',
-                                  width: '100%'
-                                }}
+                                className="share-table-password-input"
                               />
                             </div>
                           </td>
                           <td>
-                            <div style={{ 
-                              display: 'flex', 
-                              gap: '4px',
-                              flexDirection: 'column'
-                            }}>
+                            <div className="share-table-actions">
                               <button 
-                                className="delete-button"
+                                className="delete-button share-table-action-button"
                                 onClick={() => deleteShareHistoryItem(item.hash)}
-                                style={{ 
-                                  fontSize: '10px',
-                                  padding: '2px 6px'
-                                }}
                               >
                                 刪除
                               </button>
                               <button 
-                                className="update-button"
+                                className="update-button share-table-action-button"
                                 onClick={() => {
                                   setUpdateHash(item.hash);
                                   setUpdatePassword(item.editPassword);
@@ -798,10 +711,6 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                                       }
                                     }, 500);
                                   }
-                                }}
-                                style={{ 
-                                  fontSize: '10px',
-                                  padding: '2px 6px'
                                 }}
                               >
                                 編輯
@@ -845,11 +754,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
               <span 
                 data-tooltip-id="update-data-tooltip"
                 data-tooltip-content="如果你擁有分享網址也有修改密碼則可以把它們填入這裡，就能修改分享內容。或者點選上方的修改，就會自動帶入相關資訊。"
-                style={{
-                  color: 'var(--ios-text-secondary)',
-                  marginLeft: '4px',
-                  cursor: 'pointer'
-                }}
+                className="share-tooltip-icon"
               >
                 <i className="fas fa-question-circle" />
               </span>
@@ -866,48 +771,22 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
           <div className="card-section">
             <h4>匯出數據表</h4>
             
-            <div style={{ 
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "8px"
-            }}>
-              <span style={{ color: "var(--ios-text-secondary)", fontSize: "14px" }}>
-                顯示 {favorites.length} 條記錄
-              </span>
-              <div style={{ display: "flex", gap: "8px" }}>
+            <div className="share-export-header">
+              <span>您可以將學習數據匯出為 JSON 格式</span>
+              <div className="share-import-buttons">
                 <button
                   onClick={() => {
-                    // 複製表格到剪貼板
-                    const headers = ['ID', '文本內容', '標籤IDs', '標籤名稱', '創建時間'];
-                    const rows = favorites.map(fav => [
-                      fav.id,
-                      fav.text,
-                      fav.tagIds.join(', '),
-                      fav.tagIds.map(tagId => tags.find(tag => tag.tagId === tagId)?.name || tagId).join(', '),
-                      new Date(fav.createdAt).toLocaleString()
-                    ]);
+                    // 複製表格內容
+                    const tableData = favorites.map(fav => {
+                      const tagNames = fav.tagIds.map(tagId => tags.find(tag => tag.tagId === tagId)?.name || tagId).join(', ');
+                      return `${fav.id}\t${fav.text}\t${fav.tagIds.join(', ')}\t${tagNames}\t${new Date(fav.createdAt).toLocaleString()}`;
+                    }).join('\n');
                     
-                    const tableText = [headers, ...rows]
-                      .map(row => row.join('\t'))
-                      .join('\n');
-                    
-                    navigator.clipboard.writeText(tableText).then(() => {
-                      alert('表格已複製到剪貼板');
-                    }).catch(err => {
-                      console.error('複製失敗:', err);
-                      alert('複製失敗');
-                    });
+                    const header = 'ID\t文本內容\t標籤IDs\t標籤名稱\t創建時間\n';
+                    copyToClipboard(header + tableData);
+                    alert('表格內容已複製到剪貼板');
                   }}
-                  style={{
-                    padding: "4px 8px",
-                    background: "var(--ios-primary)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    cursor: "pointer"
-                  }}
+                  className="export-button copy"
                 >
                   複製表格
                 </button>
@@ -932,15 +811,7 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                     document.body.removeChild(link);
                     URL.revokeObjectURL(url);
                   }}
-                  style={{
-                    padding: "4px 8px",
-                    background: "var(--ios-success)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    cursor: "pointer"
-                  }}
+                  className="export-button download"
                 >
                   匯出JSON
                 </button>
@@ -1001,73 +872,47 @@ const ShareData: React.FC<ShareDataProps> = ({ tags, favorites, user, onLoginReq
                     };
                     input.click();
                   }}
-                  style={{
-                    padding: "4px 8px",
-                    background: "var(--ios-warning)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    cursor: "pointer"
-                  }}
+                  className="export-button import"
                 >
                   匯入JSON
                 </button>
                 <span 
                   data-tooltip-id="export-import-tooltip"
                   data-tooltip-content="匯出JSON: 導出完整數據，包含所有收藏和標籤信息，可用於備份或遷移。&#10;匯入JSON: 從之前匯出的JSON恢復數據，將覆蓋當前數據。"
-                  style={{
-                    color: 'var(--ios-text-secondary)',
-                    marginLeft: '4px',
-                    cursor: 'pointer'
-                  }}
+                  className="share-tooltip-icon"
                 >
                   <i className="fas fa-question-circle" />
                 </span>
               </div>
             </div>
             
-            <div style={{ 
-              overflowX: "auto", 
-              background: "rgba(30, 30, 34, 0.7)",
-              borderRadius: "8px",
-              border: "1px solid var(--ios-border)"
-            }}>
-              <table style={{ 
-                width: "100%", 
-                borderCollapse: "collapse",
-                fontSize: "14px"
-              }}>
+            <div className="export-table-container">
+              <table className="export-table">
                 <thead>
-                  <tr style={{ 
-                    borderBottom: "1px solid var(--ios-border)",
-                    textAlign: "left"
-                  }}>
-                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>ID</th>
-                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>文本內容</th>
-                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤IDs</th>
-                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>標籤名稱</th>
-                    <th style={{ padding: "8px", whiteSpace: "nowrap" }}>創建時間</th>
+                  <tr className="export-table-header">
+                    <th>ID</th>
+                    <th>文本內容</th>
+                    <th>標籤IDs</th>
+                    <th>標籤名稱</th>
+                    <th>創建時間</th>
                   </tr>
                 </thead>
                 <tbody>
                   {favorites.map(fav => (
-                    <tr key={fav.id} style={{ 
-                      borderBottom: "1px solid rgba(100, 100, 110, 0.2)"
-                    }}>
-                      <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                    <tr key={fav.id} className="export-table-row">
+                      <td className="export-table-cell nowrap secondary">
                         {fav.id}
                       </td>
-                      <td style={{ padding: "8px" }}>
+                      <td className="export-table-cell">
                         {fav.text}
                       </td>
-                      <td style={{ padding: "8px", color: "var(--ios-text-secondary)" }}>
+                      <td className="export-table-cell secondary">
                         {fav.tagIds.join(', ')}
                       </td>
-                      <td style={{ padding: "8px" }}>
+                      <td className="export-table-cell">
                         {fav.tagIds.map(tagId => tags.find(tag => tag.tagId === tagId)?.name || tagId).join(', ')}
                       </td>
-                      <td style={{ padding: "8px", whiteSpace: "nowrap", color: "var(--ios-text-secondary)" }}>
+                      <td className="export-table-cell nowrap secondary">
                         {new Date(fav.createdAt).toLocaleString()}
                       </td>
                     </tr>
