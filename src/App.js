@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import PronunciationAssessment from "./pages/PronunciationAssessment";
 import Landing from "./pages/Landing";
+import Pitch from "./pages/Pitch";
+import PitchDetails from "./pages/PitchDetails";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import DataDeletionPage from "./pages/DataDeletionPage";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -22,6 +24,10 @@ function AppContent() {
           <Route path="/" element={<PronunciationAssessment />} />
           <Route path="/intro" element={<Landing />} />
           <Route path="/intro-en" element={<Landing />} />
+          <Route path="/pitch" element={<Pitch />} />
+          <Route path="/pitch-en" element={<Pitch />} />
+          <Route path="/pitch-details" element={<PitchDetails />} />
+          <Route path="/pitch-details-en" element={<PitchDetails />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/data-deletion" element={<DataDeletionPage />} />
           <Route path="/practice/:slug" element={<PronunciationAssessment />} />

@@ -530,6 +530,34 @@ body {
   }
 }
 
+.grid-5 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.team-single {
+  display: flex;
+  justify-content: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
 /* Card styles */
 .card {
   background: white;
@@ -1327,4 +1355,257 @@ body {
 
 .space-y-12 > * + * {
   margin-top: 3rem;
-} 
+}
+
+/* Pitch Page Specific Styles */
+
+/* Metrics Grid */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.metric-item {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.2;
+}
+
+/* Pricing Information */
+.pricing-info {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.pricing-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+}
+
+.pricing-details {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* Team Specific Styles */
+.team-avatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.team-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #3b82f6;
+}
+
+.team-role {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.team-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.team-detail-item {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.team-detail-item strong {
+  color: #374151;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* Enhanced Card Styles for Pitch */
+.card.pitch-card {
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.card.pitch-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Problem and Solution specific styles */
+.problem-point, .solution-feature {
+  position: relative;
+  overflow: hidden;
+}
+
+.problem-point::before, .solution-feature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+/* Financial projections */
+.financial-year {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #3b82f6;
+}
+
+/* Market opportunity highlights */
+.market-highlight {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.market-highlight h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.market-highlight p {
+  opacity: 0.9;
+}
+
+/* Competitive advantage icons */
+.advantage-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.advantage-icon svg {
+  stroke: white;
+}
+
+/* Business model pricing cards */
+.pricing-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-card.featured {
+  border: 2px solid #3b82f6;
+  transform: scale(1.05);
+}
+
+.pricing-card.featured::before {
+  content: '推薦 / RECOMMENDED';
+  position: absolute;
+  top: 1rem;
+  right: -2rem;
+  background: #3b82f6;
+  color: white;
+  padding: 0.25rem 3rem;
+  font-size: 0.75rem;
+  transform: rotate(45deg);
+  font-weight: bold;
+}
+
+/* Call to action enhancements */
+.pitch-cta {
+  background: linear-gradient(135deg, #1e40af, #7c3aed);
+  color: white;
+  text-align: center;
+  padding: 4rem 2rem;
+  border-radius: 1rem;
+  margin: 2rem 0;
+}
+
+.pitch-cta h2 {
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.pitch-cta p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+}
+
+/* Responsive adjustments for pitch page */
+@media (max-width: 768px) {
+  .metric-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .team-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .pricing-card.featured {
+    transform: none;
+  }
+  
+  .pitch-cta {
+    padding: 2rem 1rem;
+    margin: 1rem 0;
+  }
+}
+
+/* Animation for pitch elements */
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pitch-section {
+  animation: slideInUp 0.6s ease-out;
+}
+
+/* Gradient text for headings */
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
