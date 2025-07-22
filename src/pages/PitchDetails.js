@@ -31,8 +31,8 @@ export default function PitchDetails() {
               <ul>
                 <li><strong>Market Opportunity:</strong> $60 billion global language learning market, targeting 50 million users</li>
                 <li><strong>Target:</strong> 20% market share, expanding to 34 languages in 10 years, reaching 10 million active users</li>
-                <li><strong>Revenue Model:</strong> Multiple income sources including B2C subscriptions ($10 USD/month with high-usage free clause), B2B solutions, API integration, white-label licensing, and strategic partner ecosystem</li>
-                <li><strong>Data Monetization:</strong> Voice data sales channel - users consent to data for AI training in exchange for free usage, expected to generate passive income, cover Azure API costs, and contribute 15-20% of total revenue</li>
+                <li><strong>Revolutionary Data Monetization:</strong> Voice data sales generate 100x higher profit margin than traditional speech recognition services. While processing costs $0.01 per minute, selling the same data generates $1+ per minute to AI companies, creating unprecedented profit margins</li>
+                <li><strong>Integrated Business Model:</strong> Data-first revenue strategy combining voice data sales (primary), B2C subscriptions ($10 USD/month with data-for-free exchange), B2B solutions, API integration, white-label licensing, and strategic partnerships</li>
                 <li><strong>Competitive Advantage:</strong> Top-tier technology integration (Azure deep cooperation), personalized user experience, and data-driven ecosystem</li>
                 <li><strong>Financial Projection:</strong> $125 million annual revenue within 3 years, 25% net profit margin, expected ROI up to 300%</li>
                 <li><strong>Funding Need:</strong> Seeking $5 million seed round for product optimization, market expansion, and data infrastructure</li>
@@ -120,14 +120,14 @@ export default function PitchDetails() {
 
           <section className="pitch-section">
             <h2>Business Model</h2>
-            <p>We build sustainable, diversified revenue structures to meet B2C, B2B, and B2B2C needs. The model emphasizes data monetization, making the platform partially free to accelerate user growth. The following pricing integrates refund conditions to encourage high-quality linguistic data generation (average 80+ score sentences, only occasional incorrect words), improving data sales value. All prices are unified in USD, rounded to whole numbers.</p>
+            <p>Our revolutionary business model prioritizes voice data monetization with 100x profit margins over traditional speech processing. While Azure speech recognition costs $0.01 per minute, we can sell the same anonymized error data for $1+ per minute to AI companies, creating unprecedented profitability. This data-first strategy enables us to offer near-free services while building sustainable revenue streams across B2C, B2B, and B2B2C segments.</p>
 
             <div className="business-model">
               <h3>1. Voice Data Sales (Voice Data Monetization)</h3>
-              <p><strong>Model Details:</strong> Users opt-in in contracts, we segment voice data (e.g., error phonemes between correct words as niche linguistic data), anonymize and sell to AI companies.</p>
-              <p><strong>Pricing Basis:</strong> $100-500 USD per hour of niche linguistic data. One-time sales or royalty model (e.g., commission per use).</p>
-              <p><strong>Potential:</strong> Cover Azure API costs ($1-2 USD per hour) and generate passive income. Expected monthly 100 hours data sales $10,000-20,000 USD. Refund conditions ensure data quality, improving sales value.</p>
-              <p><strong>Flywheel Formation:</strong> Free users/refunds → More high-quality data → Sales revenue → Subsidize operations → More users.</p>
+              <p><strong>Revolutionary Economics:</strong> 100x profit margin advantage - Azure processing costs $0.60/hour while data sales generate $60-300/hour for the same audio content.</p>
+              <p><strong>Premium Data Value:</strong> Error pronunciation segments are worth $100-500 per hour to AI companies training speech recognition models, as incorrect pronunciation data is extremely rare and valuable.</p>
+              <p><strong>Massive Profit Potential:</strong> Expected monthly 100 hours of premium data sales generating $10,000-30,000 USD with operational costs under $300, creating 97%+ gross margins.</p>
+              <p><strong>Flywheel Effect:</strong> Free users generate valuable data → High-margin sales revenue → Subsidize free services → Attract more users → Exponential data value growth.</p>
             </div>
 
             <div className="business-model">
@@ -325,8 +325,8 @@ export default function PitchDetails() {
             <ul>
               <li><strong>市場機會：</strong>全球語言學習市場規模達60億美元，目標服務5,000萬用戶</li>
               <li><strong>市場目標：</strong>佔有20%市場份額，並在10年內擴展至34種語言，達到1,000萬活躍用戶</li>
-              <li><strong>創新商業模式：</strong>多元收入來源，包括B2C訂閱（10 USD/月，含高使用免費條款）、B2B解決方案、API整合、白標授權和策略夥伴生態</li>
-              <li><strong>聲音數據銷售：</strong>用戶同意數據用於AI訓練，可換取免費使用，預計產生被動收入，覆蓋Azure API成本並貢獻總營收的15-20%</li>
+              <li><strong>革命性數據變現：</strong>聲音數據銷售利潤率比傳統語音識別服務高100倍。處理成本每分鐘$0.01，同樣數據銷售給AI公司每分鐘可獲得$1+，創造前所未有的利潤率</li>
+              <li><strong>整合商業模式：</strong>數據優先營收策略，結合聲音數據銷售（主要）、B2C訂閱（10 USD/月含數據換免費）、B2B解決方案、API整合、白標授權和策略夥伴生態</li>
               <li><strong>競爭優勢：</strong>頂尖技術整合（Azure深度合作）、個人化用戶體驗和數據驅動生態系統</li>
               <li><strong>財務預測：</strong>3年內實現年營收1.25億美元，淨利潤率25%，預期ROI高達300%</li>
               <li><strong>融資需求：</strong>尋求500萬美元種子輪，用於產品優化、市場擴張和數據基礎設施</li>
@@ -414,14 +414,14 @@ export default function PitchDetails() {
 
         <section className="pitch-section">
           <h2>商業模式</h2>
-          <p>我們建構可持續、多元的營收結構，滿足B2C、B2B和B2B2C需求。模式強調數據變現，讓平台部分免費以加速用戶增長。以下定價整合退費條件以鼓勵產生高品質語料（平均80分以上句子，僅偶爾錯誤單字），提升數據銷售價值。所有價格統一為美元，取整數。</p>
+          <p>我們的革命性商業模式以聲音數據變現為核心，利潤率比傳統語音處理高100倍。Azure語音識別成本每分鐘$0.01，同樣的匿名化錯誤數據銷售給AI公司每分鐘可獲得$1+，創造前所未有的獲利能力。這種數據優先策略讓我們能提供接近免費的服務，同時建立跨B2C、B2B和B2B2C的可持續營收流。</p>
 
           <div className="business-model">
             <h3>1. 聲音數據銷售（Voice Data Monetization）</h3>
-            <p><strong>模式細節：</strong>用戶在合約中同意（opt-in），我們切割聲音數據成片段（e.g., 正確詞間的錯誤音素作為niche語料），匿名化後銷售給AI公司。</p>
-            <p><strong>計價依據：</strong>每小時niche語料100-500 USD。一次性銷售或版稅模式（e.g., 每次使用得佣金）。</p>
-            <p><strong>潛力：</strong>覆蓋Azure API成本（每小時1-2 USD），並產生被動收入。預計每月100小時數據銷售10,000-20,000 USD。退費條件確保數據品質，提升銷售價值。</p>
-            <p><strong>飛輪形成：</strong>免費用戶/退費 → 更多高品質數據 → 銷售收入 → 補貼運營 → 更多用戶。</p>
+            <p><strong>革命性經濟效益：</strong>100倍利潤率優勢 - Azure處理成本每小時$0.60，同樣音頻內容數據銷售可獲得$60-300/小時。</p>
+            <p><strong>頂級數據價值：</strong>錯誤發音片段對訓練語音識別模型的AI公司價值每小時$100-500，因為錯誤發音數據極其稀有且珍貴。</p>
+            <p><strong>巨大獲利潛力：</strong>預計每月100小時頂級數據銷售可獲得$10,000-30,000，營運成本低於$300，創造97%+毛利率。</p>
+            <p><strong>飛輪效應：</strong>免費用戶產生珍貴數據 → 高利潤銷售收入 → 補貼免費服務 → 吸引更多用戶 → 數據價值指數成長。</p>
           </div>
 
           <div className="business-model">
