@@ -558,6 +558,419 @@ body {
   margin: 0 auto;
 }
 
+/* ==================== PITCH DETAILS STYLES ==================== */
+
+/* Pitch Details Layout */
+.pitch-details {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.pitch-details .container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* Header Section */
+.pitch-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding: 3rem 0;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  border-radius: 2rem;
+  color: white;
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+}
+
+.pitch-header h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.pitch-tagline {
+  font-size: 1.25rem;
+  opacity: 0.9;
+  font-weight: 500;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Section Styles */
+.pitch-section {
+  background: white;
+  margin-bottom: 2.5rem;
+  padding: 2.5rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.pitch-section h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #3b82f6;
+  position: relative;
+}
+
+.pitch-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: #60a5fa;
+  border-radius: 2px;
+}
+
+.pitch-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #3b82f6;
+  margin: 2rem 0 1rem 0;
+}
+
+.pitch-section h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 1.5rem 0 1rem 0;
+}
+
+.pitch-section p {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  color: #475569;
+}
+
+/* Key Points Box */
+.key-points {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+  padding: 2rem;
+  border-radius: 1rem;
+  margin: 2rem 0;
+  border-left: 4px solid #3b82f6;
+}
+
+.key-points h3 {
+  color: #1e40af;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+}
+
+.key-points ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-points li {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+  position: relative;
+  font-size: 1.05rem;
+}
+
+.key-points li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* Pain Points */
+.pain-point {
+  background: #fef2f2;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid #ef4444;
+}
+
+.pain-point h3 {
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.pain-point ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.pain-point li {
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.pain-point li::before {
+  content: '⚠';
+  position: absolute;
+  left: 0;
+  color: #ef4444;
+}
+
+/* Solution Features */
+.solution-feature {
+  background: #f0fdf4;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid #10b981;
+}
+
+.solution-feature h3 {
+  color: #059669;
+  margin-bottom: 1rem;
+}
+
+/* Business Models */
+.business-model {
+  background: #fefce8;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid #eab308;
+}
+
+.business-model h3 {
+  color: #ca8a04;
+  margin-bottom: 1rem;
+}
+
+.business-model p {
+  margin-bottom: 1rem;
+}
+
+.business-model strong {
+  color: #92400e;
+}
+
+/* Advantages */
+.advantage {
+  background: #f5f3ff;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid #8b5cf6;
+}
+
+.advantage h3 {
+  color: #7c3aed;
+  margin-bottom: 1rem;
+}
+
+/* Financial Table */
+.financial-table {
+  background: #f8fafc;
+  padding: 2rem;
+  border-radius: 1rem;
+  margin: 2rem 0;
+  border: 2px solid #e2e8f0;
+}
+
+.financial-table h3 {
+  text-align: center;
+  color: #1e293b;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.financial-breakdown {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.financial-breakdown thead {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: white;
+}
+
+.financial-breakdown th,
+.financial-breakdown td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.financial-breakdown th {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.financial-breakdown tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.financial-breakdown tbody tr:hover {
+  background: #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+.financial-breakdown td:first-child {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.financial-breakdown strong {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+/* Key Assumptions */
+.key-assumptions {
+  background: #ecfdf5;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border-left: 4px solid #10b981;
+}
+
+.key-assumptions h4 {
+  color: #059669;
+  margin-bottom: 1rem;
+}
+
+.key-assumptions ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-assumptions li {
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.key-assumptions li::before {
+  content: '📊';
+  position: absolute;
+  left: 0;
+}
+
+/* Footer */
+.pitch-footer {
+  text-align: center;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 3rem 2rem;
+  border-radius: 2rem;
+  margin-top: 3rem;
+  box-shadow: 0 20px 40px rgba(30, 41, 59, 0.3);
+}
+
+.pitch-footer p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.pitch-footer a {
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.pitch-footer a:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+/* Lists */
+.pitch-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.pitch-section ul li {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+  position: relative;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.pitch-section ul li::before {
+  content: '▶';
+  position: absolute;
+  left: 0;
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pitch-details .container {
+    padding: 1rem;
+  }
+  
+  .pitch-header h1 {
+    font-size: 2rem;
+  }
+  
+  .pitch-tagline {
+    font-size: 1.1rem;
+  }
+  
+  .pitch-section {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .pitch-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .financial-breakdown {
+    font-size: 0.9rem;
+  }
+  
+  .financial-breakdown th,
+  .financial-breakdown td {
+    padding: 0.75rem;
+  }
+  
+  .key-points,
+  .pain-point,
+  .solution-feature,
+  .business-model,
+  .advantage {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pitch-header {
+    padding: 2rem 1rem;
+    border-radius: 1rem;
+  }
+  
+  .pitch-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .pitch-section h2 {
+    font-size: 1.25rem;
+  }
+  
+  .financial-breakdown {
+    font-size: 0.8rem;
+  }
+}
+
 /* Card styles */
 .card {
   background: white;
