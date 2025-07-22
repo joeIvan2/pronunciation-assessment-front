@@ -32,11 +32,13 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "NODE_OPTIONS='--max-old-space-size=8192' react-scripts start",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' react-scripts build",
     "test": "react-scripts test",
     "test:ci": "react-scripts test --coverage --watchAll=false",
     "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:intro": "react-scripts test --testPathPattern=Landing.test.js --watchAll=false",
+    "test:intro-verbose": "react-scripts test --testPathPattern=Landing.test.js --verbose --watchAll=false",
     "test:e2e": "npx playwright test",
     "test:e2e:ci": "npx playwright test --project=\"Desktop Chrome\"",
     "test:install": "npx playwright install --with-deps",
@@ -52,7 +54,10 @@
     "test:favorites": "npx playwright test tests/logged-in-favorites.js --project=\"Desktop Chrome\" --headed",
     "test:gen-auth": "node tests/generate-auth-state.js",
     "test:url-login": "npx playwright test tests/url-login-test.js --project=\"Desktop Chrome\" --headed",
+    "test:intro-e2e": "npx playwright test tests/intro-page-test.js --project=\"Desktop Chrome\"",
+    "test:intro-e2e-headed": "npx playwright test tests/intro-page-test.js --project=\"Desktop Chrome\" --headed",
     "test:full-flow": "npm run test:baseline && npm run test:auth-check && npm run test:logged-in",
+    "test:intro-full": "npm run test:intro && npm run test:intro-e2e",
     "eject": "react-scripts eject",
     "vercel-build": "npm install --legacy-peer-deps && npm run build"
   },
