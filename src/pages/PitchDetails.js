@@ -101,7 +101,7 @@ export default function PitchDetails() {
               <p>Real-time recording assessment, multi-modal input (text, voice, images), speech synthesis, favorites system, and AI assistant.</p>
             </div>
 
-            <p>Platform designed modularly (e.g., PronunciationAssessment.tsx as core coordinator), ensuring scalability. Inspired by linkedin.com (YiChi's Chinese learning App with effective pronunciation practice) and producthunt.com (YiChi's AI speech assessment feature), we expand to multi-language support, similar to chattytutor.com's conversation shadow practice and custom AI prompt features.</p>
+            <p>Platform designed modularly, ensuring scalability and flexibility for future expansion.</p>
           </section>
 
           <section className="pitch-section">
@@ -123,21 +123,29 @@ export default function PitchDetails() {
             <p>We build sustainable, diversified revenue structures to meet B2C, B2B, and B2B2C needs. The model emphasizes data monetization, making the platform partially free to accelerate user growth. The following pricing integrates refund conditions to encourage high-quality linguistic data generation (average 80+ score sentences, only occasional incorrect words), improving data sales value. All prices are unified in USD, rounded to whole numbers.</p>
 
             <div className="business-model">
-              <h3>1. B2C Subscription Service</h3>
+              <h3>1. Voice Data Sales (Voice Data Monetization)</h3>
+              <p><strong>Model Details:</strong> Users opt-in in contracts, we segment voice data (e.g., error phonemes between correct words as niche linguistic data), anonymize and sell to AI companies.</p>
+              <p><strong>Pricing Basis:</strong> $100-500 USD per hour of niche linguistic data. One-time sales or royalty model (e.g., commission per use).</p>
+              <p><strong>Potential:</strong> Cover Azure API costs ($1-2 USD per hour) and generate passive income. Expected monthly 100 hours data sales $10,000-20,000 USD. Refund conditions ensure data quality, improving sales value.</p>
+              <p><strong>Flywheel Formation:</strong> Free users/refunds → More high-quality data → Sales revenue → Subsidize operations → More users.</p>
+            </div>
+
+            <div className="business-model">
+              <h3>2. B2C Subscription Service</h3>
               <p><strong>Basic Pricing:</strong> $10 USD/month (unlimited assessments, AI assistant, cloud sync)</p>
               <p><strong>High-Usage Free Clause:</strong> If users use more than 5 hours per month (e.g., total practice recording time), they can use that month for free. However, the Terms of Service clearly state: user voice data will be anonymized to assist in creating speech recognition engines (e.g., training AI models), and must meet high-quality conditions (average 80+ score sentences, only occasional incorrect pronunciation words). This encourages high engagement, generates more niche data (error pronunciation segments), and complies with privacy regulations (such as GDPR).</p>
               <p><strong>Expected Effect:</strong> Attract price-sensitive users, increase conversion rate by 20%; expected data consent rate of 30%, generating hundreds of hours of sellable linguistic data monthly.</p>
             </div>
 
             <div className="business-model">
-              <h3>2. B2B Enterprise Solutions</h3>
+              <h3>3. B2B Enterprise Solutions</h3>
               <p><strong>Pricing:</strong> From $3,000 USD/year (customized features, management dashboard, reports)</p>
               <p><strong>Refund Condition:</strong> Full refund if 1000 hours of analyzable content is reached (condition: average 80+ score sentences, only occasional incorrect pronunciation words). This encourages enterprises to generate high-quality data for our data sales channel.</p>
               <p><strong>Target:</strong> Corporate employee training and educational institutions.</p>
             </div>
 
             <div className="business-model">
-              <h3>3. Teaching API Integration Service</h3>
+              <h3>4. Teaching API Integration Service</h3>
               <p><strong>Pricing:</strong> $6 USD/month/student (API calls, grade analysis, support)</p>
               <p><strong>Refund Condition:</strong> 100% refund if 5 hours of analyzable content is reached (condition: average 80+ score sentences, only occasional incorrect pronunciation words). This part is paid by student parents, but teachers can receive rebates (points in mall for products like educational tools or course resources).</p>
               <p><strong>Function:</strong> Seamlessly embed into LMS systems (such as teachify.tw integration compatibility).</p>
@@ -145,24 +153,17 @@ export default function PitchDetails() {
             </div>
 
             <div className="business-model">
-              <h3>4. White Label Licensing</h3>
+              <h3>5. White Label Licensing</h3>
               <p><strong>Pricing:</strong> From $3,000 USD/year (brand customization, joint development)</p>
               <p><strong>Refund Condition:</strong> Refund if 1000 hours of analyzable content is reached (condition: average 80+ score sentences, only occasional incorrect pronunciation words).</p>
             </div>
 
             <div className="business-model">
-              <h3>5. B2B2C Strategic Partner Ecosystem</h3>
+              <h3>6. B2B2C Strategic Partner Ecosystem</h3>
               <p><strong>Commission Sharing:</strong> 15-30% (schools, study abroad agencies, immigration consultants recommendations)</p>
               <p><strong>Learning Progress Plan:</strong> $3-4 USD/month/person + certification fees</p>
             </div>
 
-            <div className="business-model">
-              <h3>6. Voice Data Sales (Voice Data Monetization)</h3>
-              <p><strong>Model Details:</strong> Users opt-in in contracts, we segment voice data (e.g., error phonemes between correct words as niche linguistic data), anonymize and sell to AI companies (such as speechsuper.com and elsaspeak.com similar API training needs).</p>
-              <p><strong>Pricing Basis:</strong> Based on market data, $100-500 USD per hour of niche linguistic data (from medium.com and learn.microsoft.com). One-time sales or royalty model (e.g., commission per use).</p>
-              <p><strong>Potential:</strong> Cover Azure API costs ($1-2 USD per hour) and generate passive income. Expected monthly 100 hours data sales $10,000-20,000 USD. Refund conditions ensure data quality, improving sales value.</p>
-              <p><strong>Flywheel Formation:</strong> Free users/refunds → More high-quality data → Sales revenue → Subsidize operations → More users.</p>
-            </div>
           </section>
 
           <section className="pitch-section">
@@ -170,17 +171,17 @@ export default function PitchDetails() {
             
             <div className="advantage">
               <h3>1. Technical Barriers</h3>
-              <p>Azure deep integration, proprietary AI algorithms, multi-modal processing. Superior to speechsuper.com's 8-language API, we provide 34 languages and data monetization.</p>
+              <p>Azure deep integration, proprietary AI algorithms, multi-modal processing. We provide 34 languages and data monetization capabilities.</p>
             </div>
 
             <div className="advantage">
               <h3>2. User Experience</h3>
-              <p>Intuitive interface, personalized paths, cross-platform sync. Drawing from elsaspeak.com's pronunciation feedback, we add community and refund incentives, similar to yourteacher.ai's bilingual voice and vocha.co's immersive conversation simulation.</p>
+              <p>Intuitive interface, personalized paths, cross-platform sync with community features and refund incentives.</p>
             </div>
 
             <div className="advantage">
               <h3>3. Ecosystem</h3>
-              <p>Partnerships with educational institutions and study abroad agencies; data sales create unique moat. Similar to wegic.ai's AI website generation tool, we apply to educational content creation.</p>
+              <p>Partnerships with educational institutions and study abroad agencies; data sales create unique moat for sustainable competitive advantage.</p>
             </div>
           </section>
 
@@ -394,7 +395,7 @@ export default function PitchDetails() {
             <p>即時錄音評估、多模態輸入（文字、語音、圖片）、語音合成、收藏系統和AI助理。</p>
           </div>
 
-          <p>平台設計模組化（e.g., PronunciationAssessment.tsx 作為核心協調器），確保可擴展性。啟發自 linkedin.com（YiChi的華語學習App，提供有效發音練習）和 producthunt.com（YiChi的AI語音評估功能），我們擴展至多語言支援，類似 chattytutor.com 的對話陰影練習和自訂AI提示功能。</p>
+          <p>平台設計模組化，確保可擴展性和靈活性，為未來擴展做好準備。</p>
         </section>
 
         <section className="pitch-section">
@@ -416,21 +417,29 @@ export default function PitchDetails() {
           <p>我們建構可持續、多元的營收結構，滿足B2C、B2B和B2B2C需求。模式強調數據變現，讓平台部分免費以加速用戶增長。以下定價整合退費條件以鼓勵產生高品質語料（平均80分以上句子，僅偶爾錯誤單字），提升數據銷售價值。所有價格統一為美元，取整數。</p>
 
           <div className="business-model">
-            <h3>1. B2C 訂閱服務</h3>
+            <h3>1. 聲音數據銷售（Voice Data Monetization）</h3>
+            <p><strong>模式細節：</strong>用戶在合約中同意（opt-in），我們切割聲音數據成片段（e.g., 正確詞間的錯誤音素作為niche語料），匿名化後銷售給AI公司。</p>
+            <p><strong>計價依據：</strong>每小時niche語料100-500 USD。一次性銷售或版稅模式（e.g., 每次使用得佣金）。</p>
+            <p><strong>潛力：</strong>覆蓋Azure API成本（每小時1-2 USD），並產生被動收入。預計每月100小時數據銷售10,000-20,000 USD。退費條件確保數據品質，提升銷售價值。</p>
+            <p><strong>飛輪形成：</strong>免費用戶/退費 → 更多高品質數據 → 銷售收入 → 補貼運營 → 更多用戶。</p>
+          </div>
+
+          <div className="business-model">
+            <h3>2. B2C 訂閱服務</h3>
             <p><strong>基本定價：</strong>10 USD/月（含無限評估、AI助理、雲端同步）</p>
             <p><strong>高使用免費條款：</strong>如果用戶每月使用超過5小時（e.g., 練習錄音總時長），即可免費使用該月。但服務合約（Terms of Service）中明確規定：用戶聲音數據將被匿名化用於協助製作語音辨識引擎（e.g., 訓練AI模型），且需符合高品質條件（平均80分以上的句子，只能偶爾穿差幾個發音不好的單字）。這鼓勵高參與度，產生更多niche數據（錯誤發音片段），並符合隱私法規（如GDPR）。</p>
             <p><strong>預期效果：</strong>吸引價格敏感用戶，轉化率提升20%；數據同意率預計30%，產生每月數百小時可銷售語料。</p>
           </div>
 
           <div className="business-model">
-            <h3>2. B2B 企業解決方案</h3>
+            <h3>3. B2B 企業解決方案</h3>
             <p><strong>定價：</strong>3,000 USD/年起（客製化功能、管理後台、報告）</p>
             <p><strong>退費條件：</strong>只要達到1000小時的可供分析內容就可退費（條件：平均80分以上的句子，只能偶爾穿差幾個發音不好的單字）。這鼓勵企業產生高品質數據，用於我們的數據銷售管道。</p>
             <p><strong>目標：</strong>企業員工培訓和教育機構。</p>
           </div>
 
           <div className="business-model">
-            <h3>3. 教學 API 整合服務</h3>
+            <h3>4. 教學 API 整合服務</h3>
             <p><strong>定價：</strong>6 USD/月/學生（API調用、成績分析、支援）</p>
             <p><strong>退費條件：</strong>只要達到5小時的可供分析內容就可退費100%（條件：平均80分以上的句子，只能偶爾穿差幾個發音不好的單字）。這部分由學生家長支付購買服務，但老師可以收回扣（有點數在商城換產品，如教育工具或課程資源）。</p>
             <p><strong>功能：</strong>無縫嵌入LMS系統（如 teachify.tw 的整合兼容）。</p>
@@ -438,24 +447,17 @@ export default function PitchDetails() {
           </div>
 
           <div className="business-model">
-            <h3>4. White Label 授權</h3>
+            <h3>5. White Label 授權</h3>
             <p><strong>定價：</strong>3,000 USD/年起（品牌客製、共同開發）</p>
             <p><strong>退費條件：</strong>只要達到1000小時的可供分析內容就可退費（條件：平均80分以上的句子，只能偶爾穿差幾個發音不好的單字）。</p>
           </div>
 
           <div className="business-model">
-            <h3>5. B2B2C 策略夥伴生態</h3>
+            <h3>6. B2B2C 策略夥伴生態</h3>
             <p><strong>佣金分潤：</strong>15-30%（學校、留學代辦、移民顧問推薦）</p>
             <p><strong>學習歷程方案：</strong>3-4 USD/月/人 + 認證費</p>
           </div>
 
-          <div className="business-model">
-            <h3>6. 聲音數據銷售（Voice Data Monetization）</h3>
-            <p><strong>模式細節：</strong>用戶在合約中同意（opt-in），我們切割聲音數據成片段（e.g., 正確詞間的錯誤音素作為niche語料），匿名化後銷售給AI公司（如 speechsuper.com 和 elsaspeak.com 的類似API訓練需求）。</p>
-            <p><strong>計價依據：</strong>基於市場數據，每小時niche語料100-500 USD（來自 medium.com和 learn.microsoft.com）。一次性銷售或版稅模式（e.g., 每次使用得佣金）。</p>
-            <p><strong>潛力：</strong>覆蓋Azure API成本（每小時1-2 USD），並產生被動收入。預計每月100小時數據銷售10,000-20,000 USD。退費條件確保數據品質，提升銷售價值。</p>
-            <p><strong>飛輪形成：</strong>免費用戶/退費 → 更多高品質數據 → 銷售收入 → 補貼運營 → 更多用戶。</p>
-          </div>
         </section>
 
         <section className="pitch-section">
@@ -463,17 +465,17 @@ export default function PitchDetails() {
           
           <div className="advantage">
             <h3>1. 技術壁壘</h3>
-            <p>Azure深度整合、自主AI算法、多模態處理。優於 speechsuper.com 的8語言API，我們提供34種語言和數據變現。</p>
+            <p>Azure深度整合、自主AI算法、多模態處理。我們提供34種語言和數據變現能力。</p>
           </div>
 
           <div className="advantage">
             <h3>2. 用戶體驗</h3>
-            <p>直覺介面、個人化路徑、跨平台同步。借鏡 elsaspeak.com 的發音回饋，我們添加社群和退費激勵，類似 yourteacher.ai 的雙語聲音和 vocha.co 的沉浸式對話模擬。</p>
+            <p>直覺介面、個人化路徑、跨平台同步，包含社群功能和退費激勵機制。</p>
           </div>
 
           <div className="advantage">
             <h3>3. 生態系統</h3>
-            <p>與教育機構、留學代辦合作；數據銷售創造獨特護城河。類似 wegic.ai 的AI網站生成工具，我們應用於教育內容創作。</p>
+            <p>與教育機構、留學代辦合作；數據銷售創造獨特護城河，形成可持續競爭優勢。</p>
           </div>
         </section>
 
