@@ -15,7 +15,7 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
         primaryBorderColor: '#013a82',
         lineColor: '#44444c',
         secondaryColor: '#177cfc',
-        tertiaryColor: '#f59e0b',
+        tertiaryColor: '#dddddd',
       },
       flowchart: {
         curve: 'basis',
@@ -36,9 +36,9 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
       
       const flowchartDefinition = isEnglish ? `
         flowchart TD
-          A["👤<br/>User Entry"] --> B["🎯<br/>AI Assessment"]
-          B --> B1["🧠<br/>AI Analysis"]
-          B1 --> C["📝<br/>Decision & Feedback"]
+          A["👤<br/>User Entry"] --> B["🎯<br/>Pronunciation Assessment"]
+          B --> B1["🧠<br/>User History Analysis"]
+          B --> C["📝<br/>Pronunciation Score"]
           B1 --> R1["🌐<br/>Language Club<br/>Recommendation"]
           B1 --> R2["📰<br/>Personalized Content<br/>(News, Videos)"]
           
@@ -58,22 +58,16 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
             G --> J["💰<br/>Generate Revenue"]
           end
           
-          classDef default fill:#ffffff,stroke:#44444c,stroke-width:2px,color:#44444c,font-family:Roboto;
-          classDef primary fill:#013a82,stroke:#013a82,stroke-width:2px,color:#ffffff;
-          classDef accent fill:#e8f0fe,stroke:#177cfc,stroke-width:2px,color:#013a82;
-          classDef highlight fill:#177cfc,stroke:#177cfc,stroke-width:2px,color:#ffffff;
-          classDef success fill:#16a34a,stroke:#16a34a,stroke-width:2px,color:#ffffff;
-          classDef data fill:#f59e0b,stroke:#f59e0b,stroke-width:2px,color:#ffffff;
+          classDef darkBlue fill:#013a82 !important,stroke:#44444c !important,stroke-width:2px !important,color:#f8f9fa !important;
+          classDef darkGray fill:#44444c !important,stroke:#44444c !important,stroke-width:2px !important,color:#f8f9fa !important;
 
-          class A,B,B1,C,E,H primary;
-          class D,X,F,I success;
-          class G,J data;
-          class R1,R2 accent;
+          class A,B1,C,E,H,G,J darkBlue;
+          class B,D,X,F,I,R1,R2 darkGray;
       ` : `
         flowchart TD
-          A["👤<br/>用戶進入"] --> B["🎯<br/>AI 評估"]
-          B --> B1["🧠<br/>AI 分析"]
-          B1 --> C["📝<br/>決策與回饋"]
+          A["👤<br/>用戶進入"] --> B["🎯<br/>AI 評估發音"]
+          B --> B1["🧠<br/>用戶使用歷程分析"]
+          B --> C["📝<br/>發音評分"]
           B1 --> R1["🌐<br/>語言社團推薦"]
           B1 --> R2["📰<br/>個人化內容推薦<br/>(新聞、影片)"]
 
@@ -87,23 +81,17 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
           end
 
           subgraph "價值生成"
-            X -->|"練習完成"| F["📈<br/>用戶能力���升"]
+            X -->|"練習完成"| F["📈<br/>用戶能力提升"]
             X -->|"練習完成"| G["🏢<br/>平台數據變現"]
             F --> I["🏆<br/>達成學習目標"]
             G --> J["💰<br/>創造營收"]
           end
           
-          classDef default fill:#ffffff,stroke:#44444c,stroke-width:2px,color:#44444c,font-family:Roboto;
-          classDef primary fill:#013a82,stroke:#013a82,stroke-width:2px,color:#ffffff;
-          classDef accent fill:#e8f0fe,stroke:#177cfc,stroke-width:2px,color:#013a82;
-          classDef highlight fill:#177cfc,stroke:#177cfc,stroke-width:2px,color:#ffffff;
-          classDef success fill:#16a34a,stroke:#16a34a,stroke-width:2px,color:#ffffff;
-          classDef data fill:#f59e0b,stroke:#f59e0b,stroke-width:2px,color:#ffffff;
+          classDef darkBlue fill:#013a82 !important,stroke:#44444c !important,stroke-width:2px !important,color:#f8f9fa !important;
+          classDef darkGray fill:#44444c !important,stroke:#44444c !important,stroke-width:2px !important,color:#f8f9fa !important;
 
-          class A,B,B1,C,E,H primary;
-          class D,X,F,I success;
-          class G,J data;
-          class R1,R2 accent;
+          class A,B1,C,E,H,G,J darkBlue;
+          class B,D,X,F,I,R1,R2 darkGray;
       `;
 
       const uniqueId = `mermaid-flowchart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
