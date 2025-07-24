@@ -293,3 +293,10 @@
   fill: #f8f9fa !important; /* Use a light color for text inside the SVG */
   color: #f8f9fa !important; /* Fallback for some elements */
 }
+
+/* ===== Mermaid Text Wrapping Fix (Scoped) ===== */
+.pitch-deck-container-v2 .mermaid .nodeLabel div {
+  white-space: normal !important;
+  word-break: break-word !important;
+  max-width: 200px !important; 
+}

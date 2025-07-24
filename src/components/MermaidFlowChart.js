@@ -19,9 +19,9 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
       },
       flowchart: {
         curve: 'basis',
-        padding: 20,
+        padding: 20, // Standard padding
         nodeSpacing: 60,
-        rankSpacing: 60,
+        rankSpacing: 60, // Standard rank spacing
         useMaxWidth: false,
         htmlLabels: true
       },
@@ -96,10 +96,55 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
 
       const uniqueId = `mermaid-flowchart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
+      const adjustForeignObjects = (container) => {
+        const foreignObjects = container.querySelectorAll('foreignObject');
+        foreignObjects.forEach(fo => {
+          const div = fo.querySelector('div');
+          if (div) {
+            const contentWidth = div.scrollWidth;
+            const contentHeight = div.scrollHeight;
+            const padding = 10; 
+            fo.setAttribute('width', contentWidth + padding);
+            fo.setAttribute('height', contentHeight + padding);
+          }
+        });
+      };
+
+      const cropSvgTopMargin = (container) => {
+        const svg = container.querySelector('svg');
+        if (!svg) return;
+        const mainG = svg.querySelector('g');
+        if (!mainG) return;
+
+        const transform = mainG.getAttribute('transform');
+        const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
+        if (!match) return;
+
+        const x = parseFloat(match[1]);
+        const y = parseFloat(match[2]);
+        
+        const desiredTopMargin = 20;
+        const cropAmount = y - desiredTopMargin;
+
+        if (cropAmount > 0) {
+          mainG.setAttribute('transform', `translate(${x}, ${desiredTopMargin})`);
+          
+          const currentHeight = parseFloat(svg.getAttribute('height'));
+          svg.setAttribute('height', currentHeight - cropAmount);
+
+          const viewBox = svg.getAttribute('viewBox').split(' ').map(parseFloat);
+          const [minX, minY, width, height] = viewBox;
+          svg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height - cropAmount}`);
+        }
+      };
+
       mermaid.render(uniqueId, flowchartDefinition)
         .then(({ svg }) => {
           if (mermaidRef.current) {
             mermaidRef.current.innerHTML = svg;
+            // Adjust dimensions after SVG is in the DOM
+            adjustForeignObjects(mermaidRef.current);
+            cropSvgTopMargin(mermaidRef.current);
           }
         })
         .catch((error) => {
@@ -118,7 +163,7 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
         className="mermaid-flowchart"
         style={{ 
           textAlign: 'center', 
-          padding: '20px',
+          padding: '20px', // Standard padding
           backgroundColor: '#f8f9fa',
           borderRadius: '8px',
           margin: '2rem 0',
