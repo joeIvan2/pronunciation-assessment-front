@@ -10,30 +10,22 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
       startOnLoad: true,
       theme: 'base',
       themeVariables: {
-        primaryColor: '#3b82f6',
+        primaryColor: '#013a82',
         primaryTextColor: '#ffffff',
-        primaryBorderColor: '#1d4ed8',
-        lineColor: '#6366f1',
-        secondaryColor: '#10b981',
-        tertiaryColor: '#ef4444',
-        background: '#ffffff',
-        mainBkg: '#3b82f6',
-        secondBkg: '#10b981',
-        tertiaryBkg: '#ef4444',
-        clusterBkg: '#f8fafc',
-        clusterBorder: '#e2e8f0'
+        primaryBorderColor: '#013a82',
+        lineColor: '#44444c',
+        secondaryColor: '#177cfc',
+        tertiaryColor: '#f59e0b',
       },
       flowchart: {
         curve: 'basis',
         padding: 20,
-        nodeSpacing: 80,
-        rankSpacing: 80,
+        nodeSpacing: 60,
+        rankSpacing: 60,
         useMaxWidth: true,
-        htmlLabels: false
+        htmlLabels: true
       },
-      wrap: false,
-      fontSize: 13,
-      maxTextSize: 90000
+      fontSize: 14,
     });
   }, []);
 
@@ -44,79 +36,89 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
       
       const flowchartDefinition = isEnglish ? `
         flowchart TD
-          A["👤 User Entry"] --> B["🎯 AI Assessment"]
-          B --> C["Decision"]
-          C -->|"✅ Correct"| D["➡️ Next Question"]
-          C -->|"❌ Incorrect"| E["📝 Practice"]
-          D --> X["Question Check"]
-          X -->|"Has More"| Y["Continue Learning"]
-          X -->|"Complete Practice"| F["👤 User Progress"]
-          X -->|"Complete Practice"| G["🏢 Platform Data"]
-          Y --> B
-          E --> H["🤖 AI Generate Questions"]
-          H --> B
-          F --> I["📈 Level Up"]
-          G --> J["💰 Data Monetization"]
-          I --> K["🏆 Success"]
-          J --> L["💎 100x Profit"]
+          A["👤<br/>User Entry"] --> B["🎯<br/>AI Assessment"]
+          B --> B1["🧠<br/>AI Analysis"]
+          B1 --> C["📝<br/>Decision & Feedback"]
+          B1 --> R1["🌐<br/>Language Club<br/>Recommendation"]
+          B1 --> R2["📰<br/>Personalized Content<br/>(News, Videos)"]
           
-          style A fill:#3b82f6,stroke:#1d4ed8,color:#fff
-          style B fill:#6366f1,stroke:#4338ca,color:#fff
-          style C fill:#f59e0b,stroke:#d97706,color:#fff
-          style D fill:#10b981,stroke:#059669,color:#fff
-          style E fill:#fecaca,stroke:#f87171,color:#dc2626
-          style X fill:#e5e7eb,stroke:#9ca3af,color:#374151
-          style Y fill:#10b981,stroke:#059669,color:#fff
-          style F fill:#06b6d4,stroke:#0891b2,color:#fff
-          style G fill:#f97316,stroke:#ea580c,color:#fff
-          style H fill:#9333ea,stroke:#7c3aed,color:#fff
-          style I fill:#22c55e,stroke:#16a34a,color:#fff
-          style J fill:#f59e0b,stroke:#d97706,color:#fff
-          style K fill:#8b5cf6,stroke:#7c3aed,color:#fff
-          style L fill:#ec4899,stroke:#db2777,color:#fff
+          subgraph "Learning Loop"
+            C -->|"✅ Correct"| D["➡️<br/>Next Question"]
+            C -->|"❌ Incorrect"| E["🗣️<br/>Targeted Practice"]
+            D --> X["Check Progress"]
+            X -->|"Continue"| B
+            E --> H["🤖<br/>AI Generates<br/>New Material"]
+            H --> B
+          end
+
+          subgraph "Value Generation"
+            X -->|"Practice Complete"| F["📈<br/>User Skill<br/>Improvement"]
+            X -->|"Practice Complete"| G["🏢<br/>Platform<br/>Monetizes Data"]
+            F --> I["🏆<br/>Achieve Goals"]
+            G --> J["💰<br/>Generate Revenue"]
+          end
+          
+          classDef default fill:#ffffff,stroke:#44444c,stroke-width:2px,color:#44444c,font-family:Roboto;
+          classDef primary fill:#013a82,stroke:#013a82,stroke-width:2px,color:#ffffff;
+          classDef accent fill:#e8f0fe,stroke:#177cfc,stroke-width:2px,color:#013a82;
+          classDef highlight fill:#177cfc,stroke:#177cfc,stroke-width:2px,color:#ffffff;
+          classDef success fill:#16a34a,stroke:#16a34a,stroke-width:2px,color:#ffffff;
+          classDef data fill:#f59e0b,stroke:#f59e0b,stroke-width:2px,color:#ffffff;
+
+          class A,B,B1,C,E,H primary;
+          class D,X,F,I success;
+          class G,J data;
+          class R1,R2 accent;
       ` : `
         flowchart TD
-          A["👤 用戶進入"] --> B["🎯 AI評估"]
-          B --> C["決策分支"]
-          C -->|"✓ 正確"| D["➡️ 下一題"]
-          C -->|"✗ 錯誤"| E["📝 練習"]
-          D --> X["題目檢查"]
-          X -->|"還有題目"| Y["繼續學習"]
-          X -->|"完成練習"| F["👤 用戶 程度提升"]
-          X -->|"完成練習"| G["🏢 平台 發音數據變現"]
-          Y --> B
-          E --> H["🤖 AI出題"]
-          H --> B
-          F --> I["📈 等級提升"]
-          G --> J["💰 數據變現"]
-          I --> K["🏆 學習成功"]
-          J --> L["💎 100倍利潤"]
+          A["👤<br/>用戶進入"] --> B["🎯<br/>AI 評估"]
+          B --> B1["🧠<br/>AI 分析"]
+          B1 --> C["📝<br/>決策與回饋"]
+          B1 --> R1["🌐<br/>語言社團推薦"]
+          B1 --> R2["📰<br/>個人化內容推薦<br/>(新聞、影片)"]
+
+          subgraph "學習循環"
+            C -->|"✓ 正確"| D["➡️<br/>下一題"]
+            C -->|"✗ 錯誤"| E["🗣️<br/>針對性練習"]
+            D --> X["檢查進度"]
+            X -->|"繼續"| B
+            E --> H["🤖<br/>AI 生成<br/>新練習材料"]
+            H --> B
+          end
+
+          subgraph "價值生成"
+            X -->|"練習完成"| F["📈<br/>用戶能力���升"]
+            X -->|"練習完成"| G["🏢<br/>平台數據變現"]
+            F --> I["🏆<br/>達成學習目標"]
+            G --> J["💰<br/>創造營收"]
+          end
           
-          style A fill:#3b82f6,stroke:#1d4ed8,color:#fff
-          style B fill:#6366f1,stroke:#4338ca,color:#fff
-          style C fill:#f59e0b,stroke:#d97706,color:#fff
-          style D fill:#10b981,stroke:#059669,color:#fff
-          style E fill:#fecaca,stroke:#f87171,color:#dc2626
-          style X fill:#e5e7eb,stroke:#9ca3af,color:#374151
-          style Y fill:#10b981,stroke:#059669,color:#fff
-          style F fill:#06b6d4,stroke:#0891b2,color:#fff
-          style G fill:#f97316,stroke:#ea580c,color:#fff
-          style H fill:#9333ea,stroke:#7c3aed,color:#fff
-          style I fill:#22c55e,stroke:#16a34a,color:#fff
-          style J fill:#f59e0b,stroke:#d97706,color:#fff
-          style K fill:#8b5cf6,stroke:#7c3aed,color:#fff
-          style L fill:#ec4899,stroke:#db2777,color:#fff
+          classDef default fill:#ffffff,stroke:#44444c,stroke-width:2px,color:#44444c,font-family:Roboto;
+          classDef primary fill:#013a82,stroke:#013a82,stroke-width:2px,color:#ffffff;
+          classDef accent fill:#e8f0fe,stroke:#177cfc,stroke-width:2px,color:#013a82;
+          classDef highlight fill:#177cfc,stroke:#177cfc,stroke-width:2px,color:#ffffff;
+          classDef success fill:#16a34a,stroke:#16a34a,stroke-width:2px,color:#ffffff;
+          classDef data fill:#f59e0b,stroke:#f59e0b,stroke-width:2px,color:#ffffff;
+
+          class A,B,B1,C,E,H primary;
+          class D,X,F,I success;
+          class G,J data;
+          class R1,R2 accent;
       `;
 
       const uniqueId = `mermaid-flowchart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       mermaid.render(uniqueId, flowchartDefinition)
         .then(({ svg }) => {
-          mermaidRef.current.innerHTML = svg;
+          if (mermaidRef.current) {
+            mermaidRef.current.innerHTML = svg;
+          }
         })
         .catch((error) => {
           console.error('Mermaid rendering error:', error);
-          mermaidRef.current.innerHTML = '<p>Flow chart loading...</p>';
+          if (mermaidRef.current) {
+            mermaidRef.current.innerHTML = '<p>Flow chart loading...</p>';
+          }
         });
     }
   }, [isEnglish]);
@@ -128,16 +130,16 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
         className="mermaid-flowchart"
         style={{ 
           textAlign: 'center', 
-          padding: '30px',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-          borderRadius: '1rem',
+          padding: '20px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
           margin: '2rem 0',
-          minHeight: '550px',
+          minHeight: '600px',
           width: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'visible'
+          border: '1px solid #dee2e6'
         }}
       />
     </div>
