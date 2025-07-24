@@ -4,6 +4,8 @@ import PronunciationAssessment from "./pages/PronunciationAssessment";
 import Landing from "./pages/Landing";
 import Pitch from "./pages/Pitch";
 import PitchDetails from "./pages/PitchDetails";
+import PitchDetailsV2 from "./pages/PitchDetailsV2";
+import PitchDetailsV2EN from "./pages/PitchDetailsV2EN";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import DataDeletionPage from "./pages/DataDeletionPage";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -26,8 +28,10 @@ function AppContent() {
           <Route path="/intro-en" element={<Landing />} />
           <Route path="/pitch" element={<Pitch />} />
           <Route path="/pitch-en" element={<Pitch />} />
-          <Route path="/pitch-details" element={<PitchDetails />} />
-          <Route path="/pitch-details-en" element={<PitchDetails />} />
+          <Route path="/pitch-details" element={<PitchDetailsV2 />} />
+          <Route path="/pitch-details-en" element={<PitchDetailsV2EN />} />
+          <Route path="/pitch-details-v2" element={<PitchDetailsV2 />} />
+          <Route path="/pitch-details-v2-en" element={<PitchDetailsV2EN />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/data-deletion" element={<DataDeletionPage />} />
           <Route path="/practice/:slug" element={<PronunciationAssessment />} />

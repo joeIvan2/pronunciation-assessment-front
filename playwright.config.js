@@ -12,7 +12,7 @@ module.exports = {
     headless: process.env.HEADLESS === 'true',
     viewport: { width: 1920, height: 1080 },
     ignoreHTTPSErrors: true,
-    screenshot: 'only-on-failure',
+    screenshot: 'on',
     video: 'retain-on-failure',
     trace: 'retain-on-failure',
   },
