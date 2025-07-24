@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import './../styles/PitchDetailsV2.css'; // Reusing the same professional stylesheet
 
+import MermaidFlowChart from '../components/MermaidFlowChart';
+
 const PitchDetailsV2EN = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sections = [
     { id: 'executive-summary', title: '1.0 Executive Summary' },
     { id: 'product-innovation', title: '2.0 The nicetone.ai Platform' },
+    { id: 'learning-flowchart', title: 'Learning Flowchart' },
     { id: 'market-opportunity', title: '3.0 The Opportunity in Australia' },
     { id: 'strategic-fit', title: '4.0 Strategic Alignment' },
     { id: 'market-entry', title: '5.0 Go-to-Market Strategy' },
@@ -101,6 +104,11 @@ const PitchDetailsV2EN = () => {
           <p>Transforms solitary study into community collaboration through "Professional Study Groups" and "Ask a Senior" features.</p>
           <h4>2.3.3. Tone Currency Economy</h4>
           <p>Drives deep user engagement through a "Learn-to-Earn" gamification mechanism.</p>
+        </section>
+
+        <section id="learning-flowchart">
+          <h2>Learning Flowchart</h2>
+          <MermaidFlowChart isEnglish={true} />
         </section>
 
         <section id="market-opportunity">

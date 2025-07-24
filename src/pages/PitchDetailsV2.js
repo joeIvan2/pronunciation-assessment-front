@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import './../styles/PitchDetailsV2.css';
 
+import MermaidFlowChart from '../components/MermaidFlowChart';
+
 const PitchDetailsV2 = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sections = [
     { id: 'executive-summary', title: '1.0 執行摘要' },
     { id: 'product-innovation', title: '2.0 nicetone.ai 平台' },
+    { id: 'learning-flowchart', title: '學習流程圖' },
     { id: 'market-opportunity', title: '3.0 澳洲的機遇' },
     { id: 'strategic-fit', title: '4.0 戰略契合' },
     { id: 'market-entry', title: '5.0 市場進入策略' },
@@ -101,6 +104,11 @@ const PitchDetailsV2 = () => {
           <p>透過「專業學習小組」和「問個前輩」功能，將孤獨學習變為社群協作。</p>
           <h4>2.3.3. Tone Currency 經濟體系</h4>
           <p>以「學習即賺取」的遊戲化機制，驅動用戶深度參與。</p>
+        </section>
+
+        <section id="learning-flowchart">
+          <h2>學習流程圖</h2>
+          <MermaidFlowChart isEnglish={false} />
         </section>
 
         <section id="market-opportunity">
