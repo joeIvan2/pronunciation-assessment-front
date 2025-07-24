@@ -274,17 +274,22 @@
 }
 
 /* ===== Mermaid Overrides (Scoped) ===== */
-.pitch-deck-container-v2 [id^="mermaid-flowchart-"] p {
+[id^="mermaid-flowchart-"] p {
     margin: 0;
     color: #ffffff !important;
 }
 
-.pitch-deck-container-v2 [id^="mermaid-flowchart-"] .cluster-label p {
+/* ===== Mermaid Subgraph Title Color Override ===== */
+/* This uses a more specific selector to override the general 'p' rule above */
+[id^="mermaid-flowchart-"] .cluster-label p {
     color: var(--secondary-color) !important;
     font-weight: bold !important;
 }
 
-.pitch-deck-container-v2 .mermaid-flowchart svg text {
-  fill: #f8f9fa !important;
-  color: #f8f9fa !important;
+
+
+/* ===== Mermaid Flowchart Text Color Override ===== */
+.mermaid-flowchart svg text {
+  fill: #f8f9fa !important; /* Use a light color for text inside the SVG */
+  color: #f8f9fa !important; /* Fallback for some elements */
 }

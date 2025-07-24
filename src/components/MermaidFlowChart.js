@@ -22,7 +22,7 @@ const MermaidFlowChart = ({ isEnglish = false }) => {
         padding: 20,
         nodeSpacing: 60,
         rankSpacing: 60,
-        useMaxWidth: true,
+        useMaxWidth: false,
         htmlLabels: true
       },
       fontSize: 14,
